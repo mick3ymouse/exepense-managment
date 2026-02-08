@@ -16,6 +16,6 @@ else
 fi
 
 # Run the application
-echo "Starting Expense Management App (Streamlit)..."
+echo "Starting Expense Management App (FastAPI)..."
 pip install -r requirements.txt
-streamlit run app.py --browser.gatherUsageStats false --theme.base "light"
+python -m uvicorn backend.main:app --reload --port 8000

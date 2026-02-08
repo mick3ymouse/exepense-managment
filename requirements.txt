@@ -1,4 +1,5 @@
-streamlit
+fastapi
+uvicorn
+python-multipart
 pandas
 openpyxl
-streamlit-option-menu
