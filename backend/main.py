@@ -1,8 +1,6 @@
 from fastapi import FastAPI, UploadFile, File
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse
-import shutil
-import os
 
 app = FastAPI()
 

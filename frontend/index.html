@@ -5,6 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Le Mie Spese Dashboard</title>
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>💰</text></svg>">
     <link rel="stylesheet" href="/static/style.css">
     <!-- Font Awesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -50,26 +52,6 @@
             <!-- Header -->
             <header class="top-header">
                 <h1>Dashboard</h1>
-                <div class="header-controls">
-                    <select id="year-filter" class="custom-select minimal-select">
-                        <option value="2024">2024</option>
-                        <option value="2023">2023</option>
-                    </select>
-                    <select id="month-filter" class="custom-select minimal-select">
-                        <option value="Gennaio">Gennaio</option>
-                        <option value="Febbraio">Febbraio</option>
-                        <option value="Marzo">Marzo</option>
-                        <option value="Aprile">Aprile</option>
-                        <option value="Maggio">Maggio</option>
-                        <option value="Giugno">Giugno</option>
-                        <option value="Luglio">Luglio</option>
-                        <option value="Agosto">Agosto</option>
-                        <option value="Settembre">Settembre</option>
-                        <option value="Ottobre">Ottobre</option>
-                        <option value="Novembre">Novembre</option>
-                        <option value="Dicembre">Dicembre</option>
-                    </select>
-                </div>
             </header>
 
             <div class="content-wrapper">
@@ -91,108 +73,130 @@
 
                 <hr class="section-divider">
 
-                <!-- Dashboard Grid -->
-                <!-- Left: Panoramica + Dove Spendo | Right: Bonifici -->
-                <div class="dashboard-grid">
+                <div class="filters-bar">
+                    <select id="year-filter" class="custom-select minimal-select">
+                        <option value="2024">2024</option>
+                        <option value="2023">2023</option>
+                    </select>
+                    <select id="month-filter" class="custom-select minimal-select">
+                        <option value="Gennaio">Gennaio</option>
+                        <option value="Febbraio">Febbraio</option>
+                        <option value="Marzo">Marzo</option>
+                        <option value="Aprile">Aprile</option>
+                        <option value="Maggio">Maggio</option>
+                        <option value="Giugno">Giugno</option>
+                        <option value="Luglio">Luglio</option>
+                        <option value="Agosto">Agosto</option>
+                        <option value="Settembre">Settembre</option>
+                        <option value="Ottobre">Ottobre</option>
+                        <option value="Novembre">Novembre</option>
+                        <option value="Dicembre">Dicembre</option>
+                    </select>
+                </div>
+            </div>
 
-                    <!-- Left Column -->
-                    <div class="col-left">
+            <!-- Dashboard Grid -->
+            <!-- Left: Panoramica + Dove Spendo | Right: Bonifici -->
+            <div class="dashboard-grid">
 
-                        <!-- Panoramica Card -->
-                        <div class="card">
-                            <h3 class="card-title">Panoramica</h3>
-                            <hr class="card-divider">
+                <!-- Left Column -->
+                <div class="col-left">
 
-                            <div class="panoramica-content">
-                                <div class="chart-container">
-                                    <canvas id="panoramicaChart"></canvas>
+                    <!-- Panoramica Card -->
+                    <div class="card">
+                        <h3 class="card-title">Panoramica</h3>
+                        <hr class="card-divider">
+
+                        <div class="panoramica-content">
+                            <div class="chart-container">
+                                <canvas id="panoramicaChart"></canvas>
+                            </div>
+                            <div class="metrics-container">
+                                <div class="metric-item">
+                                    <span class="metric-label">Entrate</span>
+                                    <span class="metric-value positive">467,00 €</span>
+                                    <span class="metric-delta positive">↑ 12%</span>
                                 </div>
-                                <div class="metrics-container">
-                                    <div class="metric-item">
-                                        <span class="metric-label">Entrate</span>
-                                        <span class="metric-value positive">467,00 €</span>
-                                        <span class="metric-delta positive">↑ 12%</span>
-                                    </div>
-                                    <div class="metric-item">
-                                        <span class="metric-label">Uscite</span>
-                                        <span class="metric-value negative">-242,92 €</span>
-                                        <span class="metric-delta positive">↓ 5%</span>
-                                        <!-- positive because less spending is good? or negative color? Sticking to design -->
-                                    </div>
+                                <div class="metric-item">
+                                    <span class="metric-label">Uscite</span>
+                                    <span class="metric-value negative">-242,92 €</span>
+                                    <span class="metric-delta positive">↓ 5%</span>
+                                    <!-- positive because less spending is good? or negative color? Sticking to design -->
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Top Categories Card -->
-                        <div class="card">
-                            <h3 class="card-title">Dove spendo di più</h3>
-                            <hr class="card-divider">
-
-                            <table class="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>Categoria</th>
-                                        <th>Importo</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>Ristoranti</td>
-                                        <td>55 €</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Viaggi</td>
-                                        <td>77 €</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Carburante</td>
-                                        <td>37 €</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-
                     </div>
 
-                    <!-- Right Column -->
-                    <div class="col-right">
+                    <!-- Top Categories Card -->
+                    <div class="card">
+                        <h3 class="card-title">Dove spendo di più</h3>
+                        <hr class="card-divider">
 
-                        <div class="spacer-vertical"></div> <!-- To emulate the vertical centering request -->
-
-                        <!-- Bonifici Card -->
-                        <div class="card">
-                            <h3 class="card-title">Bonifici Fatti</h3>
-                            <hr class="card-divider">
-
-                            <table class="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>DA</th>
-                                        <th>Importo</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr>
-                                        <td>Mario</td>
-                                        <td>50 €</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Luca</td>
-                                        <td>20 €</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Paolo</td>
-                                        <td>30 €</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Categoria</th>
+                                    <th>Importo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Ristoranti</td>
+                                    <td>55 €</td>
+                                </tr>
+                                <tr>
+                                    <td>Viaggi</td>
+                                    <td>77 €</td>
+                                </tr>
+                                <tr>
+                                    <td>Carburante</td>
+                                    <td>37 €</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
 
                 </div>
 
+                <!-- Right Column -->
+                <div class="col-right">
+
+                    <div class="spacer-vertical"></div> <!-- To emulate the vertical centering request -->
+
+                    <!-- Bonifici Card -->
+                    <div class="card">
+                        <h3 class="card-title">Bonifici Fatti</h3>
+                        <hr class="card-divider">
+
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>DA</th>
+                                    <th>Importo</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Mario</td>
+                                    <td>50 €</td>
+                                </tr>
+                                <tr>
+                                    <td>Luca</td>
+                                    <td>20 €</td>
+                                </tr>
+                                <tr>
+                                    <td>Paolo</td>
+                                    <td>30 €</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
             </div>
-        </main>
+
+    </div>
+    </main>
     </div>
 
     <script src="/static/app.js"></script>
