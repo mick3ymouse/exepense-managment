@@ -393,11 +393,15 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!container) return;
         container.innerHTML = '';
 
-        const years = Object.keys(data);
+        const years = Object.keys(data).sort((a, b) => b - a);
         if (years.length === 0) {
             container.appendChild(createEmptyState());
             return;
         }
+
+        // Reverse map: month name → number for sorting
+        const MONTH_ORDER = {};
+        Object.entries(MONTH_NAMES).forEach(([num, name]) => MONTH_ORDER[name] = parseInt(num));
 
         years.forEach(year => {
             const yearHeader = document.createElement('h2');
@@ -406,7 +410,8 @@ document.addEventListener('DOMContentLoaded', function () {
             container.appendChild(yearHeader);
 
             const months = data[year];
-            Object.keys(months).forEach(month => {
+            const sortedMonths = Object.keys(months).sort((a, b) => (MONTH_ORDER[b] || 0) - (MONTH_ORDER[a] || 0));
+            sortedMonths.forEach(month => {
                 const expenses = months[month];
                 const monthSection = document.createElement('div');
                 monthSection.className = 'month-section';
