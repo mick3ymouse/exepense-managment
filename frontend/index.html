@@ -27,19 +27,19 @@
             </div>
 
             <nav class="sidebar-nav">
-                <a href="#" class="nav-item active">
+                <a href="#" class="nav-item active" data-page="dashboard">
                     <i class="fa-solid fa-house"></i>
                     <span>Dashboard</span>
                 </a>
-                <a href="#" class="nav-item">
+                <a href="#" class="nav-item" data-page="elenco">
                     <i class="fa-solid fa-list-check"></i>
                     <span>Elenco</span>
                 </a>
-                <a href="#" class="nav-item">
+                <a href="#" class="nav-item" data-page="analisi">
                     <i class="fa-solid fa-chart-line"></i>
                     <span>Analisi</span>
                 </a>
-                <a href="#" class="nav-item">
+                <a href="#" class="nav-item" data-page="confronto">
                     <i class="fa-solid fa-right-left"></i>
                     <span>Confronto</span>
                 </a>
@@ -49,154 +49,216 @@
         <!-- Main Content -->
         <main class="main-content">
 
-            <!-- Header -->
-            <header class="top-header">
-                <h1>Dashboard</h1>
-            </header>
+            <!-- ════════════════════════════════════════════════
+                 PAGE: DASHBOARD
+                 ════════════════════════════════════════════════ -->
+            <section id="page-dashboard" class="page active">
 
-            <div class="content-wrapper">
+                <!-- Header -->
+                <header class="top-header">
+                    <h1>Dashboard</h1>
+                </header>
 
-                <!-- Upload Section -->
-                <section class="upload-section">
-                    <div class="file-drop-area" id="drop-area">
-                        <i class="fa-solid fa-cloud-arrow-up"></i>
-                        <span class="file-msg">Trascina qui i tuoi file Excel (.xlsx)</span>
-                        <input class="file-input" type="file" id="fileElem" multiple accept=".xlsx">
+                <div class="content-wrapper">
+
+                    <!-- Upload Section -->
+                    <section class="upload-section">
+                        <div class="file-drop-area" id="drop-area">
+                            <i class="fa-solid fa-cloud-arrow-up"></i>
+                            <span class="file-msg">Trascina qui i tuoi file Excel (.xlsx)</span>
+                            <input class="file-input" type="file" id="fileElem" multiple accept=".xlsx">
+                        </div>
+
+                        <button class="btn-primary" id="upload-btn">
+                            Carica e Analizza
+                        </button>
+                    </section>
+
+                    <!-- Upload Toast Notification -->
+                    <div id="upload-toast" class="upload-toast hidden"></div>
+
+                    <hr class="section-divider">
+
+                    <div class="filters-bar">
+                        <select id="month-filter" class="custom-select minimal-select">
+                            <!-- JS populates from /available-periods -->
+                        </select>
+                        <select id="year-filter" class="custom-select minimal-select">
+                            <!-- JS populates from /available-periods -->
+                        </select>
                     </div>
-
-                    <button class="btn-primary" id="upload-btn">
-                        Carica e Analizza
-                    </button>
-
-                    <!-- Filters removed from here -->
-                </section>
-
-                <hr class="section-divider">
-
-                <div class="filters-bar">
-                    <select id="year-filter" class="custom-select minimal-select">
-                        <option value="2024">2024</option>
-                        <option value="2023">2023</option>
-                    </select>
-                    <select id="month-filter" class="custom-select minimal-select">
-                        <option value="Gennaio">Gennaio</option>
-                        <option value="Febbraio">Febbraio</option>
-                        <option value="Marzo">Marzo</option>
-                        <option value="Aprile">Aprile</option>
-                        <option value="Maggio">Maggio</option>
-                        <option value="Giugno">Giugno</option>
-                        <option value="Luglio">Luglio</option>
-                        <option value="Agosto">Agosto</option>
-                        <option value="Settembre">Settembre</option>
-                        <option value="Ottobre">Ottobre</option>
-                        <option value="Novembre">Novembre</option>
-                        <option value="Dicembre">Dicembre</option>
-                    </select>
                 </div>
-            </div>
 
-            <!-- Dashboard Grid -->
-            <!-- Left: Panoramica + Dove Spendo | Right: Bonifici -->
-            <div class="dashboard-grid">
+                <!-- Dashboard Grid -->
+                <div class="dashboard-grid">
 
-                <!-- Left Column -->
-                <div class="col-left">
+                    <!-- Left Column -->
+                    <div class="col-left">
 
-                    <!-- Panoramica Card -->
-                    <div class="card">
-                        <h3 class="card-title">Panoramica</h3>
-                        <hr class="card-divider">
+                        <!-- Panoramica Card -->
+                        <div class="card">
+                            <h3 class="card-title">Panoramica</h3>
+                            <hr class="card-divider">
 
-                        <div class="panoramica-content">
-                            <div class="chart-container">
-                                <canvas id="panoramicaChart"></canvas>
-                            </div>
-                            <div class="metrics-container">
-                                <div class="metric-item">
-                                    <span class="metric-label">Entrate</span>
-                                    <span class="metric-value positive">467,00 €</span>
-                                    <span class="metric-delta positive">↑ 12%</span>
+                            <div class="panoramica-content">
+                                <div class="chart-container">
+                                    <canvas id="panoramicaChart"></canvas>
                                 </div>
-                                <div class="metric-item">
-                                    <span class="metric-label">Uscite</span>
-                                    <span class="metric-value negative">-242,92 €</span>
-                                    <span class="metric-delta positive">↓ 5%</span>
-                                    <!-- positive because less spending is good? or negative color? Sticking to design -->
+                                <div class="metrics-container" id="metrics-container">
+                                    <div class="metric-item">
+                                        <span class="metric-label">Entrate</span>
+                                        <span class="metric-value entrate-color" id="metric-entrate">— €</span>
+                                    </div>
+                                    <div class="metric-item">
+                                        <span class="metric-label">Uscite</span>
+                                        <span class="metric-value uscite-color" id="metric-uscite">— €</span>
+                                    </div>
+                                    <div class="metric-item">
+                                        <span class="metric-label">Saldo</span>
+                                        <span class="metric-value" id="metric-saldo">— €</span>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Top Categories Card -->
+                        <div class="card">
+                            <h3 class="card-title">Dove spendo di più</h3>
+                            <hr class="card-divider">
+
+                            <div id="top-categories-container">
+                                <!-- JS populates top 3 categories -->
+                                <p class="top-cat-empty"
+                                    style="color: var(--azzurro-pastello); text-align: center; padding: 20px; font-weight: 500;">
+                                    Carica dati per visualizzare le categorie.</p>
+                            </div>
+                        </div>
+
                     </div>
 
-                    <!-- Top Categories Card -->
-                    <div class="card">
-                        <h3 class="card-title">Dove spendo di più</h3>
-                        <hr class="card-divider">
+                    <!-- Right Column -->
+                    <div class="col-right">
 
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Categoria</th>
-                                    <th>Importo</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>Ristoranti</td>
-                                    <td>55 €</td>
-                                </tr>
-                                <tr>
-                                    <td>Viaggi</td>
-                                    <td>77 €</td>
-                                </tr>
-                                <tr>
-                                    <td>Carburante</td>
-                                    <td>37 €</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                        <div class="spacer-vertical"></div>
+
+                        <!-- Bonifici Card -->
+                        <div class="card">
+                            <h3 class="card-title">Bonifici Fatti</h3>
+                            <hr class="card-divider">
+
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>DA</th>
+                                        <th>Importo</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Mario</td>
+                                        <td>50 €</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Luca</td>
+                                        <td>20 €</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Paolo</td>
+                                        <td>30 €</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
 
                 </div>
 
-                <!-- Right Column -->
-                <div class="col-right">
+            </section>
 
-                    <div class="spacer-vertical"></div> <!-- To emulate the vertical centering request -->
+            <!-- ════════════════════════════════════════════════
+                 PAGE: ELENCO
+                 ════════════════════════════════════════════════ -->
+            <section id="page-elenco" class="page">
 
-                    <!-- Bonifici Card -->
-                    <div class="card">
-                        <h3 class="card-title">Bonifici Fatti</h3>
-                        <hr class="card-divider">
+                <!-- Sticky Search Bar -->
+                <div class="elenco-search-bar">
+                    <div class="search-input-wrapper">
+                        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                        <input type="text" id="search-input" placeholder="Cerca operazione, categoria..."
+                            autocomplete="off">
+                    </div>
 
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>DA</th>
-                                    <th>Importo</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>Mario</td>
-                                    <td>50 €</td>
-                                </tr>
-                                <tr>
-                                    <td>Luca</td>
-                                    <td>20 €</td>
-                                </tr>
-                                <tr>
-                                    <td>Paolo</td>
-                                    <td>30 €</td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div class="search-actions">
+                        <button class="icon-btn" id="elenco-import-btn" title="Importa nuovo file Excel">
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
+                        <button class="icon-btn" id="date-filter-btn" title="Filtra per data">
+                            <i class="fa-solid fa-calendar-days"></i>
+                        </button>
+                        <input type="file" id="elenco-file-input" accept=".xlsx" multiple style="display: none;">
+                    </div>
+
+                    <!-- Date Range Popover -->
+                    <div class="date-popover hidden" id="date-popover">
+                        <div class="date-popover-content">
+                            <div class="date-field">
+                                <label for="date-start">Da:</label>
+                                <input type="date" id="date-start">
+                            </div>
+                            <div class="date-field">
+                                <label for="date-end">A:</label>
+                                <input type="date" id="date-end">
+                            </div>
+                            <div class="date-popover-actions">
+                                <button class="btn-small btn-apply" id="apply-date-filter">Applica</button>
+                                <button class="btn-small btn-clear" id="clear-date-filter">Cancella</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-            </div>
+                <!-- Upload Toast for Elenco -->
+                <div id="elenco-toast" class="upload-toast hidden"></div>
 
-    </div>
-    </main>
+                <!-- Expenses Timeline -->
+                <div id="expenses-list" class="expenses-list">
+                    <!-- JS populates: Year headers > Month sections > Tables -->
+                    <div class="empty-state" id="empty-state">
+                        <i class="fa-solid fa-inbox"></i>
+                        <p>Nessuna spesa trovata.</p>
+                        <p class="empty-hint">Carica un file Excel dalla Dashboard per iniziare.</p>
+                    </div>
+                </div>
+
+            </section>
+
+            <!-- ════════════════════════════════════════════════
+                 PAGE: ANALISI (placeholder)
+                 ════════════════════════════════════════════════ -->
+            <section id="page-analisi" class="page">
+                <header class="top-header">
+                    <h1>Analisi</h1>
+                </header>
+                <div class="empty-state">
+                    <i class="fa-solid fa-chart-line"></i>
+                    <p>Sezione in costruzione.</p>
+                </div>
+            </section>
+
+            <!-- ════════════════════════════════════════════════
+                 PAGE: CONFRONTO (placeholder)
+                 ════════════════════════════════════════════════ -->
+            <section id="page-confronto" class="page">
+                <header class="top-header">
+                    <h1>Confronto</h1>
+                </header>
+                <div class="empty-state">
+                    <i class="fa-solid fa-right-left"></i>
+                    <p>Sezione in costruzione.</p>
+                </div>
+            </section>
+
+        </main>
     </div>
 
     <script src="/static/app.js"></script>

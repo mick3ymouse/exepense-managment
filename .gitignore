@@ -17,3 +17,9 @@ Desktop.ini
 
 # Flet
 build/
+
+# Database
+data/
+
+# IDE
+.vscode/

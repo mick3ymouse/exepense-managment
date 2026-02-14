@@ -1,21 +1,41 @@
+/* ===================================================
+   EXPENSE MANAGEMENT DASHBOARD — Pastel Cyan Theme
+   =================================================== */
+
 :root {
-    --primary-color: #1565C0;
+    /* Palette Principale - Toni Ciano/Azzurro */
+    --ciano-scuro: #2C6E7C;
+    /* Sidebar - Ciano scuro */
+    --ciano-medio: #4A9EAF;
+    /* Primario - Ciano medio */
+    --azzurro-pastello: #7FC8D9;
+    /* Secondario - Azzurro chiaro */
+    --azzurro-chiaro: #B8E6F0;
+    /* Accenti chiari */
+    --bianco-caldo: #F5F9FA;
+    /* Sfondo principale - contrasto netto */
+
+    /* Semantici */
+    --accent-green: #66BB6A;
     --accent-red: #EF5350;
-    --accent-green: #4CAF50;
-    --bg-light: #F8FAFC;
-    --text-dark: #1E293B;
-    --text-muted: #64748B;
-    --border-color: #E2E8F0;
-    --sidebar-bg: #E3F2FD;
-    --card-bg: #E3F2FD;
-    /* Updated to match sidebar */
+    --card-bg: #FFFFFF;
+    --border-color: rgba(127, 200, 217, 0.25);
+    --shadow-color: rgba(44, 110, 124, 0.18);
+}
+
+/* ---- Reset & Base ---- */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
 }
 
 body {
     margin: 0;
     font-family: 'Inter', sans-serif;
-    background-color: #FFFFFF;
-    color: var(--text-dark);
+    background-color: var(--bianco-caldo);
+    color: var(--ciano-scuro);
+    -webkit-font-smoothing: antialiased;
 }
 
 .app-container {
@@ -23,52 +43,86 @@ body {
     min-height: 100vh;
 }
 
-/* Sidebar */
+/* ===================================================
+   SIDEBAR
+   =================================================== */
 .sidebar {
     width: 250px;
-    background-color: var(--sidebar-bg);
-    padding: 20px;
+    background-color: var(--ciano-scuro);
+    padding: 28px 20px;
     display: flex;
     flex-direction: column;
     border-right: 1px solid var(--border-color);
+    position: relative;
 }
 
 .sidebar-header {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-bottom: 40px;
-    color: #1565C0;
+    gap: 12px;
+    margin-bottom: 44px;
+    color: #FFFFFF;
+}
+
+.sidebar-header i {
+    font-size: 1.5rem;
+    color: var(--azzurro-chiaro);
+}
+
+.sidebar-header h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
 }
 
 .sidebar-nav {
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 6px;
 }
 
 .nav-item {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 14px;
     padding: 12px 16px;
     text-decoration: none;
-    color: var(--text-dark);
-    border-radius: 8px;
-    transition: background-color 0.2s;
+    color: rgba(255, 255, 255, 0.8);
+    border-radius: 10px;
+    transition: all 0.25s ease;
     font-weight: 500;
+    font-size: 0.95rem;
+}
+
+.nav-item i {
+    font-size: 1.1rem;
+    width: 20px;
+    text-align: center;
 }
 
 .nav-item.active {
-    background-color: #1565C0;
-    color: white;
+    background-color: var(--ciano-medio);
+    color: #FFFFFF;
+    box-shadow: 0 4px 12px rgba(74, 158, 175, 0.5);
+}
+
+.nav-item.active i {
+    color: #FFFFFF;
 }
 
 .nav-item:hover:not(.active) {
-    background-color: #BBDEFB;
+    background-color: rgba(127, 200, 217, 0.2);
+    color: var(--azzurro-chiaro);
 }
 
-/* Main Content */
+.nav-item:hover:not(.active) i {
+    color: var(--azzurro-chiaro);
+}
+
+/* ===================================================
+   MAIN CONTENT
+   =================================================== */
 .main-content {
     flex: 1;
     padding: 30px 50px;
@@ -84,7 +138,9 @@ body {
 
 .top-header h1 {
     font-size: 2rem;
+    font-weight: 700;
     margin: 0;
+    color: var(--ciano-scuro);
 }
 
 .header-controls {
@@ -92,40 +148,39 @@ body {
     gap: 15px;
 }
 
-/* Minimal Filters */
+/* ===================================================
+   FILTERS — Pill Selects
+   =================================================== */
 .minimal-select {
-    padding: 8px 16px;
+    padding: 8px 36px 8px 16px;
     border-radius: 20px;
-    /* Pill shape */
     border: 1px solid transparent;
-    /* No visible border by default */
-    background-color: #F1F5F9;
-    /* Very light subtle bg */
-    color: var(--text-dark);
+    background-color: rgba(255, 255, 255, 0.7);
+    color: var(--ciano-scuro);
+    font-family: 'Inter', sans-serif;
     font-size: 0.95rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.25s ease;
     outline: none;
     appearance: none;
-    /* Remove default arrow in some browsers if we add custom icon, but let's keep simple for now */
-    background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23131313%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
+    background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%232C6E7C%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
     background-repeat: no-repeat;
-    background-position: right 10px top 50%;
+    background-position: right 12px center;
     background-size: 10px auto;
-    padding-right: 30px;
-    /* Space for the arrow */
+    backdrop-filter: blur(4px);
 }
 
 .minimal-select:hover {
-    background-color: #E2E8F0;
-    /* Slightly darker on hover */
+    background-color: #FFFFFF;
+    border-color: var(--azzurro-pastello);
+    box-shadow: 0 2px 8px rgba(127, 200, 217, 0.15);
 }
 
-.minimal-select:focus {
-    background-color: #fff;
-    border-color: var(--primary-color);
-    box-shadow: 0 0 0 2px rgba(21, 101, 192, 0.1);
+.minimal-select:focus-visible {
+    background-color: #FFFFFF;
+    border-color: var(--ciano-medio);
+    box-shadow: 0 0 0 3px rgba(74, 158, 175, 0.18);
 }
 
 .section-divider {
@@ -134,38 +189,57 @@ body {
     margin: 30px 0;
 }
 
-/* Upload Section */
+/* ===================================================
+   UPLOAD SECTION
+   =================================================== */
 .upload-section {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 20px;
     width: 100%;
-    /* Full width */
     margin: 0 auto;
 }
 
 .file-drop-area {
     width: 100%;
     height: 150px;
-    /* Taller */
-    border: 3px dashed #CBD5E1;
-    /* Thicker border */
+    border: 2.5px dashed var(--azzurro-pastello);
     border-radius: 16px;
     padding: 0;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    background-color: #F8FAFC;
+    background-color: rgba(255, 255, 255, 0.5);
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.3s ease;
     gap: 15px;
+    backdrop-filter: blur(4px);
+}
+
+.file-drop-area i {
+    font-size: 2rem;
+    color: var(--ciano-medio);
+    transition: color 0.3s ease, transform 0.3s ease;
+}
+
+.file-drop-area .file-msg {
+    color: var(--ciano-scuro);
+    font-weight: 500;
+    font-size: 0.95rem;
+    opacity: 0.7;
 }
 
 .file-drop-area:hover {
-    border-color: var(--primary-color);
-    background-color: var(--sidebar-bg);
+    border-color: var(--ciano-medio);
+    background-color: rgba(127, 200, 217, 0.06);
+    box-shadow: 0 4px 20px rgba(74, 158, 175, 0.15);
+}
+
+.file-drop-area:hover i {
+    color: var(--ciano-medio);
+    transform: translateY(-3px);
 }
 
 .file-input {
@@ -173,33 +247,44 @@ body {
 }
 
 .btn-primary {
-    background-color: var(--accent-red);
-    color: white;
+    background: linear-gradient(135deg, var(--ciano-medio), var(--azzurro-pastello));
+    color: #FFFFFF;
     border: none;
-    padding: 12px 30px;
-    border-radius: 8px;
+    padding: 12px 32px;
+    border-radius: 10px;
+    font-family: 'Inter', sans-serif;
     font-size: 1rem;
     font-weight: 600;
     cursor: pointer;
-    transition: opacity 0.2s;
+    transition: all 0.3s ease;
     margin-top: 15px;
-    /* Added spacing */
+    box-shadow: 0 4px 14px rgba(74, 158, 175, 0.35);
 }
 
 .btn-primary:hover {
-    opacity: 0.9;
+    background: linear-gradient(135deg, var(--azzurro-pastello), var(--ciano-medio));
+    box-shadow: 0 6px 20px rgba(127, 200, 217, 0.45);
+    transform: translateY(-1px);
 }
 
-/* Filters Bar */
+.btn-primary:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(44, 110, 124, 0.25);
+}
+
+/* ===================================================
+   FILTERS BAR
+   =================================================== */
 .filters-bar {
     display: flex;
     justify-content: flex-end;
-    /* Right aligned */
     gap: 15px;
     margin-bottom: 25px;
 }
 
-/* Dashboard Grid */
+/* ===================================================
+   DASHBOARD GRID
+   =================================================== */
 .dashboard-grid {
     display: grid;
     grid-template-columns: 2fr 1fr;
@@ -215,40 +300,48 @@ body {
 .col-right {
     display: flex;
     flex-direction: column;
-    /* justify-content: center;  <-- This would center exact middle, but let's use spacer logic if needed or this flex prop */
     justify-content: center;
 }
 
-/* Card Styling */
+/* ===================================================
+   CARD STYLING
+   =================================================== */
 .card {
     background-color: var(--card-bg);
-    /* Sidebar Color */
-    border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.5);
-    /* Soft border */
-    padding: 25px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.03);
+    border-radius: 18px;
+    border: 1px solid var(--border-color);
+    padding: 28px;
+    box-shadow: 0 6px 24px var(--shadow-color);
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 10px 36px rgba(44, 110, 124, 0.25);
+    transform: translateY(-2px);
 }
 
 .card-title {
-    font-size: 1.2rem;
+    font-size: 1.15rem;
     font-weight: 700;
     text-align: center;
-    margin: 0 0 10px 0;
-    color: var(--text-dark);
+    margin: 0 0 12px 0;
+    color: var(--ciano-scuro);
+    letter-spacing: -0.01em;
 }
 
 .card-divider {
     border: 0;
     border-top: 1px solid var(--border-color);
-    margin: 0 0 20px 0;
+    margin: 0 0 22px 0;
 }
 
-/* Panoramica Content */
+/* ===================================================
+   PANORAMICA — Chart + Metrics
+   =================================================== */
 .panoramica-content {
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 24px;
 }
 
 .chart-container {
@@ -260,33 +353,52 @@ body {
     flex: 0.8;
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 24px;
     align-items: center;
 }
 
 .metric-item {
     text-align: center;
+    padding: 12px 20px;
+    border-radius: 12px;
+    background-color: rgba(184, 230, 240, 0.35);
+    min-width: 140px;
+    transition: background-color 0.2s ease;
+}
+
+.metric-item:hover {
+    background-color: rgba(127, 200, 217, 0.4);
 }
 
 .metric-label {
     display: block;
-    font-size: 0.9rem;
-    color: var(--text-muted);
-    margin-bottom: 5px;
+    font-size: 0.85rem;
+    color: var(--ciano-medio);
+    margin-bottom: 6px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
 .metric-value {
     display: block;
     font-size: 1.8rem;
     font-weight: 700;
-    color: var(--text-dark);
+}
+
+.metric-value.positive {
+    color: var(--accent-green);
+}
+
+.metric-value.negative {
+    color: var(--accent-red);
 }
 
 .metric-delta {
     display: block;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     font-weight: 600;
-    margin-top: 5px;
+    margin-top: 4px;
 }
 
 .metric-delta.positive {
@@ -297,20 +409,613 @@ body {
     color: var(--accent-red);
 }
 
-/* Tables */
+/* ===================================================
+   TABLES
+   =================================================== */
 .data-table {
     width: 100%;
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
 }
 
-.data-table th,
-.data-table td {
-    padding: 10px;
-    text-align: left;
-    border-bottom: 1px solid #F1F5F9;
+.data-table thead tr {
+    background-color: var(--azzurro-pastello);
 }
 
 .data-table th {
+    padding: 12px 16px;
+    text-align: left;
     font-weight: 600;
-    color: var(--text-muted);
+    color: var(--ciano-scuro);
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.data-table th:first-child {
+    border-radius: 10px 0 0 10px;
+}
+
+.data-table th:last-child {
+    border-radius: 0 10px 10px 0;
+}
+
+.data-table td {
+    padding: 12px 16px;
+    text-align: left;
+    color: var(--ciano-scuro);
+    font-weight: 500;
+    font-size: 0.95rem;
+    border-bottom: 1px solid rgba(184, 230, 240, 0.5);
+    transition: background-color 0.2s ease;
+}
+
+.data-table tbody tr:nth-child(even) {
+    background-color: rgba(184, 230, 240, 0.2);
+}
+
+.data-table tbody tr:hover {
+    background-color: rgba(127, 200, 217, 0.15);
+}
+
+.data-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* ===================================================
+   SPACER (utility)
+   =================================================== */
+.spacer-vertical {
+    flex: 0;
+}
+
+/* ===================================================
+   SCROLLBAR
+   =================================================== */
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: var(--azzurro-pastello);
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background-color: var(--ciano-medio);
+}
+
+/* ===================================================
+   SELECTION
+   =================================================== */
+::selection {
+    background-color: rgba(127, 200, 217, 0.3);
+    color: var(--ciano-scuro);
+}
+
+/* ===================================================
+   SPA — Page Visibility
+   =================================================== */
+.page {
+    display: none;
+}
+
+.page.active {
+    display: block;
+}
+
+/* ===================================================
+   ELENCO — Search Bar (Sticky)
+   =================================================== */
+.elenco-search-bar {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 18px 0 22px 0;
+    background-color: var(--bianco-caldo);
+    border-bottom: 1px solid var(--border-color);
+    margin-bottom: 30px;
+}
+
+.search-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.search-input-wrapper {
+    flex: 1;
+    position: relative;
+}
+
+.search-icon {
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--azzurro-pastello);
+    font-size: 0.95rem;
+}
+
+.search-input-wrapper input {
+    width: 100%;
+    padding: 12px 16px 12px 44px;
+    border-radius: 14px;
+    border: 1.5px solid var(--border-color);
+    background-color: var(--card-bg);
+    color: var(--ciano-scuro);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 500;
+    outline: none;
+    transition: all 0.25s ease;
+}
+
+.search-input-wrapper input::placeholder {
+    color: var(--azzurro-pastello);
+    font-weight: 400;
+}
+
+.search-input-wrapper input:focus {
+    border-color: var(--ciano-medio);
+    box-shadow: 0 0 0 3px rgba(74, 158, 175, 0.15);
+}
+
+/* ===================================================
+   ELENCO — Icon Buttons
+   =================================================== */
+.icon-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    border: 1.5px solid var(--border-color);
+    background-color: var(--card-bg);
+    color: var(--ciano-medio);
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.25s ease;
+}
+
+.icon-btn:hover {
+    background-color: var(--azzurro-chiaro);
+    border-color: var(--azzurro-pastello);
+    color: var(--ciano-scuro);
+}
+
+.icon-btn:focus {
+    outline: none;
+    box-shadow: none;
+}
+
+.icon-btn:focus-visible {
+    outline: 2px solid var(--ciano-medio);
+    outline-offset: 2px;
+}
+
+.icon-btn.active {
+    background-color: var(--ciano-medio);
+    border-color: var(--ciano-medio);
+    color: #FFFFFF;
+}
+
+/* ===================================================
+   ELENCO — Date Popover
+   =================================================== */
+.date-popover {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 8px);
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 8px 32px var(--shadow-color);
+    z-index: 200;
+    min-width: 280px;
+}
+
+.date-popover.hidden {
+    display: none;
+}
+
+.date-popover-content {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.date-field {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.date-field label {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--ciano-scuro);
+    min-width: 30px;
+}
+
+.date-field input[type="date"] {
+    flex: 1;
+    padding: 8px 12px;
+    border-radius: 10px;
+    border: 1.5px solid var(--border-color);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    color: var(--ciano-scuro);
+    background-color: var(--bianco-caldo);
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.date-field input[type="date"]:focus {
+    border-color: var(--ciano-medio);
+}
+
+.date-popover-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 4px;
+}
+
+.btn-small {
+    padding: 8px 18px;
+    border-radius: 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: all 0.2s ease;
+}
+
+.btn-apply {
+    background-color: var(--ciano-medio);
+    color: #FFFFFF;
+}
+
+.btn-apply:hover {
+    background-color: var(--ciano-scuro);
+}
+
+.btn-clear {
+    background-color: transparent;
+    color: var(--ciano-medio);
+    border: 1.5px solid var(--border-color);
+}
+
+.btn-clear:hover {
+    background-color: var(--bianco-caldo);
+}
+
+/* ===================================================
+   ELENCO — Year Header
+   =================================================== */
+.year-header {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--ciano-scuro);
+    margin: 40px 0 12px 0;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--azzurro-pastello);
+    letter-spacing: -0.02em;
+}
+
+.year-header:first-child {
+    margin-top: 0;
+}
+
+/* ===================================================
+   ELENCO — Month Section
+   =================================================== */
+.month-section {
+    margin-bottom: 30px;
+}
+
+.month-title {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: var(--ciano-medio);
+    margin: 18px 0 12px 0;
+    padding-left: 4px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.month-title::before {
+    content: '';
+    display: inline-block;
+    width: 4px;
+    height: 20px;
+    background-color: var(--azzurro-pastello);
+    border-radius: 2px;
+}
+
+/* ===================================================
+   ELENCO — Expense Table
+   =================================================== */
+.expense-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: var(--card-bg);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 4px 16px var(--shadow-color);
+    border: 1px solid var(--border-color);
+}
+
+.expense-table thead tr {
+    background-color: var(--azzurro-pastello);
+}
+
+.expense-table th {
+    padding: 11px 14px;
+    text-align: left;
+    font-weight: 600;
+    color: var(--ciano-scuro);
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.expense-table th:first-child {
+    border-radius: 14px 0 0 0;
+}
+
+.expense-table th:last-child {
+    border-radius: 0 14px 0 0;
+    text-align: center;
+    width: 60px;
+}
+
+.expense-table td {
+    padding: 11px 14px;
+    text-align: left;
+    color: var(--ciano-scuro);
+    font-weight: 500;
+    font-size: 0.92rem;
+    border-bottom: 1px solid rgba(184, 230, 240, 0.4);
+    transition: all 0.25s ease;
+}
+
+.expense-table td:last-child {
+    text-align: center;
+}
+
+.expense-table tbody tr:nth-child(even) {
+    background-color: rgba(184, 230, 240, 0.12);
+}
+
+.expense-table tbody tr:hover {
+    background-color: rgba(127, 200, 217, 0.12);
+}
+
+.expense-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+/* ── Importo styling ── */
+.importo-positive {
+    color: var(--accent-green);
+    font-weight: 600;
+}
+
+.importo-negative {
+    color: var(--accent-red);
+    font-weight: 600;
+}
+
+/* ===================================================
+   ELENCO — Excluded Row (Eye Toggle)
+   =================================================== */
+.expense-row.excluded td {
+    color: #c5c5c5 !important;
+    text-decoration: line-through;
+    text-decoration-color: #ddd;
+}
+
+.expense-row.excluded .importo-positive,
+.expense-row.excluded .importo-negative {
+    color: #c5c5c5 !important;
+}
+
+.eye-toggle {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.1rem;
+    color: var(--ciano-medio);
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.eye-toggle:hover {
+    background-color: rgba(127, 200, 217, 0.2);
+    color: var(--ciano-scuro);
+}
+
+.expense-row.excluded .eye-toggle {
+    color: #c5c5c5;
+}
+
+/* ===================================================
+   ELENCO — Upload Toast
+   =================================================== */
+.upload-toast {
+    padding: 14px 20px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.92rem;
+    margin: 16px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.upload-toast.hidden {
+    display: none;
+}
+
+.upload-toast.success {
+    background-color: rgba(102, 187, 106, 0.15);
+    color: var(--accent-green);
+    border: 1px solid rgba(102, 187, 106, 0.3);
+}
+
+.upload-toast.error {
+    background-color: rgba(239, 83, 80, 0.12);
+    color: var(--accent-red);
+    border: 1px solid rgba(239, 83, 80, 0.3);
+}
+
+/* ===================================================
+   ELENCO — Empty State
+   =================================================== */
+.empty-state {
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--azzurro-pastello);
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 16px;
+    opacity: 0.6;
+}
+
+.empty-state p {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0 0 6px 0;
+}
+
+.empty-hint {
+    font-size: 0.9rem !important;
+    font-weight: 400 !important;
+    opacity: 0.7;
+}
+
+/* ===================================================
+   ELENCO — Drop Zone (compact)
+   =================================================== */
+.elenco-drop-zone {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 16px 24px;
+    margin-bottom: 20px;
+    border: 2px dashed var(--border-color);
+    border-radius: 14px;
+    color: var(--azzurro-pastello);
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.elenco-drop-zone i {
+    font-size: 1.2rem;
+}
+
+.elenco-drop-zone.drag-over {
+    border-color: var(--ciano-medio);
+    background-color: rgba(127, 200, 217, 0.08);
+    color: var(--ciano-medio);
+}
+
+/* ===================================================
+   DASHBOARD — Entrate / Uscite Colors
+   =================================================== */
+.entrate-color {
+    color: #27ae60 !important;
+    /* Smeraldo morbido */
+}
+
+.uscite-color {
+    color: #c0392b !important;
+    /* Corallo scuro, non neon */
+}
+
+.saldo-positive {
+    color: #27ae60 !important;
+}
+
+.saldo-negative {
+    color: #c0392b !important;
+}
+
+/* ===================================================
+   DASHBOARD — Top Categories Progress Bars
+   =================================================== */
+.top-cat-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.top-cat-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.top-cat-info {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.top-cat-rank {
+    font-size: 0.85rem;
+    margin-right: 8px;
+}
+
+.top-cat-name {
+    flex: 1;
+    font-weight: 600;
+    color: var(--ciano-scuro);
+    font-size: 0.95rem;
+}
+
+.top-cat-amount {
+    font-weight: 700;
+    color: #c0392b;
+    font-size: 0.95rem;
+}
+
+.top-cat-bar-track {
+    width: 100%;
+    height: 8px;
+    background-color: rgba(184, 230, 240, 0.3);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.top-cat-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: linear-gradient(90deg, var(--azzurro-pastello), var(--ciano-medio));
+    transition: width 0.6s ease;
 }
