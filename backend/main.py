@@ -55,6 +55,16 @@ app.mount("/static", StaticFiles(directory="frontend"), name="static")
 
 # ── Helpers ───────────────────────────────────────────────────────
 
+def get_neutral_keywords(conn) -> set:
+    """Return set of lowercase neutral keywords from the DB."""
+    rows = conn.execute("SELECT keyword FROM neutral_keywords").fetchall()
+    return {r['keyword'].lower() for r in rows}
+
+
+def check_neutral(operazione: str, neutral_kws: set) -> bool:
+    """Check if operazione matches any neutral keyword (case-insensitive full match)."""
+    return operazione.strip().lower() in neutral_kws
+
 def parse_importo(value) -> float:
     """
     Parse Italian-format currency string to float.
@@ -123,6 +133,7 @@ def process_excel(file_bytes: bytes) -> dict:
 
     stats = {"new": 0, "duplicates": 0, "fuzzy_matches": [], "errors": 0}
     conn = get_db_connection()
+    neutral_kws = get_neutral_keywords(conn)
 
     try:
         for _, row in df.iterrows():
@@ -190,12 +201,15 @@ def process_excel(file_bytes: bytes) -> dict:
                     stats["duplicates"] += 1
                     continue
 
+                # Check neutral keyword match
+                is_neutral = 1 if check_neutral(operazione, neutral_kws) else 0
+
                 # Insert new row
                 conn.execute("""
                     INSERT INTO expenses
-                        (data_valuta, operazione, conto_carta, categoria, valuta, importo, hash_id)
-                    VALUES (?, ?, ?, ?, ?, ?, ?)
-                """, (data_valuta, operazione, conto_carta, categoria, valuta, importo, hash_id))
+                        (data_valuta, operazione, conto_carta, categoria, valuta, importo, hash_id, is_neutral)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """, (data_valuta, operazione, conto_carta, categoria, valuta, importo, hash_id, is_neutral))
 
                 stats["new"] += 1
 
@@ -326,6 +340,80 @@ async def toggle_expense(expense_id: int):
     return {"id": expense_id, "is_excluded": bool(new_value)}
 
 
+@app.post("/expenses")
+async def create_expense(request: Request):
+    """
+    Create a manual expense entry.
+    Expects JSON: { data_valuta, operazione, categoria, conto_carta, importo }
+    """
+    body = await request.json()
+
+    data_valuta = body.get("data_valuta", "").strip()
+    operazione = body.get("operazione", "").strip()
+    categoria = body.get("categoria", "").strip()
+    conto_carta = body.get("conto_carta", "").strip()
+    importo_raw = body.get("importo", 0)
+
+    # Validate required fields
+    if not data_valuta or not operazione:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "Data e Operazione sono obbligatori."}
+        )
+
+    # Parse importo (accept both Italian and standard formats)
+    importo = parse_importo(importo_raw)
+
+    # Validate date format
+    try:
+        datetime.strptime(data_valuta, '%Y-%m-%d')
+    except ValueError:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "Formato data non valido. Usa YYYY-MM-DD."}
+        )
+
+    hash_id = generate_hash(data_valuta, importo, operazione, conto_carta)
+
+    conn = get_db_connection()
+    try:
+        # Check for duplicates
+        existing = conn.execute(
+            "SELECT id FROM expenses WHERE hash_id = ?", (hash_id,)
+        ).fetchone()
+        if existing:
+            conn.close()
+            return JSONResponse(
+                status_code=409,
+                content={"error": "Spesa duplicata già presente."}
+            )
+
+        # Check neutral keyword match
+        neutral_kws = get_neutral_keywords(conn)
+        is_neutral = 1 if check_neutral(operazione, neutral_kws) else 0
+
+        conn.execute("""
+            INSERT INTO expenses
+                (data_valuta, operazione, conto_carta, categoria, valuta, importo, hash_id, is_neutral)
+            VALUES (?, ?, ?, ?, 'EUR', ?, ?, ?)
+        """, (data_valuta, operazione, conto_carta, categoria, importo, hash_id, is_neutral))
+        conn.commit()
+
+        # Retrieve the created row
+        row = conn.execute(
+            "SELECT * FROM expenses WHERE hash_id = ?", (hash_id,)
+        ).fetchone()
+        conn.close()
+
+        return dict(row)
+    except Exception as e:
+        conn.close()
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"Errore durante il salvataggio: {str(e)}"}
+        )
+
+
 @app.get("/available-periods")
 async def get_available_periods():
     """
@@ -393,6 +481,7 @@ async def get_dashboard_stats(
         FROM expenses
         WHERE data_valuta >= ? AND data_valuta < ?
           AND is_excluded = 0
+          AND is_neutral = 0
     """, (start_date, end_date)).fetchone()
 
     # Top 3 categories by cumulative spending (only negative importo = spending)
@@ -401,6 +490,7 @@ async def get_dashboard_stats(
         FROM expenses
         WHERE data_valuta >= ? AND data_valuta < ?
           AND is_excluded = 0
+          AND is_neutral = 0
           AND importo < 0
           AND categoria != '' AND categoria IS NOT NULL
         GROUP BY categoria
@@ -423,6 +513,157 @@ async def get_dashboard_stats(
             for row in top_categories
         ]
     }
+
+
+# ── Monthly Reimbursement Status ─────────────────────────────────
+
+@app.get("/monthly-status")
+async def get_monthly_status():
+    """Return paid/unpaid status for every month."""
+    conn = get_db_connection()
+    rows = conn.execute("SELECT month, year, is_paid FROM monthly_status").fetchall()
+    conn.close()
+    result = {}
+    for r in rows:
+        key = f"{r['year']}-{r['month']:02d}"
+        result[key] = bool(r['is_paid'])
+    return result
+
+
+@app.post("/monthly-status")
+async def set_monthly_status(request: Request):
+    """Upsert is_paid flag for a given month/year."""
+    body = await request.json()
+    month = int(body["month"])
+    year = int(body["year"])
+    is_paid = 1 if body.get("is_paid") else 0
+
+    conn = get_db_connection()
+    conn.execute("""
+        INSERT INTO monthly_status (month, year, is_paid)
+        VALUES (?, ?, ?)
+        ON CONFLICT(month, year) DO UPDATE SET is_paid = excluded.is_paid
+    """, (month, year, is_paid))
+    conn.commit()
+    conn.close()
+    return {"month": month, "year": year, "is_paid": bool(is_paid)}
+
+
+# ── Bulk Delete Expenses ─────────────────────────────────────────
+
+@app.delete("/expenses/bulk-delete")
+async def bulk_delete_expenses(request: Request):
+    """Delete all expenses for given month/year combos and reset monthly_status."""
+    body = await request.json()
+    periods = body.get("periods", [])
+    if not periods:
+        return JSONResponse(status_code=400, content={"error": "Nessun periodo specificato."})
+
+    conn = get_db_connection()
+    total_deleted = 0
+
+    for p in periods:
+        m, y = int(p["month"]), int(p["year"])
+        start_date = f"{y}-{m:02d}-01"
+        if m == 12:
+            end_date = f"{y + 1}-01-01"
+        else:
+            end_date = f"{y}-{m + 1:02d}-01"
+
+        print(f"DEBUG: Processing deletion for {m}/{y}...")
+        cur = conn.execute(
+            "DELETE FROM expenses WHERE data_valuta >= ? AND data_valuta < ?",
+            (start_date, end_date)
+        )
+        deleted_count = cur.rowcount
+        total_deleted += deleted_count
+        print(f"DEBUG: Deleted {deleted_count} expenses for {m}/{y}")
+
+        conn.execute(
+            "DELETE FROM monthly_status WHERE month = ? AND year = ?",
+            (m, y)
+        )
+
+    conn.commit()
+    print(f"DEBUG: Commit executed. Total deleted: {total_deleted}")
+    conn.close()
+    return {"deleted": total_deleted}
+
+
+# ── Delete Expense ───────────────────────────────────────────────
+
+@app.delete("/expenses/{expense_id}")
+async def delete_expense(expense_id: int):
+    """Delete a single expense by ID."""
+    conn = get_db_connection()
+    row = conn.execute("SELECT id FROM expenses WHERE id = ?", (expense_id,)).fetchone()
+    if not row:
+        conn.close()
+        return JSONResponse(status_code=404, content={"error": "Spesa non trovata."})
+
+    conn.execute("DELETE FROM expenses WHERE id = ?", (expense_id,))
+    conn.commit()
+    conn.close()
+    return {"deleted": expense_id}
+
+
+# ── Neutral Keywords CRUD ────────────────────────────────────────
+
+@app.get("/neutral-keywords")
+async def get_keywords():
+    """Return all neutral keywords."""
+    conn = get_db_connection()
+    rows = conn.execute("SELECT id, keyword FROM neutral_keywords ORDER BY keyword").fetchall()
+    conn.close()
+    return [{"id": r["id"], "keyword": r["keyword"]} for r in rows]
+
+
+@app.post("/neutral-keywords")
+async def add_keyword(request: Request):
+    """Add a neutral keyword and re-flag matching existing expenses."""
+    body = await request.json()
+    keyword = body.get("keyword", "").strip()
+    if not keyword:
+        return JSONResponse(status_code=400, content={"error": "Keyword vuota."})
+
+    conn = get_db_connection()
+    try:
+        conn.execute("INSERT INTO neutral_keywords (keyword) VALUES (?)", (keyword,))
+        # Re-flag existing expenses that match this keyword
+        conn.execute(
+            "UPDATE expenses SET is_neutral = 1 WHERE LOWER(TRIM(operazione)) = ?",
+            (keyword.lower(),)
+        )
+        conn.commit()
+        row = conn.execute(
+            "SELECT id, keyword FROM neutral_keywords WHERE keyword = ?", (keyword,)
+        ).fetchone()
+        conn.close()
+        return {"id": row["id"], "keyword": row["keyword"]}
+    except Exception:
+        conn.close()
+        return JSONResponse(status_code=409, content={"error": "Keyword già presente."})
+
+
+@app.delete("/neutral-keywords/{kw_id}")
+async def delete_keyword(kw_id: int):
+    """Remove a neutral keyword and un-flag matching expenses."""
+    conn = get_db_connection()
+    row = conn.execute("SELECT keyword FROM neutral_keywords WHERE id = ?", (kw_id,)).fetchone()
+    if not row:
+        conn.close()
+        return JSONResponse(status_code=404, content={"error": "Keyword non trovata."})
+
+    keyword = row["keyword"]
+    conn.execute("DELETE FROM neutral_keywords WHERE id = ?", (kw_id,))
+    # Un-flag expenses (only if no other keyword matches)
+    conn.execute(
+        "UPDATE expenses SET is_neutral = 0 WHERE LOWER(TRIM(operazione)) = ?",
+        (keyword.lower(),)
+    )
+    conn.commit()
+    conn.close()
+    return {"deleted": kw_id}
 
 
 if __name__ == "__main__":

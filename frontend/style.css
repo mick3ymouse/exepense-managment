@@ -38,6 +38,10 @@ body {
     -webkit-font-smoothing: antialiased;
 }
 
+.hidden {
+    display: none !important;
+}
+
 .app-container {
     display: flex;
     min-height: 100vh;
@@ -654,20 +658,46 @@ body {
 }
 
 .date-field input[type="date"] {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
     flex: 1;
-    padding: 8px 12px;
-    border-radius: 10px;
-    border: 1.5px solid var(--border-color);
+    padding: 0.5rem 12px;
+    border-radius: 6px;
+    border: 1px solid #AEC6CF;
     font-family: 'Inter', sans-serif;
     font-size: 0.9rem;
     color: var(--ciano-scuro);
-    background-color: var(--bianco-caldo);
+    background-color: #E3EBF2;
     outline: none;
-    transition: border-color 0.2s ease;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.inline-form-row input[type="date"] {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    background-color: #E3EBF2 !important;
+    border: 1px solid #AEC6CF !important;
 }
 
 .date-field input[type="date"]:focus {
     border-color: var(--ciano-medio);
+    box-shadow: 0 0 0 2px rgba(74, 158, 175, 0.15);
+}
+
+/* ── TASK 4: Calendar picker icon styling ── */
+.date-field input[type="date"]::-webkit-calendar-picker-indicator,
+.inline-form-row input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    filter: invert(40%) sepia(15%) saturate(600%) hue-rotate(160deg);
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+
+.date-field input[type="date"]::-webkit-calendar-picker-indicator:hover,
+.inline-form-row input[type="date"]::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
 }
 
 .date-popover-actions {
@@ -756,6 +786,7 @@ body {
    =================================================== */
 .expense-table {
     width: 100%;
+    table-layout: fixed;
     border-collapse: separate;
     border-spacing: 0;
     background: var(--card-bg);
@@ -763,6 +794,38 @@ body {
     overflow: hidden;
     box-shadow: 0 4px 16px var(--shadow-color);
     border: 1px solid var(--border-color);
+}
+
+/* Column widths (fixed layout) */
+.expense-table .col-data {
+    width: 12%;
+}
+
+.expense-table .col-operazione {
+    width: 28%;
+}
+
+.expense-table .col-categoria {
+    width: 18%;
+}
+
+.expense-table .col-conto {
+    width: 17%;
+}
+
+.expense-table .col-importo {
+    width: 15%;
+}
+
+/* ── TASK 1: Right-align importo column (accounting convention) ── */
+.expense-table th:nth-child(5),
+.expense-table td:nth-child(5) {
+    text-align: right;
+    padding-right: 18px;
+}
+
+.expense-table .col-azioni {
+    width: 10%;
 }
 
 .expense-table thead tr {
@@ -797,6 +860,9 @@ body {
     font-size: 0.92rem;
     border-bottom: 1px solid rgba(184, 230, 240, 0.4);
     transition: all 0.25s ease;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    white-space: normal;
 }
 
 .expense-table td:last-child {
@@ -858,6 +924,317 @@ body {
 
 .expense-row.excluded .eye-toggle {
     color: #c5c5c5;
+}
+
+/* ===================================================
+   ELENCO — Reimbursable Badge (Month Header)
+   =================================================== */
+.month-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    padding: 4px 14px;
+    border-radius: 20px;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+    transition: all 0.3s ease;
+}
+
+.month-badge.badge-paid {
+    background: linear-gradient(135deg, rgba(39, 174, 96, 0.12), rgba(39, 174, 96, 0.06));
+    color: #27ae60;
+    border: 1px solid rgba(39, 174, 96, 0.25);
+}
+
+.month-badge.badge-unpaid {
+    background: linear-gradient(135deg, rgba(231, 76, 60, 0.12), rgba(231, 76, 60, 0.06));
+    color: #e74c3c;
+    border: 1px solid rgba(231, 76, 60, 0.25);
+}
+
+.month-badge i {
+    font-size: 0.75rem;
+}
+
+/* ── Action buttons (eye + trash) ── */
+.action-btns {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.delete-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--ciano-medio);
+    font-size: 0.85rem;
+    padding: 4px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    opacity: 0.5;
+}
+
+.delete-btn:hover {
+    color: #e74c3c;
+    opacity: 1;
+    background: rgba(231, 76, 60, 0.08);
+}
+
+/* ── TASK 2 + 3: Refactored paid-label + custom checkbox ── */
+.paid-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.2s ease;
+}
+
+.paid-label.label-paid {
+    color: #27ae60;
+}
+
+.paid-label.label-unpaid {
+    color: #e74c3c;
+}
+
+/* Custom checkbox — hidden native + styled pseudo-element */
+.paid-checkbox {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border: 1.5px solid #779ECB;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.9);
+    cursor: pointer;
+    position: relative;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+.paid-checkbox:hover {
+    border-color: #5DADE2;
+    box-shadow: 0 0 0 3px rgba(93, 173, 226, 0.15);
+}
+
+.paid-checkbox:checked {
+    background: #27ae60;
+    border-color: #27ae60;
+}
+
+.paid-checkbox:checked::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 5px;
+    width: 5px;
+    height: 10px;
+    border: solid #fff;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+}
+
+/* ── Row fade-out animation ── */
+.expense-row.fade-out {
+    opacity: 0;
+    transform: translateX(20px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+/* ===================================================
+   ELENCO — Table Footer (tfoot totals)
+   =================================================== */
+.expense-table tfoot td {
+    padding: 12px 14px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--ciano-scuro);
+    background-color: rgba(184, 230, 240, 0.25);
+    border-top: 2px solid var(--azzurro-pastello);
+    border-bottom: none;
+}
+
+.tfoot-total-label {
+    color: var(--ciano-medio);
+    font-weight: 600;
+}
+
+.tfoot-rimborso {
+    text-align: right;
+    padding-right: 18px;
+    font-weight: 700;
+}
+
+/* ===================================================
+   ELENCO — Add Manual Expense Button & Inline Form
+   =================================================== */
+.add-expense-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 10px 0;
+    margin-top: 8px;
+    border: 2px dashed var(--border-color);
+    border-radius: 0 0 14px 14px;
+    background: transparent;
+    color: var(--azzurro-pastello);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.add-expense-btn:hover {
+    border-color: var(--ciano-medio);
+    color: var(--ciano-medio);
+    background-color: rgba(127, 200, 217, 0.06);
+}
+
+.add-expense-btn i {
+    font-size: 0.8rem;
+}
+
+/* Inline form row */
+.inline-form-row td {
+    padding: 8px 6px !important;
+    background-color: rgba(184, 230, 240, 0.12);
+    border-bottom: none !important;
+}
+
+.inline-form-row input,
+.inline-form-row select {
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border-color);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    color: var(--ciano-scuro);
+    background-color: var(--card-bg);
+    outline: none;
+    transition: border-color 0.2s ease;
+    box-sizing: border-box;
+}
+
+.inline-form-row input:focus {
+    border-color: var(--ciano-medio);
+    box-shadow: 0 0 0 2px rgba(74, 158, 175, 0.15);
+}
+
+.inline-form-actions {
+    display: flex;
+    gap: 4px;
+    justify-content: center;
+}
+
+.inline-form-actions button {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+}
+
+.btn-save-inline {
+    background-color: #27ae60;
+    color: #fff;
+}
+
+.btn-save-inline:hover {
+    background-color: #219a52;
+}
+
+.btn-cancel-inline {
+    background-color: transparent;
+    color: var(--ciano-medio);
+    border: 1.5px solid var(--border-color) !important;
+}
+
+.btn-cancel-inline:hover {
+    background-color: rgba(127, 200, 217, 0.1);
+}
+
+/* ───────────────────────────────────────────────────
+   ELENCO — Smart Autocomplete Dropdown (Portal)
+   ─────────────────────────────────────────────────── */
+.autocomplete-list {
+    position: fixed;
+    z-index: 10000;
+    max-height: 152px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    /* Prevents scroll chaining to body */
+    pointer-events: auto;
+    background: rgba(255, 255, 255, 0.97);
+    border: 1px solid var(--border-color);
+    border-top: none;
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+    list-style: none;
+    margin: 0;
+    padding: 4px 0;
+    backdrop-filter: blur(6px);
+}
+
+.autocomplete-list.drop-up {
+    border-top: 1px solid var(--border-color);
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+    box-shadow: 0 -4px 14px rgba(0, 0, 0, 0.10);
+}
+
+.autocomplete-list li {
+    padding: 7px 12px;
+    font-size: 0.88rem;
+    color: #2c3e50;
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.autocomplete-list li:hover,
+.autocomplete-list li.ac-active {
+    background: linear-gradient(135deg, rgba(127, 200, 217, 0.18), rgba(127, 200, 217, 0.08));
+    color: var(--ciano-scuro);
+}
+
+.autocomplete-list li mark {
+    background: rgba(127, 200, 217, 0.35);
+    color: inherit;
+    border-radius: 2px;
+    padding: 0 1px;
+}
+
+/* Scrollbar styling for the dropdown */
+.autocomplete-list::-webkit-scrollbar {
+    width: 5px;
+}
+
+.autocomplete-list::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.autocomplete-list::-webkit-scrollbar-thumb {
+    background: var(--ciano-chiaro);
+    border-radius: 3px;
 }
 
 /* ===================================================
@@ -1023,4 +1400,462 @@ body {
     border-radius: 4px;
     background: linear-gradient(90deg, var(--azzurro-pastello), var(--ciano-medio));
     transition: width 0.6s ease;
+}
+
+
+/* ===================================================
+   KEBAB MENU (Opzioni Avanzate)
+   =================================================== */
+.kebab-wrapper {
+    position: relative;
+}
+
+.kebab-dropdown {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    min-width: 230px;
+    background: rgba(255, 255, 255, 0.98);
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    backdrop-filter: blur(8px);
+    padding: 6px 0;
+    z-index: 2000;
+    animation: kebabFadeIn 0.15s ease;
+}
+
+@keyframes kebabFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.kebab-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 10px 16px;
+    border: none;
+    background: none;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: var(--ciano-scuro);
+    cursor: pointer;
+    transition: background 0.15s ease;
+    text-align: left;
+}
+
+.kebab-item:hover {
+    background: rgba(127, 200, 217, 0.12);
+}
+
+.kebab-item i {
+    width: 18px;
+    text-align: center;
+    color: var(--ciano-medio);
+}
+
+
+/* ===================================================
+   MODALS (shared)
+   =================================================== */
+.modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(3px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 5000;
+    animation: modalFadeIn 0.2s ease;
+}
+
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.modal-content {
+    background: var(--card-bg);
+    border-radius: 14px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.18);
+    width: 90%;
+    max-width: 520px;
+    max-height: 80vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    animation: modalSlide 0.25s ease;
+}
+
+@keyframes modalSlide {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 22px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.modal-header h3 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--ciano-scuro);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+}
+
+.modal-header h3 i {
+    color: var(--ciano-medio);
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 1.4rem;
+    color: var(--ciano-medio);
+    cursor: pointer;
+    line-height: 1;
+    padding: 4px;
+    border-radius: 6px;
+    transition: all 0.15s ease;
+}
+
+.modal-close:hover {
+    background: rgba(127, 200, 217, 0.15);
+    color: var(--ciano-scuro);
+}
+
+.modal-body {
+    padding: 18px 22px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.modal-hint {
+    font-size: 0.84rem;
+    color: var(--ciano-medio);
+    margin: 0 0 16px 0;
+    line-height: 1.5;
+}
+
+.modal-footer {
+    padding: 14px 22px;
+    border-top: 1px solid var(--border-color);
+    display: flex;
+    justify-content: flex-end;
+}
+
+
+/* ── Bulk Delete: Period Tree ── */
+.period-tree {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.period-year {
+    border: 1px solid var(--border-color);
+    border-radius: 10px;
+    padding: 10px 14px;
+    background: rgba(184, 230, 240, 0.08);
+}
+
+.period-year-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+}
+
+.period-year-header label {
+    font-weight: 700;
+    font-size: 0.92rem;
+    color: var(--ciano-scuro);
+    cursor: pointer;
+    user-select: none;
+}
+
+.period-year-header .paid-checkbox {
+    margin: 0;
+}
+
+.period-months {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+    padding-left: 26px;
+}
+
+.period-month-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    line-height: 1;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: var(--ciano-scuro);
+    user-select: none;
+    padding: 3px 8px;
+    border-radius: 6px;
+    transition: background 0.15s ease;
+}
+
+.period-months .paid-checkbox {
+    margin: 0 !important;
+}
+
+.period-month-label:hover {
+    background: rgba(127, 200, 217, 0.12);
+}
+
+/* Removed custom size to use default 18px and fix checkmark alignment */
+
+.btn-danger {
+    padding: 10px 22px;
+    border-radius: 8px;
+    border: none;
+    background: #e74c3c;
+    color: #fff;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.btn-danger:hover:not(:disabled) {
+    background: #c0392b;
+}
+
+.btn-danger:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+
+/* ── Keyword Management ── */
+.keyword-input-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.keyword-input-row input {
+    flex: 1;
+    padding: 9px 14px;
+    border-radius: 8px;
+    border: 1.5px solid var(--border-color);
+    font-family: 'Inter', sans-serif;
+    font-size: 0.88rem;
+    color: var(--ciano-scuro);
+    background: var(--card-bg);
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.keyword-input-row input:focus {
+    border-color: var(--ciano-medio);
+    box-shadow: 0 0 0 2px rgba(74, 158, 175, 0.15);
+}
+
+.btn-add-keyword {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    background: var(--ciano-medio);
+    color: #fff;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: background 0.2s ease;
+    white-space: nowrap;
+}
+
+.btn-add-keyword:hover {
+    background: var(--ciano-scuro);
+}
+
+.keyword-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.keyword-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px 5px 12px;
+    border-radius: 20px;
+    background: rgba(74, 105, 189, 0.12);
+    color: #4a69bd;
+    font-size: 0.85rem;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+}
+
+.keyword-remove {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 0.85rem;
+    color: #4a69bd;
+    opacity: 0.6;
+    padding: 0 2px;
+    line-height: 1;
+    transition: opacity 0.15s ease;
+}
+
+.keyword-remove:hover {
+    opacity: 1;
+}
+
+.keyword-list-empty {
+    font-size: 0.84rem;
+    color: var(--ciano-medio);
+    font-style: italic;
+}
+
+
+/* ===================================================
+   NEUTRAL ROWS (Redesign)
+   =================================================== */
+.expense-row.neutral-row {
+    border-top: 2px solid #4a69bd;
+    border-bottom: 2px solid #4a69bd;
+    background: rgba(74, 105, 189, 0.08);
+}
+
+.expense-row.neutral-row td {
+    font-weight: 600;
+    color: #2c3a6e;
+}
+
+.importo-neutral {
+    color: #4a69bd !important;
+    font-weight: 700;
+}
+
+/* Keep eye hidden but preserve layout so trash aligns with other rows */
+.expense-row.neutral-row .eye-toggle {
+    visibility: hidden;
+}
+
+
+
+.expense-table tbody tr.expense-row.neutral-row:hover {
+    background-color: rgba(74, 105, 189, 0.12) !important;
+}
+
+
+/* ===================================================
+   SMALL CONFIRM MODAL
+   =================================================== */
+.modal-content-sm {
+    max-width: 420px;
+}
+
+.modal-footer-confirm {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 14px 24px;
+    border-top: 1px solid var(--border-color);
+}
+
+/* ── Tooltip Error (No Alert) ── */
+.keyword-input-wrapper {
+    position: relative;
+    flex: 1;
+}
+
+.keyword-input-wrapper input {
+    width: 100%;
+}
+
+.error-tooltip {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    margin-bottom: 12px;
+    background: #fff;
+    color: #e74c3c;
+    font-weight: 700;
+    font-size: 0.85rem;
+    padding: 8px 12px;
+    border: 1px solid #e74c3c;
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(10px);
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+    z-index: 10;
+    pointer-events: none;
+}
+
+.error-tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 20px;
+    border-width: 6px;
+    border-style: solid;
+    border-color: #e74c3c transparent transparent transparent;
+}
+
+.error-tooltip::before {
+    /* Inner white arrow to cover the border arrow's base line */
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 21px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #fff transparent transparent transparent;
+    z-index: 1;
+}
+
+.error-tooltip.show-error {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
 }

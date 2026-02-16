@@ -25,27 +25,54 @@ document.addEventListener('DOMContentLoaded', function () {
     const pages = document.querySelectorAll('.page');
     let dashboardDirty = false;  // Set true when Elenco data changes
 
-    navItems.forEach(item => {
-        item.addEventListener('click', (e) => {
-            e.preventDefault();
-            const targetPage = item.dataset.page;
+    // ══════════════════════════════════════════════════
+    // 1. SPA ROUTER — State-Driven Navigation
+    // ══════════════════════════════════════════════════
+    function setActiveView(viewId) {
+        // 1. Save state
+        localStorage.setItem('activeTab', viewId);
 
-            navItems.forEach(n => n.classList.remove('active'));
-            item.classList.add('active');
+        // 2. Update Sidebar
+        navItems.forEach(item => {
+            item.classList.toggle('active', item.dataset.page === viewId);
+        });
 
-            pages.forEach(p => p.classList.remove('active'));
-            const page = document.getElementById(`page-${targetPage}`);
-            if (page) page.classList.add('active');
+        // 3. Update Pages
+        pages.forEach(page => {
+            const pageEl = document.getElementById(`page-${viewId}`);
+            // Toggle active class on all pages
+            if (page.id === `page-${viewId}`) {
+                page.classList.add('active');
+            } else {
+                page.classList.remove('active');
+            }
+        });
 
-            if (targetPage === 'elenco') loadExpenses();
-
-            // Auto-refresh stale data when navigating to Dashboard (or future pages)
-            if (targetPage === 'dashboard' && dashboardDirty) {
+        // 4. Trigger Page Logic
+        if (viewId === 'elenco') {
+            loadExpenses();
+        } else if (viewId === 'dashboard') {
+            // Only reload if dirty.
+            // Note: currentYear is defined later, but this block only runs
+            // if dashboardDirty is true, which implies we've been to Elenco and back.
+            if (dashboardDirty) {
                 dashboardDirty = false;
                 loadDashboardStats(currentYear, currentMonth);
             }
+        }
+    }
+
+    // Event Listeners
+    navItems.forEach(item => {
+        item.addEventListener('click', (e) => {
+            e.preventDefault();
+            setActiveView(item.dataset.page);
         });
     });
+
+    // Immediate Init (No Flicker)
+    const savedTab = localStorage.getItem('activeTab') || 'dashboard';
+    setActiveView(savedTab);
 
     // ══════════════════════════════════════════════════
     // 2. DASHBOARD — Chart.js (created once, updated dynamically)
@@ -380,15 +407,21 @@ document.addEventListener('DOMContentLoaded', function () {
         if (dateEnd && dateEnd.value) params.set('end_date', dateEnd.value);
 
         try {
-            const res = await fetch(`/expenses?${params.toString()}`);
-            const data = await res.json();
-            renderExpenses(data);
+            const [expRes, statusRes] = await Promise.all([
+                fetch(`/expenses?${params.toString()}`),
+                fetch('/monthly-status')
+            ]);
+            const data = await expRes.json();
+            const statusMap = await statusRes.json();   // { "2025-11": true, ... }
+            renderExpenses(data, statusMap);
         } catch (err) {
             console.error('Errore caricamento spese:', err);
         }
     }
 
-    function renderExpenses(data) {
+    function renderExpenses(data, statusMap) {
+        _lastExpenseData = data;  // store for autocomplete extraction
+        statusMap = statusMap || {};
         const container = document.getElementById('expenses-list');
         if (!container) return;
         container.innerHTML = '';
@@ -413,16 +446,42 @@ document.addEventListener('DOMContentLoaded', function () {
             const sortedMonths = Object.keys(months).sort((a, b) => (MONTH_ORDER[b] || 0) - (MONTH_ORDER[a] || 0));
             sortedMonths.forEach(month => {
                 const expenses = months[month];
+                const monthNum = MONTH_ORDER[month] || 1;
                 const monthSection = document.createElement('div');
                 monthSection.className = 'month-section';
+                monthSection.dataset.year = year;
+                monthSection.dataset.month = String(monthNum);
 
+                // Month title + reimbursable badge
                 const monthTitle = document.createElement('h3');
                 monthTitle.className = 'month-title';
                 monthTitle.textContent = month;
+
+                const statusKey = `${year}-${String(monthNum).padStart(2, '0')}`;
+                const isPaid = !!statusMap[statusKey];
+
+                const badge = document.createElement('span');
+                badge.className = 'month-badge ' + (isPaid ? 'badge-paid' : 'badge-unpaid');
+                badge.innerHTML = isPaid
+                    ? '<i class="fa-solid fa-sack-dollar"></i> Rimborsato: — €'
+                    : '<i class="fa-solid fa-hand-holding-dollar"></i> Da Rimborsare: — €';
+                monthTitle.appendChild(badge);
                 monthSection.appendChild(monthTitle);
 
                 const table = document.createElement('table');
                 table.className = 'expense-table';
+
+                // Colgroup for fixed column widths
+                const colgroup = document.createElement('colgroup');
+                colgroup.innerHTML = `
+                    <col class="col-data">
+                    <col class="col-operazione">
+                    <col class="col-categoria">
+                    <col class="col-conto">
+                    <col class="col-importo">
+                    <col class="col-azioni">
+                `;
+                table.appendChild(colgroup);
 
                 const thead = document.createElement('thead');
                 thead.innerHTML = `<tr><th>Data</th><th>Operazione</th><th>Categoria</th><th>Conto</th><th>Importo</th><th></th></tr>`;
@@ -430,34 +489,393 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 const tbody = document.createElement('tbody');
                 expenses.forEach(exp => {
-                    const tr = document.createElement('tr');
-                    tr.className = 'expense-row';
-                    tr.dataset.id = exp.id;
-                    if (exp.is_excluded) tr.classList.add('excluded');
-
-                    const dateDisplay = formatDateDisplay(exp.data_valuta);
-                    const importoFormatted = formatImporto(exp.importo);
-                    const importoClass = exp.importo >= 0 ? 'importo-positive' : 'importo-negative';
-
-                    tr.innerHTML = `
-                        <td>${dateDisplay}</td>
-                        <td>${escapeHtml(exp.operazione)}</td>
-                        <td>${escapeHtml(exp.categoria || '—')}</td>
-                        <td>${escapeHtml(exp.conto_carta || '—')}</td>
-                        <td class="${importoClass}">${importoFormatted}</td>
-                        <td>
-                            <button class="eye-toggle" data-id="${exp.id}" title="${exp.is_excluded ? 'Includi nei calcoli' : 'Escludi dai calcoli'}">
-                                <i class="fa-solid ${exp.is_excluded ? 'fa-eye-slash' : 'fa-eye'}"></i>
-                            </button>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
+                    tbody.appendChild(createExpenseRow(exp));
                 });
-
                 table.appendChild(tbody);
+
+                // Tfoot with totals
+                const tfoot = document.createElement('tfoot');
+                tfoot.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="tfoot-total-label">Totale Spese: <span class="tfoot-spese-val">— €</span></td>
+                        <td colspan="2" class="tfoot-rimborso">
+                            <label class="paid-label ${isPaid ? 'label-paid' : 'label-unpaid'}">
+                                <input type="checkbox" class="paid-checkbox"
+                                       data-month="${monthNum}" data-year="${year}"
+                                       ${isPaid ? 'checked' : ''}>
+                                <span class="tfoot-rimborso-label">${isPaid ? 'Rimborsato:' : 'Da Rimborsare:'}</span>
+                                <span class="tfoot-rimborso-val">— €</span>
+                            </label>
+                        </td>
+                    </tr>
+                `;
+                table.appendChild(tfoot);
+
                 monthSection.appendChild(table);
+
+                // '+ Aggiungi Spesa Manuale' button
+                const addBtn = document.createElement('button');
+                addBtn.className = 'add-expense-btn';
+                addBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Aggiungi Spesa Manuale';
+                addBtn.addEventListener('click', () => showInlineForm(monthSection, tbody, year, monthNum));
+                monthSection.appendChild(addBtn);
+
                 container.appendChild(monthSection);
+
+                // Calculate initial totals
+                recalcMonthTotals(monthSection);
             });
+        });
+    }
+
+    /**
+     * Create a single expense row <tr> from a data object.
+     */
+    function createExpenseRow(exp) {
+        const tr = document.createElement('tr');
+        tr.className = 'expense-row';
+        tr.dataset.id = exp.id;
+        tr.dataset.importo = parseFloat(exp.importo); // raw value for recalc
+        if (exp.is_excluded) tr.classList.add('excluded');
+        if (exp.is_neutral) tr.classList.add('neutral-row');
+
+        const dateDisplay = formatDateDisplay(exp.data_valuta);
+        const importoFormatted = formatImporto(exp.importo);
+        let importoClass;
+        if (exp.is_neutral) {
+            importoClass = 'importo-neutral';
+        } else {
+            importoClass = exp.importo >= 0 ? 'importo-positive' : 'importo-negative';
+        }
+
+        tr.innerHTML = `
+            <td>${dateDisplay}</td>
+            <td>${escapeHtml(exp.operazione)}</td>
+            <td>${escapeHtml(exp.categoria || '—')}</td>
+            <td>${escapeHtml(exp.conto_carta || '—')}</td>
+            <td class="${importoClass}">${importoFormatted}</td>
+            <td>
+                <div class="action-btns">
+                    <button class="eye-toggle" data-id="${exp.id}" title="${exp.is_excluded ? 'Includi nei calcoli' : 'Escludi dai calcoli'}">
+                        <i class="fa-solid ${exp.is_excluded ? 'fa-eye-slash' : 'fa-eye'}"></i>
+                    </button>
+                    <button class="delete-btn" data-id="${exp.id}" title="Elimina spesa">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                </div>
+            </td>
+        `;
+        return tr;
+    }
+
+    /**
+     * Recalculate and display totals for a month section.
+     * Totale Spese = sum of ALL rows (absolute values of negatives).
+     * Rimborsabile = sum of non-excluded rows (absolute values of negatives).
+     */
+    function recalcMonthTotals(monthSection) {
+        const rows = monthSection.querySelectorAll('.expense-row');
+        let totalAll = 0;
+        let totalReimbursable = 0;
+
+        rows.forEach(row => {
+            const val = parseFloat(row.dataset.importo) || 0;
+            if (!row.classList.contains('neutral-row')) {
+                totalAll += val;
+            }
+            if (!row.classList.contains('excluded') && !row.classList.contains('neutral-row')) {
+                totalReimbursable += val;
+            }
+        });
+
+        // Determine paid state from checkbox
+        const checkbox = monthSection.querySelector('.paid-checkbox');
+        const isPaid = checkbox ? checkbox.checked : false;
+
+        // Update badge in month title
+        const badge = monthSection.querySelector('.month-badge');
+        if (badge) {
+            badge.className = 'month-badge ' + (isPaid ? 'badge-paid' : 'badge-unpaid');
+            badge.innerHTML = isPaid
+                ? `<i class="fa-solid fa-sack-dollar"></i> Rimborsato: ${formatImporto(totalReimbursable)}`
+                : `<i class="fa-solid fa-hand-holding-dollar"></i> Da Rimborsare: ${formatImporto(totalReimbursable)}`;
+        }
+
+        // Update tfoot
+        const tfootSpese = monthSection.querySelector('.tfoot-spese-val');
+        const tfootRimborso = monthSection.querySelector('.tfoot-rimborso-val');
+        const tfootLabel = monthSection.querySelector('.tfoot-rimborso-label');
+        const paidLabel = monthSection.querySelector('.paid-label');
+        if (tfootSpese) tfootSpese.textContent = formatImporto(totalAll);
+        if (tfootRimborso) tfootRimborso.textContent = formatImporto(totalReimbursable);
+        if (tfootLabel) tfootLabel.textContent = isPaid ? 'Rimborsato:' : 'Da Rimborsare:';
+        if (paidLabel) {
+            paidLabel.classList.toggle('label-paid', isPaid);
+            paidLabel.classList.toggle('label-unpaid', !isPaid);
+        }
+    }
+
+    /**
+     * Show the inline form to add a manual expense at the bottom of a month's tbody.
+     */
+    // ══════════════════════════════════════════════════
+    // 8. SMART AUTOCOMPLETE — Unique values + Dropdown
+    // ══════════════════════════════════════════════════
+    let _lastExpenseData = null;   // set by renderExpenses
+
+    /** Scan the loaded expense data and return sorted unique values for a given field. */
+    function extractUniqueValues(field) {
+        const vals = new Set();
+        if (!_lastExpenseData) return [];
+        Object.values(_lastExpenseData).forEach(months => {
+            Object.values(months).forEach(expenses => {
+                expenses.forEach(exp => {
+                    const v = (exp[field] || '').trim();
+                    if (v) vals.add(v);
+                });
+            });
+        });
+        return [...vals].sort((a, b) => a.localeCompare(b, 'it'));
+    }
+
+    /**
+     * Attach a custom autocomplete dropdown to an <input>.
+     * @param {HTMLInputElement} input
+     * @param {string[]} items — the full list of suggestions
+     */
+    function attachAutocomplete(input, items) {
+        let list = null;      // <ul> element
+        let activeIdx = -1;   // keyboard-highlighted index
+
+        function openDropdown(filter) {
+            closeDropdown();
+            const q = (filter || '').toLowerCase();
+            const filtered = q
+                ? items.filter(it => it.toLowerCase().includes(q))
+                : items;
+            if (filtered.length === 0) return;
+
+            list = document.createElement('ul');
+            list.className = 'autocomplete-list';
+
+            filtered.forEach((item, idx) => {
+                const li = document.createElement('li');
+                if (q) {
+                    const lower = item.toLowerCase();
+                    const start = lower.indexOf(q);
+                    if (start >= 0) {
+                        li.innerHTML =
+                            escapeHtml(item.substring(0, start)) +
+                            '<mark>' + escapeHtml(item.substring(start, start + q.length)) + '</mark>' +
+                            escapeHtml(item.substring(start + q.length));
+                    } else {
+                        li.textContent = item;
+                    }
+                } else {
+                    li.textContent = item;
+                }
+                li.addEventListener('mousedown', (e) => {
+                    e.preventDefault();
+                    input.value = item;
+                    closeDropdown();
+                });
+                list.appendChild(li);
+            });
+
+            activeIdx = -1;
+
+            // Prevent blur when clicking ANYWHERE in the list (scrollbar, items, etc.)
+            list.addEventListener('mousedown', (e) => {
+                e.preventDefault();
+            });
+
+            // Stop scroll propagation to body (prevent scroll chaining)
+            list.addEventListener('wheel', (e) => {
+                e.stopPropagation();
+            }, { passive: false });
+
+            // Portal pattern: append to body with fixed positioning
+            document.body.appendChild(list);
+            positionDropdown();
+        }
+
+        function positionDropdown() {
+            if (!list) return;
+            const rect = input.getBoundingClientRect();
+            const listHeight = list.getBoundingClientRect().height;
+            const spaceBelow = window.innerHeight - rect.bottom;
+            const spaceAbove = rect.top;
+
+            if (spaceBelow < listHeight && spaceAbove > listHeight) {
+                // Drop-up
+                list.classList.add('drop-up');
+                list.style.top = (rect.top - listHeight) + 'px';
+            } else {
+                // Drop-down
+                list.classList.remove('drop-up');
+                list.style.top = rect.bottom + 'px';
+            }
+            list.style.left = rect.left + 'px';
+            list.style.width = rect.width + 'px';
+        }
+
+        function closeDropdown() {
+            if (list) { list.remove(); list = null; activeIdx = -1; }
+        }
+
+        function setActive(newIdx) {
+            if (!list) return;
+            const lis = list.querySelectorAll('li');
+            lis.forEach(li => li.classList.remove('ac-active'));
+            activeIdx = Math.max(-1, Math.min(newIdx, lis.length - 1));
+            if (activeIdx >= 0) {
+                lis[activeIdx].classList.add('ac-active');
+                lis[activeIdx].scrollIntoView({ block: 'nearest' });
+            }
+        }
+
+        // Show full list on focus
+        input.addEventListener('focus', () => openDropdown(input.value));
+
+        // Filter while typing
+        input.addEventListener('input', () => openDropdown(input.value));
+
+        // Keyboard navigation
+        input.addEventListener('keydown', (e) => {
+            if (!list) return;
+            const lis = list.querySelectorAll('li');
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                setActive(activeIdx + 1);
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                setActive(activeIdx - 1);
+            } else if (e.key === 'Enter' && activeIdx >= 0) {
+                e.preventDefault();
+                e.stopPropagation();
+                input.value = lis[activeIdx].textContent;
+                closeDropdown();
+            } else if (e.key === 'Escape') {
+                closeDropdown();
+            }
+        });
+
+        // Close on blur (with delay to allow mousedown/scrollbar selection)
+        input.addEventListener('blur', () => {
+            setTimeout(() => closeDropdown(), 200);
+        });
+
+        // Close on scroll/resize to avoid floating ghosts
+        // Close on scroll, BUT ignore scroll events that bubble from the list itself
+        window.addEventListener('scroll', (e) => {
+            // Fix: removed activeIdx check to support mouse scrolling without prior arrow usage
+            if (list && (e.target === list || list.contains(e.target))) {
+                return;
+            }
+            closeDropdown();
+        }, true);
+        window.addEventListener('resize', () => closeDropdown());
+    }
+
+    /** Minimal HTML escape for safe highlight injection. */
+    function escapeHtml(str) {
+        return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    // ══════════════════════════════════════════════════
+    // 9. ELENCO — Inline Manual Expense Form
+    // ══════════════════════════════════════════════════
+    function showInlineForm(monthSection, tbody, year, monthNum) {
+        // Hide the add button
+        const addBtn = monthSection.querySelector('.add-expense-btn');
+        if (addBtn) addBtn.style.display = 'none';
+
+        // Remove any existing form row
+        const existing = tbody.querySelector('.inline-form-row');
+        if (existing) existing.remove();
+
+        const defaultDate = `${year}-${String(monthNum).padStart(2, '0')}-01`;
+
+        const tr = document.createElement('tr');
+        tr.className = 'inline-form-row';
+        tr.innerHTML = `
+            <td><input type="date" class="form-data" value="${defaultDate}"></td>
+            <td><input type="text" class="form-operazione" placeholder="Operazione"></td>
+            <td><input type="text" class="form-categoria" placeholder="Categoria"></td>
+            <td><input type="text" class="form-conto" placeholder="Conto"></td>
+            <td><input type="text" class="form-importo" placeholder="-00,00"></td>
+            <td>
+                <div class="inline-form-actions">
+                    <button class="btn-save-inline" title="Salva"><i class="fa-solid fa-check"></i></button>
+                    <button class="btn-cancel-inline" title="Annulla"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(tr);
+
+        // Attach smart autocomplete to Categoria and Conto
+        attachAutocomplete(tr.querySelector('.form-categoria'), extractUniqueValues('categoria'));
+        attachAutocomplete(tr.querySelector('.form-conto'), extractUniqueValues('conto_carta'));
+
+        // Focus on operazione field
+        tr.querySelector('.form-operazione').focus();
+
+        // Save handler
+        tr.querySelector('.btn-save-inline').addEventListener('click', async () => {
+            const data_valuta = tr.querySelector('.form-data').value;
+            const operazione = tr.querySelector('.form-operazione').value.trim();
+            const categoria = tr.querySelector('.form-categoria').value.trim();
+            const conto_carta = tr.querySelector('.form-conto').value.trim();
+            const importoRaw = tr.querySelector('.form-importo').value.trim();
+
+            if (!operazione) {
+                tr.querySelector('.form-operazione').style.borderColor = '#c0392b';
+                return;
+            }
+
+            try {
+                const res = await fetch('/expenses', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ data_valuta, operazione, categoria, conto_carta, importo: importoRaw })
+                });
+                const result = await res.json();
+
+                if (res.ok) {
+                    // Remove form row, add expense row
+                    tr.remove();
+                    const newRow = createExpenseRow(result);
+                    tbody.appendChild(newRow);
+                    recalcMonthTotals(monthSection);
+                    dashboardDirty = true;
+
+                    // Restore add button
+                    if (addBtn) addBtn.style.display = '';
+
+                    showToast(elencoToast, '✓ Spesa aggiunta con successo.', 'success');
+                } else {
+                    showToast(elencoToast, `Errore: ${result.error}`, 'error');
+                }
+            } catch (err) {
+                showToast(elencoToast, `Errore di rete: ${err.message}`, 'error');
+            }
+        });
+
+        // Cancel handler
+        tr.querySelector('.btn-cancel-inline').addEventListener('click', () => {
+            tr.remove();
+            if (addBtn) addBtn.style.display = '';
+        });
+
+        // Allow Enter key to save
+        tr.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                tr.querySelector('.btn-save-inline').click();
+            }
+            if (e.key === 'Escape') {
+                tr.querySelector('.btn-cancel-inline').click();
+            }
         });
     }
 
@@ -496,11 +914,72 @@ document.addEventListener('DOMContentLoaded', function () {
                     btn.title = 'Escludi dai calcoli';
                 }
 
+                // Recalculate totals instantly
+                const monthSection = row.closest('.month-section');
+                if (monthSection) recalcMonthTotals(monthSection);
+
                 // Mark dashboard as stale so it refreshes on navigation
                 dashboardDirty = true;
             }
         } catch (err) {
             console.error('Errore toggle:', err);
+        }
+    });
+
+    // ══════════════════════════════════════════════════
+    // 7b. ELENCO — Paid Checkbox (Reimbursement Status)
+    // ══════════════════════════════════════════════════
+    document.addEventListener('change', async (e) => {
+        const checkbox = e.target.closest('.paid-checkbox');
+        if (!checkbox) return;
+
+        const month = parseInt(checkbox.dataset.month);
+        const year = parseInt(checkbox.dataset.year);
+        const isPaid = checkbox.checked;
+
+        try {
+            await fetch('/monthly-status', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ month, year, is_paid: isPaid })
+            });
+            const monthSection = checkbox.closest('.month-section');
+            if (monthSection) recalcMonthTotals(monthSection);
+            dashboardDirty = true;
+        } catch (err) {
+            console.error('Errore status rimborso:', err);
+            checkbox.checked = !isPaid;   // rollback on error
+        }
+    });
+
+    // ══════════════════════════════════════════════════
+    // 7c. ELENCO — Delete Expense Row
+    // ══════════════════════════════════════════════════
+    document.addEventListener('click', async (e) => {
+        const btn = e.target.closest('.delete-btn');
+        if (!btn) return;
+
+        const id = btn.dataset.id;
+        // Removed confirmation as requested
+        // if (!confirm('Eliminare questa voce?')) return;
+
+        const row = btn.closest('.expense-row');
+        try {
+            const res = await fetch(`/expenses/${id}`, { method: 'DELETE' });
+            if (res.ok) {
+                const monthSection = row.closest('.month-section');
+
+                // Fade-out animation
+                row.classList.add('fade-out');
+                row.addEventListener('transitionend', () => {
+                    row.remove();
+                    if (monthSection) recalcMonthTotals(monthSection);
+                });
+
+                dashboardDirty = true;
+            }
+        } catch (err) {
+            console.error('Errore eliminazione:', err);
         }
     });
 
@@ -635,5 +1114,290 @@ document.addEventListener('DOMContentLoaded', function () {
         element.className = `upload-toast ${type}`;
         setTimeout(() => element.classList.add('hidden'), 6000);
     }
+
+
+    // ═══════════════════════════════════════════════════
+    // KEBAB MENU + MODALS
+    // ═══════════════════════════════════════════════════
+    const MONTH_NAMES = {
+        1: 'Gennaio', 2: 'Febbraio', 3: 'Marzo', 4: 'Aprile',
+        5: 'Maggio', 6: 'Giugno', 7: 'Luglio', 8: 'Agosto',
+        9: 'Settembre', 10: 'Ottobre', 11: 'Novembre', 12: 'Dicembre'
+    };
+
+    // ── Kebab toggle ──
+    const kebabBtn = document.getElementById('kebab-btn');
+    const kebabDropdown = document.getElementById('kebab-dropdown');
+    if (kebabBtn && kebabDropdown) {
+        kebabBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            kebabDropdown.classList.toggle('hidden');
+        });
+        document.addEventListener('click', () => kebabDropdown.classList.add('hidden'));
+    }
+
+    // ── Modal helpers ──
+    function openModal(id) {
+        document.getElementById(id)?.classList.remove('hidden');
+        kebabDropdown?.classList.add('hidden');
+    }
+    function closeModal(id) {
+        document.getElementById(id)?.classList.add('hidden');
+    }
+
+    // Close modals on overlay click
+    document.querySelectorAll('.modal-overlay').forEach(overlay => {
+        overlay.addEventListener('click', (e) => {
+            if (e.target === overlay) overlay.classList.add('hidden');
+        });
+    });
+
+    // ── Subtask 1.1: Bulk Delete Modal ──
+    document.getElementById('kebab-bulk-delete')?.addEventListener('click', async () => {
+        openModal('modal-bulk-delete');
+        const tree = document.getElementById('bulk-delete-tree');
+        tree.innerHTML = '<p class="modal-hint">Caricamento periodi…</p>';
+
+        try {
+            const res = await fetch('/available-periods');
+            const data = await res.json();
+            const periods = data.periods || [];
+
+            // Group by year
+            const byYear = {};
+            periods.forEach(p => {
+                if (!byYear[p.year]) byYear[p.year] = [];
+                byYear[p.year].push(p.month);
+            });
+
+            tree.innerHTML = '';
+            Object.keys(byYear).sort((a, b) => b - a).forEach(year => {
+                const months = byYear[year].sort((a, b) => a - b);
+                const yearDiv = document.createElement('div');
+                yearDiv.className = 'period-year';
+
+                const yearHeader = document.createElement('div');
+                yearHeader.className = 'period-year-header';
+                const yearCb = document.createElement('input');
+                yearCb.type = 'checkbox';
+                yearCb.className = 'paid-checkbox';
+                yearCb.dataset.year = year;
+                const yearLabel = document.createElement('label');
+                yearLabel.textContent = year;
+                yearHeader.appendChild(yearCb);
+                yearHeader.appendChild(yearLabel);
+                yearDiv.appendChild(yearHeader);
+
+                const monthsDiv = document.createElement('div');
+                monthsDiv.className = 'period-months';
+                months.forEach(m => {
+                    const mLabel = document.createElement('label');
+                    mLabel.className = 'period-month-label';
+                    const mCb = document.createElement('input');
+                    mCb.type = 'checkbox';
+                    mCb.className = 'paid-checkbox';
+                    mCb.dataset.month = m;
+                    mCb.dataset.year = year;
+                    mLabel.appendChild(mCb);
+                    mLabel.appendChild(document.createTextNode(MONTH_NAMES[m]));
+                    monthsDiv.appendChild(mLabel);
+
+                    mCb.addEventListener('change', updateBulkDeleteButton);
+                });
+                yearDiv.appendChild(monthsDiv);
+                tree.appendChild(yearDiv);
+
+                // Year checkbox cascades to months
+                yearCb.addEventListener('change', () => {
+                    monthsDiv.querySelectorAll('input[type=checkbox]').forEach(cb => {
+                        cb.checked = yearCb.checked;
+                    });
+                    updateBulkDeleteButton();
+                });
+
+                // Month checkboxes update year checkbox
+                monthsDiv.addEventListener('change', () => {
+                    const all = monthsDiv.querySelectorAll('input[type=checkbox]');
+                    const checked = monthsDiv.querySelectorAll('input[type=checkbox]:checked');
+                    yearCb.checked = checked.length === all.length;
+                    yearCb.indeterminate = checked.length > 0 && checked.length < all.length;
+                });
+            });
+        } catch {
+            tree.innerHTML = '<p class="modal-hint" style="color:#e74c3c">Errore nel caricamento dei periodi.</p>';
+        }
+    });
+
+    function updateBulkDeleteButton() {
+        const btn = document.getElementById('confirm-bulk-delete');
+        const checked = document.querySelectorAll('#bulk-delete-tree input[type=checkbox][data-month]:checked');
+        btn.disabled = checked.length === 0;
+    }
+
+    document.getElementById('close-bulk-delete')?.addEventListener('click', () => closeModal('modal-bulk-delete'));
+
+    document.getElementById('confirm-bulk-delete')?.addEventListener('click', () => {
+        const checked = document.querySelectorAll('#bulk-delete-tree input[type=checkbox][data-month]:checked');
+        const periods = Array.from(checked).map(cb => ({
+            month: parseInt(cb.dataset.month),
+            year: parseInt(cb.dataset.year)
+        }));
+
+        // Show custom confirmation modal
+        document.getElementById('confirm-delete-msg').textContent =
+            `Eliminare definitivamente i dati di ${periods.length} mese/i? Questa azione non può essere annullata.`;
+        openModal('modal-confirm-delete');
+
+        // Wire up confirm/cancel (one-time handlers)
+        const proceedBtn = document.getElementById('proceed-confirm-delete');
+        const cancelBtn = document.getElementById('cancel-confirm-delete');
+
+        function cleanup() {
+            proceedBtn.removeEventListener('click', onProceed);
+            cancelBtn.removeEventListener('click', onCancel);
+        }
+
+        async function onProceed() {
+            cleanup();
+            closeModal('modal-confirm-delete');
+            try {
+                const res = await fetch('/expenses/bulk-delete', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ periods })
+                });
+                const data = await res.json();
+                closeModal('modal-bulk-delete');
+
+                // Force reload to update UI and verify data is gone
+                window.location.reload();
+            } catch {
+                showToast(document.getElementById('elenco-toast'), 'Errore durante l\'eliminazione.', 'error');
+            }
+        }
+
+        function onCancel() {
+            cleanup();
+            closeModal('modal-confirm-delete');
+        }
+
+        proceedBtn.addEventListener('click', onProceed);
+        cancelBtn.addEventListener('click', onCancel);
+    });
+
+    // ── Subtask 1.2: Keywords Modal ──
+    document.getElementById('kebab-keywords')?.addEventListener('click', () => {
+        openModal('modal-keywords');
+        loadKeywords();
+    });
+    document.getElementById('close-keywords')?.addEventListener('click', () => closeModal('modal-keywords'));
+
+    async function loadKeywords() {
+        const listEl = document.getElementById('keyword-list');
+        try {
+            const res = await fetch('/neutral-keywords');
+            const keywords = await res.json();
+            if (keywords.length === 0) {
+                listEl.innerHTML = '<span class="keyword-list-empty">Nessuna keyword configurata.</span>';
+                return;
+            }
+            listEl.innerHTML = '';
+            keywords.forEach(kw => {
+                const tag = document.createElement('span');
+                tag.className = 'keyword-tag';
+                tag.textContent = kw.keyword;
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'keyword-remove';
+                removeBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+                removeBtn.title = 'Rimuovi keyword';
+                removeBtn.addEventListener('click', async () => {
+                    await fetch(`/neutral-keywords/${kw.id}`, { method: 'DELETE' });
+                    loadKeywords();
+                    loadExpenses(); // refresh to update neutral flags
+                });
+                tag.appendChild(removeBtn);
+                listEl.appendChild(tag);
+            });
+        } catch {
+            listEl.innerHTML = '<span class="keyword-list-empty">Errore nel caricamento.</span>';
+        }
+    }
+
+    // ══════════════════════════════════════════════════
+    // 8. HELPERS — Custom Alert
+    // ══════════════════════════════════════════════════
+    function showCustomAlert(message) {
+        const modal = document.getElementById('modal-alert');
+        const msgEl = document.getElementById('alert-msg');
+        const closeBtn = document.getElementById('close-alert-btn');
+        if (!modal || !msgEl || !closeBtn) {
+            alert(message); // fallback
+            return;
+        }
+
+        msgEl.textContent = message;
+        modal.classList.remove('hidden');
+
+        // One-time listener
+        const closeHandler = () => {
+            modal.classList.add('hidden');
+            closeBtn.removeEventListener('click', closeHandler);
+        };
+        closeBtn.addEventListener('click', closeHandler);
+    }
+
+    document.getElementById('add-keyword-btn')?.addEventListener('click', async () => {
+        const input = document.getElementById('keyword-input');
+        const tooltip = document.getElementById('keyword-error-tooltip');
+        const keyword = input.value.trim();
+
+        if (!keyword) return;
+
+        // Helper to show tooltip
+        const showTooltip = (msg) => {
+            if (tooltip) {
+                tooltip.textContent = msg;
+                tooltip.classList.add('show-error');
+                // Auto-dismiss
+                setTimeout(() => {
+                    tooltip.classList.remove('show-error');
+                }, 3000);
+            } else {
+                showCustomAlert(msg); // fallback
+            }
+        };
+
+        // Remove tooltip on typing
+        input.addEventListener('input', () => {
+            tooltip?.classList.remove('show-error');
+        }, { once: true }); // listener auto-removes
+
+        try {
+            const res = await fetch('/neutral-keywords', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ keyword })
+            });
+            if (res.ok) {
+                input.value = '';
+                loadKeywords();
+                loadExpenses(); // refresh to update neutral flags
+            } else {
+                const err = await res.json();
+                // Check if duplicate (or generic error)
+                showTooltip(err.error || 'Errore');
+            }
+        } catch {
+            showTooltip('Errore di rete.');
+        }
+    });
+
+    // Allow Enter to add keyword
+    document.getElementById('keyword-input')?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            document.getElementById('add-keyword-btn')?.click();
+        }
+    });
 
 });

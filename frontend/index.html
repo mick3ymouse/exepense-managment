@@ -27,7 +27,7 @@
             </div>
 
             <nav class="sidebar-nav">
-                <a href="#" class="nav-item active" data-page="dashboard">
+                <a href="#" class="nav-item" data-page="dashboard">
                     <i class="fa-solid fa-house"></i>
                     <span>Dashboard</span>
                 </a>
@@ -52,7 +52,7 @@
             <!-- ════════════════════════════════════════════════
                  PAGE: DASHBOARD
                  ════════════════════════════════════════════════ -->
-            <section id="page-dashboard" class="page active">
+            <section id="page-dashboard" class="page">
 
                 <!-- Header -->
                 <header class="top-header">
@@ -195,6 +195,19 @@
                         <button class="icon-btn" id="date-filter-btn" title="Filtra per data">
                             <i class="fa-solid fa-calendar-days"></i>
                         </button>
+                        <div class="kebab-wrapper">
+                            <button class="icon-btn" id="kebab-btn" title="Opzioni avanzate">
+                                <i class="fa-solid fa-ellipsis-vertical"></i>
+                            </button>
+                            <div class="kebab-dropdown hidden" id="kebab-dropdown">
+                                <button class="kebab-item" id="kebab-bulk-delete">
+                                    <i class="fa-solid fa-calendar-xmark"></i> Elimina Dati per Mese
+                                </button>
+                                <button class="kebab-item" id="kebab-keywords">
+                                    <i class="fa-solid fa-filter"></i> Gestione Keyword Neutre
+                                </button>
+                            </div>
+                        </div>
                         <input type="file" id="elenco-file-input" accept=".xlsx" multiple style="display: none;">
                     </div>
 
@@ -212,6 +225,87 @@
                             <div class="date-popover-actions">
                                 <button class="btn-small btn-apply" id="apply-date-filter">Applica</button>
                                 <button class="btn-small btn-clear" id="clear-date-filter">Cancella</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Modal: Eliminazione in Blocco ── -->
+                <div class="modal-overlay hidden" id="modal-bulk-delete">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3><i class="fa-solid fa-calendar-xmark"></i> Elimina Dati per Mese</h3>
+                            <button type="button" class="modal-close" id="close-bulk-delete">&times;</button>
+                        </div>
+                        <div class="modal-body" id="bulk-delete-body">
+                            <p class="modal-hint">Seleziona i mesi da eliminare.</p>
+                            <div id="bulk-delete-tree" class="period-tree">
+                                <!-- JS populates year/month checkboxes -->
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn-danger" id="confirm-bulk-delete" disabled>
+                                <i class="fa-solid fa-trash-can"></i> Elimina Selezionati
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Modal: Conferma Eliminazione (custom) ── -->
+                <div class="modal-overlay hidden" id="modal-confirm-delete">
+                    <div class="modal-content modal-content-sm">
+                        <div class="modal-header">
+                            <h3><i class="fa-solid fa-triangle-exclamation"></i> Conferma Eliminazione</h3>
+                        </div>
+                        <div class="modal-body">
+                            <p class="modal-hint" id="confirm-delete-msg"></p>
+                        </div>
+                        <div class="modal-footer-confirm">
+                            <button type="button" class="btn-small btn-clear"
+                                id="cancel-confirm-delete">Annulla</button>
+                            <button type="button" class="btn-danger" id="proceed-confirm-delete">
+                                <i class="fa-solid fa-trash-can"></i> Conferma
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Modal: Alert (Generic) ── -->
+                <div class="modal-overlay hidden" id="modal-alert">
+                    <div class="modal-content modal-content-sm">
+                        <div class="modal-header">
+                            <h3><i class="fa-solid fa-circle-info"></i> Avviso</h3>
+                        </div>
+                        <div class="modal-body">
+                            <p class="modal-hint" id="alert-msg"></p>
+                        </div>
+                        <div class="modal-footer-confirm" style="justify-content: flex-end;">
+                            <button type="button" class="btn-primary" id="close-alert-btn">OK</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Modal: Gestione Keyword Neutre ── -->
+                <div class="modal-overlay hidden" id="modal-keywords">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h3><i class="fa-solid fa-filter"></i> Gestione Keyword Neutre</h3>
+                            <button class="modal-close" id="close-keywords">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="modal-hint">Le transazioni la cui Operazione corrisponde esattamente a una
+                                keyword verranno segnate come "neutre" e non conteranno nei totali.</p>
+                            <div class="keyword-input-row">
+                                <div class="keyword-input-wrapper">
+                                    <input type="text" id="keyword-input" placeholder="Nuova keyword (es. Storno)">
+                                    <div class="error-tooltip" id="keyword-error-tooltip">Keyword già presente!</div>
+                                </div>
+                                <button class="btn-add-keyword" id="add-keyword-btn">
+                                    <i class="fa-solid fa-plus"></i> Aggiungi
+                                </button>
+                            </div>
+                            <div id="keyword-list" class="keyword-list">
+                                <!-- JS populates keyword tags -->
                             </div>
                         </div>
                     </div>
