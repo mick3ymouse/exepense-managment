@@ -65,18 +65,40 @@ def check_neutral(operazione: str, neutral_kws: set) -> bool:
     """Check if operazione matches any neutral keyword (case-insensitive full match)."""
     return operazione.strip().lower() in neutral_kws
 
+
 def parse_importo(value) -> float:
     """
-    Parse Italian-format currency string to float.
-    Examples: "1.200,50 €" → 1200.50, "-45,00" → -45.0
+    Parse currency string to float, handling both Italian and standard formats.
+
+    Italian format: uses '.' as thousands separator and ',' as decimal separator
+      e.g. "1.200,50" → 1200.50, "-45,00" → -45.0, "10,3" → 10.3
+
+    Standard format: uses '.' as decimal separator (already a float or "10.3")
+      e.g. 10.3 → 10.3, "-45.00" → -45.0
+
+    Key rule: if both '.' and ',' are present → Italian format (remove dots, comma→dot)
+              if only ',' → Italian decimal (replace comma with dot)
+              if only '.' or neither → standard format (leave as-is)
     """
     if isinstance(value, (int, float)):
         return float(value)
+
     s = str(value).strip()
     # Remove currency symbols and whitespace
     s = re.sub(r'[€$£\s]', '', s)
-    # Italian format: 1.200,50 → remove dots, replace comma with dot
-    s = s.replace('.', '').replace(',', '.')
+
+    has_dot = '.' in s
+    has_comma = ',' in s
+
+    if has_dot and has_comma:
+        # Italian format: "1.200,50" — dots are thousands separators
+        # The comma must be the decimal separator (Italian convention)
+        s = s.replace('.', '').replace(',', '.')
+    elif has_comma and not has_dot:
+        # Only comma: treat as Italian decimal separator "10,3" → "10.3"
+        s = s.replace(',', '.')
+    # else: only dot or no separator → standard float format, leave as-is
+
     try:
         return float(s)
     except ValueError:
@@ -118,17 +140,13 @@ def process_excel(file_bytes: bytes) -> dict:
     Process an Excel file and insert new expenses into the database.
     Returns stats: { new, duplicates, fuzzy_matches, errors }.
     """
-    # Read Excel, skipping first 18 rows (header at row 19 = index 18)
     df = pd.read_excel(
         io.BytesIO(file_bytes),
-        header=18,  # Row 19 is the header (0-indexed: 18)
+        header=18,
         engine='openpyxl'
     )
 
-    # Clean column names (strip whitespace)
     df.columns = df.columns.str.strip()
-
-    # Drop completely empty rows
     df = df.dropna(how='all')
 
     stats = {"new": 0, "duplicates": 0, "fuzzy_matches": [], "errors": 0}
@@ -138,16 +156,13 @@ def process_excel(file_bytes: bytes) -> dict:
     try:
         for _, row in df.iterrows():
             try:
-                # Extract and parse fields
                 data_raw = row.get('Data', None)
                 if pd.isna(data_raw):
                     continue
 
-                # Parse date
                 if isinstance(data_raw, datetime):
                     data_valuta = data_raw.strftime('%Y-%m-%d')
                 elif isinstance(data_raw, str):
-                    # Try common Italian formats
                     for fmt in ('%d/%m/%Y', '%d-%m-%Y', '%Y-%m-%d', '%d.%m.%Y'):
                         try:
                             data_valuta = datetime.strptime(data_raw.strip(), fmt).strftime('%Y-%m-%d')
@@ -167,22 +182,15 @@ def process_excel(file_bytes: bytes) -> dict:
                 valuta = str(row.get('Valuta', 'EUR')).strip()
                 importo = parse_importo(row.get('Importo', 0))
 
-                # Skip rows with no meaningful data
                 if not operazione or operazione == 'nan':
                     continue
 
-                # Clean 'nan' values
-                if conto_carta == 'nan':
-                    conto_carta = ''
-                if categoria == 'nan':
-                    categoria = ''
-                if valuta == 'nan':
-                    valuta = 'EUR'
+                if conto_carta == 'nan': conto_carta = ''
+                if categoria == 'nan': categoria = ''
+                if valuta == 'nan': valuta = 'EUR'
 
-                # Generate hash for exact duplicate check
                 hash_id = generate_hash(data_valuta, importo, operazione, conto_carta)
 
-                # Check exact duplicate
                 existing = conn.execute(
                     "SELECT id FROM expenses WHERE hash_id = ?", (hash_id,)
                 ).fetchone()
@@ -191,7 +199,6 @@ def process_excel(file_bytes: bytes) -> dict:
                     stats["duplicates"] += 1
                     continue
 
-                # Fuzzy duplicate check
                 if check_fuzzy_duplicate(conn, data_valuta, importo, operazione):
                     stats["fuzzy_matches"].append({
                         "data": data_valuta,
@@ -201,10 +208,8 @@ def process_excel(file_bytes: bytes) -> dict:
                     stats["duplicates"] += 1
                     continue
 
-                # Check neutral keyword match
                 is_neutral = 1 if check_neutral(operazione, neutral_kws) else 0
 
-                # Insert new row
                 conn.execute("""
                     INSERT INTO expenses
                         (data_valuta, operazione, conto_carta, categoria, valuta, importo, hash_id, is_neutral)
@@ -235,9 +240,7 @@ async def read_root():
 
 @app.post("/upload")
 async def upload_file(file: UploadFile = File(...)):
-    """
-    Upload an Excel file, process it, and return ingestion stats.
-    """
+    """Upload an Excel file, process it, and return ingestion stats."""
     if not file.filename.endswith('.xlsx'):
         return JSONResponse(
             status_code=400,
@@ -289,7 +292,6 @@ async def get_expenses(
     rows = conn.execute(query, params).fetchall()
     conn.close()
 
-    # Group by Year > Month
     grouped = defaultdict(lambda: defaultdict(list))
     for row in rows:
         row_dict = dict(row)
@@ -304,11 +306,9 @@ async def get_expenses(
 
         grouped[year][month].append(row_dict)
 
-    # Sort years descending, months by calendar order (desc)
     result = {}
     for year in sorted(grouped.keys(), reverse=True):
         months_data = grouped[year]
-        # Sort months by calendar order (most recent first)
         month_order = {v: k for k, v in MONTH_NAMES_IT.items()}
         sorted_months = sorted(
             months_data.keys(),
@@ -340,10 +340,10 @@ async def toggle_expense(expense_id: int):
     return {"id": expense_id, "is_excluded": bool(new_value)}
 
 
-@app.post("/expenses")
-async def create_expense(request: Request):
+@app.patch("/expenses/{expense_id}")
+async def update_expense(expense_id: int, request: Request):
     """
-    Create a manual expense entry.
+    Update an existing expense entry.
     Expects JSON: { data_valuta, operazione, categoria, conto_carta, importo }
     """
     body = await request.json()
@@ -361,10 +361,101 @@ async def create_expense(request: Request):
             content={"error": "Data e Operazione sono obbligatori."}
         )
 
-    # Parse importo (accept both Italian and standard formats)
+    # Parse importo
     importo = parse_importo(importo_raw)
 
     # Validate date format
+    try:
+        datetime.strptime(data_valuta, '%Y-%m-%d')
+    except ValueError:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "Formato data non valido. Usa YYYY-MM-DD."}
+        )
+
+    conn = get_db_connection()
+    try:
+        # Check expense exists
+        existing = conn.execute(
+            "SELECT id FROM expenses WHERE id = ?", (expense_id,)
+        ).fetchone()
+        if not existing:
+            conn.close()
+            return JSONResponse(
+                status_code=404,
+                content={"error": "Spesa non trovata."}
+            )
+
+        # Generate new hash for the updated data
+        new_hash = generate_hash(data_valuta, importo, operazione, conto_carta)
+
+        # Check for hash collision with a DIFFERENT record
+        collision = conn.execute(
+            "SELECT id FROM expenses WHERE hash_id = ? AND id != ?",
+            (new_hash, expense_id)
+        ).fetchone()
+        if collision:
+            conn.close()
+            return JSONResponse(
+                status_code=409,
+                content={"error": "Una spesa identica è già presente."}
+            )
+
+        # Check neutral keyword match
+        neutral_kws = get_neutral_keywords(conn)
+        is_neutral = 1 if check_neutral(operazione, neutral_kws) else 0
+
+        conn.execute("""
+            UPDATE expenses
+            SET data_valuta = ?,
+                operazione = ?,
+                conto_carta = ?,
+                categoria = ?,
+                importo = ?,
+                hash_id = ?,
+                is_neutral = ?
+            WHERE id = ?
+        """, (data_valuta, operazione, conto_carta, categoria, importo, new_hash, is_neutral, expense_id))
+        conn.commit()
+
+        # Return updated row
+        row = conn.execute(
+            "SELECT * FROM expenses WHERE id = ?", (expense_id,)
+        ).fetchone()
+        conn.close()
+
+        return dict(row)
+
+    except Exception as e:
+        conn.close()
+        return JSONResponse(
+            status_code=500,
+            content={"error": f"Errore durante l'aggiornamento: {str(e)}"}
+        )
+
+
+@app.post("/expenses")
+async def create_expense(request: Request):
+    """
+    Create a manual expense entry.
+    Expects JSON: { data_valuta, operazione, categoria, conto_carta, importo }
+    """
+    body = await request.json()
+
+    data_valuta = body.get("data_valuta", "").strip()
+    operazione = body.get("operazione", "").strip()
+    categoria = body.get("categoria", "").strip()
+    conto_carta = body.get("conto_carta", "").strip()
+    importo_raw = body.get("importo", 0)
+
+    if not data_valuta or not operazione:
+        return JSONResponse(
+            status_code=400,
+            content={"error": "Data e Operazione sono obbligatori."}
+        )
+
+    importo = parse_importo(importo_raw)
+
     try:
         datetime.strptime(data_valuta, '%Y-%m-%d')
     except ValueError:
@@ -377,7 +468,6 @@ async def create_expense(request: Request):
 
     conn = get_db_connection()
     try:
-        # Check for duplicates
         existing = conn.execute(
             "SELECT id FROM expenses WHERE hash_id = ?", (hash_id,)
         ).fetchone()
@@ -388,7 +478,6 @@ async def create_expense(request: Request):
                 content={"error": "Spesa duplicata già presente."}
             )
 
-        # Check neutral keyword match
         neutral_kws = get_neutral_keywords(conn)
         is_neutral = 1 if check_neutral(operazione, neutral_kws) else 0
 
@@ -399,7 +488,6 @@ async def create_expense(request: Request):
         """, (data_valuta, operazione, conto_carta, categoria, importo, hash_id, is_neutral))
         conn.commit()
 
-        # Retrieve the created row
         row = conn.execute(
             "SELECT * FROM expenses WHERE hash_id = ?", (hash_id,)
         ).fetchone()
@@ -416,10 +504,7 @@ async def create_expense(request: Request):
 
 @app.get("/available-periods")
 async def get_available_periods():
-    """
-    Return all year/month combinations that have data, plus the latest period.
-    Used to populate the dashboard filter dropdowns.
-    """
+    """Return all year/month combinations that have data, plus the latest period."""
     conn = get_db_connection()
 
     rows = conn.execute("""
@@ -457,21 +542,15 @@ async def get_dashboard_stats(
     year: int = Query(...),
     month: int = Query(...)
 ):
-    """
-    Dashboard statistics for a given month/year.
-    Returns totals (entrate, uscite, saldo) and top 3 spending categories.
-    Excludes rows where is_excluded = 1.
-    """
+    """Dashboard statistics for a given month/year."""
     conn = get_db_connection()
 
-    # Build date range for the requested month
     start_date = f"{year}-{month:02d}-01"
     if month == 12:
         end_date = f"{year + 1}-01-01"
     else:
         end_date = f"{year}-{month + 1:02d}-01"
 
-    # Totals: Entrate (importo > 0) and Uscite (importo < 0)
     totals = conn.execute("""
         SELECT
             COALESCE(SUM(CASE WHEN importo > 0 THEN importo ELSE 0 END), 0) as entrate,
@@ -484,7 +563,6 @@ async def get_dashboard_stats(
           AND is_neutral = 0
     """, (start_date, end_date)).fetchone()
 
-    # Top 3 categories by cumulative spending (only negative importo = spending)
     top_categories = conn.execute("""
         SELECT categoria, SUM(ABS(importo)) as totale
         FROM expenses
@@ -570,22 +648,17 @@ async def bulk_delete_expenses(request: Request):
         else:
             end_date = f"{y}-{m + 1:02d}-01"
 
-        print(f"DEBUG: Processing deletion for {m}/{y}...")
         cur = conn.execute(
             "DELETE FROM expenses WHERE data_valuta >= ? AND data_valuta < ?",
             (start_date, end_date)
         )
-        deleted_count = cur.rowcount
-        total_deleted += deleted_count
-        print(f"DEBUG: Deleted {deleted_count} expenses for {m}/{y}")
-
+        total_deleted += cur.rowcount
         conn.execute(
             "DELETE FROM monthly_status WHERE month = ? AND year = ?",
             (m, y)
         )
 
     conn.commit()
-    print(f"DEBUG: Commit executed. Total deleted: {total_deleted}")
     conn.close()
     return {"deleted": total_deleted}
 
@@ -629,7 +702,6 @@ async def add_keyword(request: Request):
     conn = get_db_connection()
     try:
         conn.execute("INSERT INTO neutral_keywords (keyword) VALUES (?)", (keyword,))
-        # Re-flag existing expenses that match this keyword
         conn.execute(
             "UPDATE expenses SET is_neutral = 1 WHERE LOWER(TRIM(operazione)) = ?",
             (keyword.lower(),)
@@ -656,7 +728,6 @@ async def delete_keyword(kw_id: int):
 
     keyword = row["keyword"]
     conn.execute("DELETE FROM neutral_keywords WHERE id = ?", (kw_id,))
-    # Un-flag expenses (only if no other keyword matches)
     conn.execute(
         "UPDATE expenses SET is_neutral = 0 WHERE LOWER(TRIM(operazione)) = ?",
         (keyword.lower(),)

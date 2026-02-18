@@ -49,6 +49,48 @@ const Utils = {
         }) + ' €';
     },
 
+    /**
+     * Format a raw float value as an Italian decimal string for display in input fields.
+     * e.g. -10.3 → "-10,30", 1200.5 → "1200,50"
+     */
+    formatImportoForInput(value) {
+        const num = parseFloat(value);
+        if (isNaN(num)) return '';
+        // Use fixed 2 decimals with comma as decimal separator (Italian)
+        return num.toFixed(2).replace('.', ',');
+    },
+
+    /**
+     * Parse an importo string typed by the user into a numeric string
+     * safe to send to the backend (dot as decimal separator, no thousands).
+     *
+     * Rules:
+     *   - If both '.' and ',' present → Italian format "1.200,50" → "1200.50"
+     *   - If only ',' present         → Italian decimal "10,3" → "10.3"
+     *   - If only '.' or neither      → already standard, leave as-is
+     *
+     * Returns a string like "10.30" or "-1200.50", or null if invalid.
+     */
+    parseImportoInput(raw) {
+        if (!raw) return null;
+        let s = raw.trim().replace(/[€$£\s]/g, '');
+
+        const hasDot   = s.includes('.');
+        const hasComma = s.includes(',');
+
+        if (hasDot && hasComma) {
+            // Italian thousands+decimal: "1.200,50" → remove dots, comma→dot
+            s = s.replace(/\./g, '').replace(',', '.');
+        } else if (hasComma && !hasDot) {
+            // Italian decimal only: "10,3" or "10,30" → "10.3"
+            s = s.replace(',', '.');
+        }
+        // else: standard float string, leave as-is
+
+        const num = parseFloat(s);
+        return isNaN(num) ? null : String(num);
+    },
+
     /** Safe HTML escaping */
     escapeHtml(str) {
         if (!str) return '';
@@ -63,29 +105,8 @@ const Utils = {
     showToast(element, message, type = 'success') {
         if (!element) return;
         element.textContent = message;
-        // Reset classes first
         element.className = `upload-toast ${type}`;
-        // Auto-hide
         setTimeout(() => element.classList.add('hidden'), 6000);
-    },
-
-    /** Show custom alert modal */
-    showCustomAlert(message) {
-        const modal = document.getElementById('modal-alert');
-        const msgEl = document.getElementById('alert-msg');
-        const closeBtn = document.getElementById('close-alert-btn');
-        if (!modal || !msgEl || !closeBtn) {
-            alert(message);
-            return;
-        }
-        msgEl.textContent = message;
-        UI.openModal('modal-alert');
-
-        const closeHandler = () => {
-            UI.closeModal('modal-alert');
-            closeBtn.removeEventListener('click', closeHandler);
-        };
-        closeBtn.addEventListener('click', closeHandler);
     },
 
     /** Extract unique values from data for autocomplete */
@@ -112,11 +133,29 @@ const API = {
         try {
             const res = await fetch(url, options);
             const data = await res.json();
+            if (!res.ok) {
+                console.error(`API ${options.method || 'GET'} ${url} failed [${res.status}]:`, data);
+            }
             return { ok: res.ok, status: res.status, data };
         } catch (err) {
             console.error(`API Error (${url}):`, err);
             return { ok: false, error: err.message };
         }
+    },
+
+    /** Extract a human-readable error message from any API response */
+    extractError(res) {
+        if (!res) return 'Errore sconosciuto';
+        // Custom app errors: { error: "..." }
+        if (res.data?.error) return res.data.error;
+        // FastAPI validation errors: { detail: [{msg: "...", loc: [...]}] }
+        if (res.data?.detail) {
+            if (typeof res.data.detail === 'string') return res.data.detail;
+            if (Array.isArray(res.data.detail)) {
+                return res.data.detail.map(d => d.msg || JSON.stringify(d)).join('; ');
+            }
+        }
+        return res.error || 'Errore sconosciuto';
     },
 
     async getAvailablePeriods() {
@@ -140,7 +179,7 @@ const API = {
                 totalDup += res.data.duplicates || 0;
                 totalErr += res.data.errors || 0;
             } else {
-                lastError = res.data.error || res.error;
+                lastError = res.data?.error || res.error;
             }
         }
         return { totalNew, totalDup, totalErr, lastError };
@@ -166,6 +205,14 @@ const API = {
     async addExpense(expenseData) {
         return this.fetchJSON('/expenses', {
             method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(expenseData)
+        });
+    },
+
+    async updateExpense(id, expenseData) {
+        return this.fetchJSON(`/expenses/${id}`, {
+            method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(expenseData)
         });
@@ -231,7 +278,7 @@ const UI = {
             // Elenco
             expensesList: document.getElementById('expenses-list'),
             searchInput: document.getElementById('search-input'),
-            elencoExportBtn: document.getElementById('elenco-import-btn'), // ID mismatch in original? original was 'elenco-import-btn'
+            elencoExportBtn: document.getElementById('elenco-import-btn'),
             elencoFileInput: document.getElementById('elenco-file-input'),
             elencoToast: document.getElementById('elenco-toast'),
             dateFilterBtn: document.getElementById('date-filter-btn'),
@@ -249,18 +296,13 @@ const UI = {
             // Keywords
             keywordInput: document.getElementById('keyword-input'),
             keywordList: document.getElementById('keyword-list'),
-            addKeywordBtn: document.getElementById('add-keyword-btn'),
-            keywordTooltip: document.getElementById('keyword-error-tooltip')
+            addKeywordBtn: document.getElementById('add-keyword-btn')
         };
     },
 
     openModal(id) {
         document.getElementById(id)?.classList.remove('hidden');
         this.elements.kebabDropdown?.classList.add('hidden');
-    },
-
-    closeModal(id) {
-        document.getElementById(id)?.classList.add('hidden');
     },
 
     renderDashboardStats(data) {
@@ -284,7 +326,6 @@ const UI = {
             return;
         }
 
-        // Initialize Chart
         this.chartInstance = new Chart(this.elements.panoramicaChartCtx.getContext('2d'), {
             type: 'bar',
             data: {
@@ -360,18 +401,15 @@ const UI = {
             return;
         }
 
-        // Pre-calculate month ordering
         const MONTH_ORDER = {};
         Object.entries(Utils.MONTH_NAMES).forEach(([num, name]) => MONTH_ORDER[name] = parseInt(num));
 
         years.forEach(year => {
-            // Year Header
             const yearHeader = document.createElement('h2');
             yearHeader.className = 'year-header';
             yearHeader.textContent = `Anno ${year}`;
             container.appendChild(yearHeader);
 
-            // Months
             const months = data[year];
             const sortedMonths = Object.keys(months).sort((a, b) => (MONTH_ORDER[b] || 0) - (MONTH_ORDER[a] || 0));
 
@@ -394,7 +432,6 @@ const UI = {
         section.dataset.year = year;
         section.dataset.month = monthNum;
 
-        // Header
         const headerFlex = document.createElement('div');
         headerFlex.style.cssText = 'display:flex; justify-content:flex-start; align-items:center; margin-bottom:1rem; gap:20px;';
 
@@ -403,13 +440,12 @@ const UI = {
         title.textContent = monthName;
 
         const badge = document.createElement('span');
-        this.updateBadge(badge, isPaid, 0); // initial 0, updated by recalcMonthTotals
+        this.updateBadge(badge, isPaid, 0);
 
         headerFlex.appendChild(title);
         headerFlex.appendChild(badge);
         section.appendChild(headerFlex);
 
-        // Table
         const table = document.createElement('table');
         table.className = 'expense-table';
         table.innerHTML = `
@@ -436,7 +472,6 @@ const UI = {
         expenses.forEach(exp => tbody.appendChild(this.createExpenseRow(exp)));
         section.appendChild(table);
 
-        // Add Manual Button
         const addBtn = document.createElement('button');
         addBtn.className = 'add-expense-btn';
         addBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Aggiungi Spesa Manuale';
@@ -454,50 +489,37 @@ const UI = {
     },
 
     showErrorTooltip(element, message) {
-        // Remove existing tooltip for this element
         const existing = element.parentNode.querySelector('.error-tooltip');
         if (existing) existing.remove();
 
-        // Create tooltip
         const tooltip = document.createElement('div');
         tooltip.className = 'error-tooltip';
         tooltip.textContent = message;
 
-        // Ensure parent is relative for absolute positioning
         if (getComputedStyle(element.parentNode).position === 'static') {
             element.parentNode.style.position = 'relative';
         }
 
         element.parentNode.appendChild(tooltip);
-
-        // Highlight input
-        element.classList.add('input-error');
-        const originalBorder = element.style.borderColor;
         element.style.borderColor = '#e74c3c';
 
-        // Animate in
         requestAnimationFrame(() => tooltip.classList.add('show-error'));
 
-        // Auto remove on input
-        const removeToolip = () => {
+        const removeTooltip = () => {
             tooltip.classList.remove('show-error');
-            element.style.borderColor = originalBorder;
+            element.style.borderColor = '';
             setTimeout(() => { if (tooltip.parentNode) tooltip.remove(); }, 300);
-            element.removeEventListener('input', removeToolip);
+            element.removeEventListener('input', removeTooltip);
         };
-        element.addEventListener('input', removeToolip);
-
-        // Remove after 3s
-        setTimeout(() => {
-            if (tooltip.parentNode) removeToolip();
-        }, 3000);
+        element.addEventListener('input', removeTooltip);
+        setTimeout(() => { if (tooltip.parentNode) removeTooltip(); }, 3000);
     },
 
     createExpenseRow(exp) {
         const tr = document.createElement('tr');
         tr.className = 'expense-row';
         tr.dataset.id = exp.id;
-        tr.dataset.date = exp.data_valuta; // Store date for sorting
+        tr.dataset.date = exp.data_valuta;
         tr.dataset.importo = parseFloat(exp.importo);
         if (exp.is_excluded) tr.classList.add('excluded');
         if (exp.is_neutral) tr.classList.add('neutral-row');
@@ -539,11 +561,9 @@ const UI = {
 
         const isPaid = monthSection.querySelector('.paid-checkbox')?.checked || false;
 
-        // Update Badge
         const badge = monthSection.querySelector('.month-badge');
         if (badge) this.updateBadge(badge, isPaid, totalReimbursable);
 
-        // Update Footer
         const tfootSpese = monthSection.querySelector('.tfoot-spese-val');
         const tfootRimborso = monthSection.querySelector('.tfoot-rimborso-val');
         const tfootLabel = monthSection.querySelector('.tfoot-rimborso-label');
@@ -569,6 +589,16 @@ const UI = {
         return div;
     },
 
+    /** Shared importo validation for inline forms */
+    validateImportoField(importoInput) {
+        const impVal = Utils.parseImportoInput(importoInput.value);
+        if (impVal === null) {
+            this.showErrorTooltip(importoInput, 'Inserisci importo valido (es. -10,50)');
+            return null;
+        }
+        return impVal;
+    },
+
     showInlineForm(monthSection, tbody, year, monthNum) {
         monthSection.querySelector('.add-expense-btn').style.display = 'none';
         const existing = tbody.querySelector('.inline-form-row');
@@ -582,7 +612,7 @@ const UI = {
             <td><input type="text" class="form-operazione" placeholder="Operazione"></td>
             <td><input type="text" class="form-categoria" placeholder="Categoria"></td>
             <td><input type="text" class="form-conto" placeholder="Conto"></td>
-            <td><input type="text" class="form-importo" placeholder="-00,00"></td>
+            <td><input type="text" class="form-importo" placeholder="-10,50"></td>
             <td>
                 <div class="inline-form-actions">
                     <button class="btn-save-inline" title="Salva"><i class="fa-solid fa-check"></i></button>
@@ -592,7 +622,6 @@ const UI = {
         `;
         tbody.appendChild(tr);
 
-        // Autocomplete
         const uniqueCats = Utils.extractUniqueValues(App.state.lastExpenseData, 'categoria');
         const uniqueAccs = Utils.extractUniqueValues(App.state.lastExpenseData, 'conto_carta');
         UI.attachAutocomplete(tr.querySelector('.form-categoria'), uniqueCats);
@@ -600,87 +629,57 @@ const UI = {
 
         tr.querySelector('.form-operazione').focus();
 
-        // Event Listeners for Inline Form
         const saveForm = async () => {
+            const dataInput      = tr.querySelector('.form-data');
             const operazioneInput = tr.querySelector('.form-operazione');
             const categoriaInput = tr.querySelector('.form-categoria');
-            const importoInput = tr.querySelector('.form-importo');
-            const dataInput = tr.querySelector('.form-data');
-            const contoInput = tr.querySelector('.form-conto');
+            const contoInput     = tr.querySelector('.form-conto');
+            const importoInput   = tr.querySelector('.form-importo');
 
-            // 1. Validate Date Coherence (Strict Parsing)
+            // Validate date
             if (!dataInput.value) {
                 UI.showErrorTooltip(dataInput, 'Inserisci una data!');
                 return;
             }
-            const [y, m, d] = dataInput.value.split('-').map(Number);
-
-            // Ensure strict number comparison
-            const targetYear = Number(year);
-            const targetMonth = Number(monthNum);
-
-            if (y !== targetYear || m !== targetMonth) {
-                const monthName = Utils.MONTH_NAMES[targetMonth] || targetMonth;
-                UI.showErrorTooltip(dataInput, `La data deve essere in ${monthName} ${targetYear}!`);
+            const [y, m] = dataInput.value.split('-').map(Number);
+            if (y !== Number(year) || m !== Number(monthNum)) {
+                const monthName = Utils.MONTH_NAMES[Number(monthNum)] || monthNum;
+                UI.showErrorTooltip(dataInput, `La data deve essere in ${monthName} ${year}!`);
                 return;
             }
 
-            // 2. Full Validation
             let isValid = true;
             if (!operazioneInput.value.trim()) {
-                UI.showErrorTooltip(operazioneInput, 'Campo obbligatorio!');
-                isValid = false;
+                UI.showErrorTooltip(operazioneInput, 'Campo obbligatorio!'); isValid = false;
             }
             if (!categoriaInput.value.trim()) {
-                UI.showErrorTooltip(categoriaInput, 'Categoria obbligatoria!');
-                isValid = false;
+                UI.showErrorTooltip(categoriaInput, 'Categoria obbligatoria!'); isValid = false;
             }
             if (!contoInput.value.trim()) {
-                UI.showErrorTooltip(contoInput, 'Conto obbligatorio!');
-                isValid = false;
+                UI.showErrorTooltip(contoInput, 'Conto obbligatorio!'); isValid = false;
             }
-            const rawImp = importoInput.value.trim();
-            // Normalize: if both . and , exist, check position
-            let impVal;
-            if (rawImp.includes(',') && rawImp.includes('.')) {
-                // Format "1.234,56" -> remove thousands dot, replace decimal comma
-                if (rawImp.lastIndexOf(',') > rawImp.lastIndexOf('.')) {
-                    impVal = rawImp.replace(/\./g, '').replace(',', '.');
-                } else {
-                    // Format "1,234.56" -> remove thousands comma
-                    impVal = rawImp.replace(/,/g, '');
-                }
-            } else {
-                // Only comma or only dot -> treat as decimal separator
-                impVal = rawImp.replace(',', '.');
-            }
-            if (!impVal || isNaN(parseFloat(impVal))) {
-                UI.showErrorTooltip(importoInput, 'Inserisci importo valido');
-                isValid = false;
-            }
+
+            const impVal = UI.validateImportoField(importoInput);
+            if (impVal === null) isValid = false;
 
             if (!isValid) return;
 
-            const data = {
+            const res = await API.addExpense({
                 data_valuta: dataInput.value,
                 operazione: operazioneInput.value.trim(),
                 categoria: categoriaInput.value.trim(),
                 conto_carta: contoInput.value.trim(),
                 importo: impVal
-            };
+            });
 
-            const res = await API.addExpense(data);
             if (res.ok) {
-                // Bug Fix: Avoid manual DOM manipulation on stale elements. Rely on full reload.
                 App.state.dashboardDirty = true;
                 Utils.showToast(UI.elements.elencoToast, '✓ Spesa aggiunta!', 'success');
-
                 if (document.getElementById('page-elenco').classList.contains('active')) {
                     await App.loadElenco();
                 }
             } else {
-                // Bug Fix: Access error message correctly from nested data object if present
-                const errMsg = res.data?.error || res.error || 'Errore sconosciuto';
+                const errMsg = API.extractError(res);
                 Utils.showToast(UI.elements.elencoToast, `Errore: ${errMsg}`, 'error');
             }
         };
@@ -695,6 +694,102 @@ const UI = {
         tr.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') { e.preventDefault(); saveForm(); }
             if (e.key === 'Escape') cancelForm();
+        });
+    },
+
+    /**
+     * Show inline edit form replacing an existing expense row.
+     * Called from the edit-btn click handler in setupElenco.
+     */
+    showInlineEditForm(row) {
+        // Prevent multiple edit forms
+        if (row.nextElementSibling?.classList.contains('inline-edit-row')) return;
+
+        const id       = row.dataset.id;
+        const rawDate  = row.dataset.date;
+        const rawImp   = row.dataset.importo;
+        const cells    = row.querySelectorAll('td');
+        // cells: [0]=data display, [1]=operazione, [2]=categoria, [3]=conto, [4]=importo, [5]=azioni
+
+        // Hide original row
+        row.style.display = 'none';
+
+        const tr = document.createElement('tr');
+        tr.className = 'inline-form-row inline-edit-row';
+        tr.dataset.editingId = id;
+        tr.innerHTML = `
+            <td><input type="date" class="form-data" value="${rawDate}"></td>
+            <td><input type="text" class="form-operazione" value="${Utils.escapeHtml(cells[1].textContent.trim() === '—' ? '' : cells[1].textContent.trim())}"></td>
+            <td><input type="text" class="form-categoria" value="${Utils.escapeHtml(cells[2].textContent.trim() === '—' ? '' : cells[2].textContent.trim())}"></td>
+            <td><input type="text" class="form-conto" value="${Utils.escapeHtml(cells[3].textContent.trim() === '—' ? '' : cells[3].textContent.trim())}"></td>
+            <td><input type="text" class="form-importo" value="${Utils.formatImportoForInput(rawImp)}"></td>
+            <td>
+                <div class="inline-form-actions">
+                    <button class="btn-save-inline" title="Salva"><i class="fa-solid fa-check"></i></button>
+                    <button class="btn-cancel-inline" title="Annulla"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+            </td>
+        `;
+        row.insertAdjacentElement('afterend', tr);
+
+        // Attach autocomplete
+        const uniqueCats = Utils.extractUniqueValues(App.state.lastExpenseData, 'categoria');
+        const uniqueAccs = Utils.extractUniqueValues(App.state.lastExpenseData, 'conto_carta');
+        UI.attachAutocomplete(tr.querySelector('.form-categoria'), uniqueCats);
+        UI.attachAutocomplete(tr.querySelector('.form-conto'), uniqueAccs);
+
+        tr.querySelector('.form-operazione').focus();
+
+        const cancelEdit = () => {
+            tr.remove();
+            row.style.display = '';
+        };
+
+        const saveEdit = async () => {
+            const dataInput       = tr.querySelector('.form-data');
+            const operazioneInput = tr.querySelector('.form-operazione');
+            const categoriaInput  = tr.querySelector('.form-categoria');
+            const contoInput      = tr.querySelector('.form-conto');
+            const importoInput    = tr.querySelector('.form-importo');
+
+            // Validate
+            let isValid = true;
+            if (!dataInput.value) {
+                UI.showErrorTooltip(dataInput, 'Inserisci una data!'); isValid = false;
+            }
+            if (!operazioneInput.value.trim()) {
+                UI.showErrorTooltip(operazioneInput, 'Campo obbligatorio!'); isValid = false;
+            }
+
+            const impVal = UI.validateImportoField(importoInput);
+            if (impVal === null) isValid = false;
+
+            if (!isValid) return;
+
+            const res = await API.updateExpense(id, {
+                data_valuta: dataInput.value,
+                operazione: operazioneInput.value.trim(),
+                categoria: categoriaInput.value.trim(),
+                conto_carta: contoInput.value.trim(),
+                importo: impVal
+            });
+
+            if (res.ok) {
+                App.state.dashboardDirty = true;
+                Utils.showToast(UI.elements.elencoToast, '✓ Spesa aggiornata!', 'success');
+                await App.loadElenco();
+            } else {
+                const errMsg = API.extractError(res);
+                Utils.showToast(UI.elements.elencoToast, `Errore: ${errMsg}`, 'error');
+                cancelEdit();
+            }
+        };
+
+        tr.querySelector('.btn-save-inline').addEventListener('click', saveEdit);
+        tr.querySelector('.btn-cancel-inline').addEventListener('click', cancelEdit);
+        tr.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); saveEdit(); }
+            if (e.key === 'Escape') cancelEdit();
         });
     },
 
@@ -727,7 +822,6 @@ const UI = {
             list.className = 'autocomplete-list';
             filtered.forEach(item => {
                 const li = document.createElement('li');
-                // Highlight match
                 if (q) {
                     const start = item.toLowerCase().indexOf(q);
                     if (start >= 0) {
@@ -746,14 +840,11 @@ const UI = {
             });
             document.body.appendChild(list);
 
-            // Positioning (Portal)
             const rect = input.getBoundingClientRect();
             list.style.left = rect.left + 'px';
             list.style.width = rect.width + 'px';
             list.style.top = rect.bottom + 'px';
 
-            // Basic DropUp logic omission for brevity/simplicity unless critical, 
-            // but let's replicate if easy.
             if (window.innerHeight - rect.bottom < 160) {
                 list.classList.add('drop-up');
                 list.style.top = (rect.top - list.offsetHeight) + 'px';
@@ -785,7 +876,7 @@ const App = {
         currentMonth: null,
         availablePeriods: [],
         dashboardDirty: false,
-        lastExpenseData: null // For autocomplete
+        lastExpenseData: null
     },
 
     init() {
@@ -794,7 +885,6 @@ const App = {
         this.setupDashboard();
         this.setupElenco();
 
-        // Initial Load
         const savedTab = localStorage.getItem('activeTab') || 'dashboard';
         this.navigateTo(savedTab);
     },
@@ -821,7 +911,6 @@ const App = {
             this.state.dashboardDirty = false;
             this.loadDashboard(this.state.currentYear, this.state.currentMonth);
         } else if (viewId === 'dashboard' && !this.state.currentYear) {
-            // First load
             this.initDashboardData();
         }
     },
@@ -831,7 +920,6 @@ const App = {
         if (res.ok && res.data.periods.length > 0) {
             this.state.availablePeriods = res.data.periods;
 
-            // Populate Year Filter
             const years = res.data.years || [...new Set(res.data.periods.map(p => p.year))].sort((a, b) => b - a);
             UI.elements.yearFilter.innerHTML = '';
             years.forEach(y => {
@@ -872,7 +960,6 @@ const App = {
     },
 
     setupDashboard() {
-        // Filters
         UI.elements.yearFilter?.addEventListener('change', () => {
             this.state.currentYear = parseInt(UI.elements.yearFilter.value);
             this.updateMonthFilter();
@@ -884,7 +971,6 @@ const App = {
             this.loadDashboard(this.state.currentYear, this.state.currentMonth);
         });
 
-        // Upload
         const handleFiles = async (files) => {
             if (!files.length) return;
             UI.elements.uploadBtn.textContent = 'Caricamento...';
@@ -903,7 +989,7 @@ const App = {
             UI.elements.uploadBtn.disabled = false;
             UI.elements.fileInput.value = '';
 
-            this.initDashboardData(); // Refresh all
+            this.initDashboardData();
         };
 
         if (UI.elements.dropArea) {
@@ -942,7 +1028,7 @@ const App = {
         if (UI.elements.dateFilterBtn) {
             UI.elements.dateFilterBtn.addEventListener('click', (e) => {
                 UI.elements.datePopover.classList.toggle('hidden');
-                UI.elements.kebabDropdown?.classList.add('hidden'); // Close Kebab
+                UI.elements.kebabDropdown?.classList.add('hidden');
                 e.stopPropagation();
             });
             UI.elements.applyDateBtn?.addEventListener('click', () => {
@@ -961,33 +1047,28 @@ const App = {
             });
         }
 
-        // Action Delegation (Delete, Toggle, Checkbox)
+        // Action Delegation (Delete, Toggle Eye, Edit)
         UI.elements.expensesList?.addEventListener('click', async (e) => {
             const btnDelete = e.target.closest('.delete-btn');
-            const btnEye = e.target.closest('.eye-toggle');
-            const btnEdit = e.target.closest('.edit-btn');
+            const btnEye    = e.target.closest('.eye-toggle');
+            const btnEdit   = e.target.closest('.edit-btn');
 
             if (btnDelete) {
                 const id = btnDelete.dataset.id;
                 const res = await API.deleteExpense(id);
                 if (res.ok) {
+                    Utils.showToast(UI.elements.elencoToast, '✓ Spesa eliminata.', 'success');
                     const row = btnDelete.closest('.expense-row');
                     const section = row.closest('.month-section');
                     row.remove();
                     if (section.querySelectorAll('.expense-row').length === 0) {
-                        // Find Year Header BEFORE removing
                         let yearHeader = section.previousElementSibling;
                         while (yearHeader && !yearHeader.classList.contains('year-header')) {
                             yearHeader = yearHeader.previousElementSibling;
                         }
-
-                        // "Sfondo Animato" / Automatic Recalibration
                         section.classList.add('fade-out');
-
-                        // Remove from DOM after animation completes
                         setTimeout(() => {
                             section.remove();
-                            // If Year Header is orphaned (no month sections immediately following), remove it
                             if (yearHeader) {
                                 const next = yearHeader.nextElementSibling;
                                 if (!next || !next.classList.contains('month-section')) {
@@ -1000,111 +1081,22 @@ const App = {
                     }
                     this.state.dashboardDirty = true;
                 }
+
             } else if (btnEdit) {
+                // Prevent triggering if an edit form is already open for this row
                 const row = btnEdit.closest('.expense-row');
-                const id = btnEdit.dataset.id;
+                if (row.nextElementSibling?.classList.contains('inline-edit-row')) return;
+                UI.showInlineEditForm(row);
 
-                // Read current values
-                const cells = row.querySelectorAll('td');
-                // cells[0]=data display, [1]=operation, [2]=category, [3]=account, [4]=amount
-                const rawDate = row.dataset.date; // YYYY-MM-DD from dataset
-                const rawImporto = row.dataset.importo;
-
-                // Hide original row
-                row.style.display = 'none';
-
-                const tr = document.createElement('tr');
-                tr.className = 'inline-form-row inline-edit-row';
-                tr.innerHTML = `
-                    <td><input type="date" class="form-data" value="${rawDate}"></td>
-                    <td><input type="text" class="form-operazione" value="${Utils.escapeHtml(cells[1].textContent.trim())}"></td>
-                    <td><input type="text" class="form-categoria" value="${Utils.escapeHtml(cells[2].textContent.trim())}"></td>
-                    <td><input type="text" class="form-conto" value="${Utils.escapeHtml(cells[3].textContent.trim())}"></td>
-                    <td><input type="text" class="form-importo" value="${rawImporto}"></td>
-                    <td>
-                        <div class="inline-form-actions">
-                            <button class="btn-save-inline" title="Salva"><i class="fa-solid fa-check"></i></button>
-                            <button class="btn-cancel-inline" title="Annulla"><i class="fa-solid fa-xmark"></i></button>
-                        </div>
-                    </td>
-                `;
-                row.insertAdjacentElement('afterend', tr);
-                tr.querySelector('.form-operazione').focus();
-
-                // Autocomplete for edit mode
-                const uniqueCats = Utils.extractUniqueValues(App.state.lastExpenseData, 'categoria');
-                const uniqueAccs = Utils.extractUniqueValues(App.state.lastExpenseData, 'conto_carta');
-                UI.attachAutocomplete(tr.querySelector('.form-categoria'), uniqueCats);
-                UI.attachAutocomplete(tr.querySelector('.form-conto'), uniqueAccs);
-
-                const cancelEdit = () => {
-                    tr.remove();
-                    row.style.display = '';
-                };
-
-                const saveEdit = async () => {
-                    const importoInput = tr.querySelector('.form-importo');
-                    const rawImp = importoInput.value.trim();
-                    let impVal;
-
-                    // Robust parsing logic (same as create)
-                    if (rawImp.includes(',') && rawImp.includes('.')) {
-                        if (rawImp.lastIndexOf(',') > rawImp.lastIndexOf('.')) {
-                            impVal = rawImp.replace(/\./g, '').replace(',', '.');
-                        } else {
-                            impVal = rawImp.replace(/,/g, '');
-                        }
-                    } else {
-                        impVal = rawImp.replace(',', '.');
-                    }
-
-                    if (!impVal || isNaN(parseFloat(impVal))) {
-                        UI.showErrorTooltip(importoInput, 'Inserisci importo valido');
-                        return;
-                    }
-
-                    const payload = {
-                        data_valuta: tr.querySelector('.form-data').value,
-                        operazione: tr.querySelector('.form-operazione').value.trim(),
-                        categoria: tr.querySelector('.form-categoria').value.trim(),
-                        conto_carta: tr.querySelector('.form-conto').value.trim(),
-                        importo: impVal
-                    };
-
-                    // Use PATCH to update existing entry
-                    const res = await API.fetchJSON(`/expenses/${id}`, {
-                        method: 'PATCH',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-
-                    if (res.ok) {
-                        App.state.dashboardDirty = true;
-                        Utils.showToast(UI.elements.elencoToast, '✓ Spesa aggiornata!', 'success');
-                        await App.loadElenco();
-                    } else {
-                        const errMsg = res.data?.error || res.error || 'Errore sconosciuto';
-                        Utils.showToast(UI.elements.elencoToast, `Errore: ${errMsg}`, 'error');
-                    }
-                };
-
-                tr.querySelector('.btn-save-inline').addEventListener('click', saveEdit);
-                tr.querySelector('.btn-cancel-inline').addEventListener('click', cancelEdit);
-                tr.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter') { e.preventDefault(); saveEdit(); }
-                    if (e.key === 'Escape') cancelEdit();
-                });
             } else if (btnEye) {
                 const id = btnEye.dataset.id;
                 const res = await API.toggleExclude(id);
                 if (res.ok) {
                     const row = btnEye.closest('.expense-row');
                     row.classList.toggle('excluded', res.data.is_excluded);
-                    // Update icon dynamically
                     const icon = btnEye.querySelector('i');
                     icon.className = `fa-solid ${res.data.is_excluded ? 'fa-eye-slash' : 'fa-eye'}`;
                     btnEye.title = res.data.is_excluded ? 'Includi' : 'Escludi';
-
                     UI.recalcMonthTotals(row.closest('.month-section'));
                     this.state.dashboardDirty = true;
                 }
@@ -1120,27 +1112,24 @@ const App = {
                     UI.recalcMonthTotals(section);
                     this.state.dashboardDirty = true;
                 } catch (err) {
-                    cb.checked = !cb.checked; // Rollback
+                    cb.checked = !cb.checked;
                 }
             }
         });
 
-        // Modals Logic
         this.setupModals();
     },
 
     setupModals() {
-        // Kebab
         if (UI.elements.kebabBtn) {
             UI.elements.kebabBtn.addEventListener('click', (e) => {
                 e.preventDefault(); e.stopPropagation();
                 UI.elements.kebabDropdown?.classList.toggle('hidden');
-                UI.elements.datePopover?.classList.add('hidden'); // Close Date Filter
+                UI.elements.datePopover?.classList.add('hidden');
             });
             document.addEventListener('click', () => UI.elements.kebabDropdown?.classList.add('hidden'));
         }
 
-        // Close Overlays
         UI.elements.modalOverlays.forEach(ov => ov.addEventListener('click', (e) => {
             if (e.target === ov) ov.classList.add('hidden');
         }));
@@ -1148,7 +1137,6 @@ const App = {
             e.target.closest('.modal-overlay').classList.add('hidden');
         }));
 
-        // Bulk Delete
         document.getElementById('kebab-bulk-delete')?.addEventListener('click', () => {
             UI.openModal('modal-bulk-delete');
             this.loadBulkDeleteTree();
@@ -1165,7 +1153,6 @@ const App = {
             }
         });
 
-        // Keywords
         document.getElementById('kebab-keywords')?.addEventListener('click', async () => {
             UI.openModal('modal-keywords');
             this.loadKeywordsList();
@@ -1177,18 +1164,17 @@ const App = {
             if (res.ok) {
                 UI.elements.keywordInput.value = '';
                 this.loadKeywordsList();
-                this.state.dashboardDirty = true; // Keywords affect calculations
+                this.state.dashboardDirty = true;
                 if (document.getElementById('page-elenco').classList.contains('active')) this.loadElenco();
             } else {
-                this.showTooltip(res.error || 'Errore');
+                // Show tooltip on keyword input
+                UI.showErrorTooltip(UI.elements.keywordInput, API.extractError(res));
             }
         });
 
-        // Enter Key for Keyword
         UI.elements.keywordInput?.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') UI.elements.addKeywordBtn.click();
         });
-
     },
 
     async loadElenco() {
@@ -1203,7 +1189,7 @@ const App = {
         ]);
 
         if (expRes.ok) {
-            this.state.lastExpenseData = expRes.data; // Store for autocomplete
+            this.state.lastExpenseData = expRes.data;
             UI.renderExpenses(expRes.data, statsRes.data || {});
         }
     },
@@ -1214,24 +1200,9 @@ const App = {
         rows.forEach(row => {
             row.style.display = row.innerText.toLowerCase().includes(q) ? '' : 'none';
         });
-        // Check visibility of sections/headers handled in filtered logic or CSS
-        // Simple logic for headers:
         document.querySelectorAll('.month-section').forEach(sec => {
             const visibleRows = sec.querySelectorAll('.expense-row:not([style*="none"])');
             sec.style.display = visibleRows.length ? '' : 'none';
-        });
-        document.querySelectorAll('.year-header').forEach(yh => {
-            // This logic requires DOM traversal or structure assumptions
-            let hasVis = false;
-            let sibling = yh.nextElementSibling;
-            while (sibling && sibling.classList.contains('month-section')) { // simplified assumption
-                // In actual DOM, year separator is between.
-                // Let's rely on backend filtering mostly, this is visual only.
-                // Reimplementing robust traversal:
-                sibling = sibling.nextElementSibling;
-            }
-            // Actually, simplest is to just show all headers if query is empty, else hide if no children.
-            // Implemented basically in original code, kept simple here.
         });
     },
 
@@ -1240,11 +1211,6 @@ const App = {
         tree.innerHTML = 'Caricamento...';
         const res = await API.getAvailablePeriods();
         if (!res.ok) return;
-
-        // Grouping logic similar to original...
-        // For brevity, using simplified rendering here as concept is same.
-        // Implementation note: Fully replicated tree logic is long, but necessary.
-        // ... (Re-implementing the tree building logic from previous file) ...
 
         const byYear = {};
         res.data.periods.forEach(p => {
@@ -1264,7 +1230,6 @@ const App = {
             tree.appendChild(div);
         });
 
-        // Wire up checkboxes (Year Selects All Month)
         tree.querySelectorAll('input[data-year]:not([data-month])').forEach(yCb => {
             yCb.addEventListener('change', () => {
                 tree.querySelectorAll(`input[data-year="${yCb.dataset.year}"][data-month]`).forEach(mCb => mCb.checked = yCb.checked);
@@ -1284,7 +1249,6 @@ const App = {
         list.innerHTML = 'Caricamento...';
         const res = await API.getKeywords();
         if (res.ok) {
-            this.state.keywords = res.data.map(k => k.keyword.toLowerCase());
             list.innerHTML = '';
             res.data.forEach(k => {
                 const tag = document.createElement('span');
@@ -1297,8 +1261,5 @@ const App = {
                 list.appendChild(tag);
             });
         }
-    },
-
-    // Internal helper to replace the old showTooltip if needed, or remove it entirely
-    // We used UI.showErrorTooltip above, so this can be deprecated or used as alias.
+    }
 };

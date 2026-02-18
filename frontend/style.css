@@ -7,57 +7,33 @@
 :root {
     /* Palette Mint & Ice (Electric Pastels) */
     --background-color: #F0FDFF;
-    /* Ice White (Page) */
     --sidebar-bg: #63E5FF;
-    /* Electric Cyan Sidebar */
     --sidebar-text: #003B46;
-    /* Deep Petrol Text (Critical Contrast) */
 
     /* Accents & Buttons */
     --primary-color: #82CFFF;
-    /* Sky Blue (Buttons) */
     --primary-text: #003B46;
-    /* Petrol Text on Blue */
     --primary-hover: #5AC8FA;
-    /* Vibrating Blue Hover */
 
-    --success-color: #7DFFD4;
-    /* Aquamarine (Rimborsato) */
     --danger-color: #FF6B6B;
-    /* Soft Red (Darkened) */
     --warning-color: #B3FFD9;
-    /* Pale Mint (Neutral/Wait) */
 
     /* Neutrals & Text */
     --text-color: #2C3E50;
-    /* Dark Slate Main Text */
     --text-muted: #607D8B;
-    /* Blue Grey */
 
     /* Table Rows */
     --row-alt-bg: #F5FFFF;
-    /* Very Pale Ice */
-    --row-neutral-bg: rgba(179, 255, 217, 0.25);
-    /* Pale Mint Tint */
     --header-bg: #63E5FF;
-    /* Electric Cyan Header */
     --header-text: #003B46;
-    /* Petrol Header Text */
 
     --card-bg: #FFFFFF;
     --border-color: #B3FFD9;
-    /* Mint Border */
     --shadow-color: rgba(99, 229, 255, 0.25);
-    /* Cyan Glow */
+
+    /* Sidebar width — used to offset toast */
+    --sidebar-width: 250px;
 }
-
-
-
-
-
-
-
-
 
 /* ---- Reset & Base ---- */
 *,
@@ -87,7 +63,7 @@ body {
    SIDEBAR
    =================================================== */
 .sidebar {
-    width: 250px;
+    width: var(--sidebar-width);
     background-color: var(--sidebar-bg);
     padding: 28px 20px;
     display: flex;
@@ -99,7 +75,6 @@ body {
     bottom: 0;
     z-index: 200;
     color: var(--sidebar-text);
-    /* Deep Teal Text */
 }
 
 .sidebar-header {
@@ -108,13 +83,11 @@ body {
     gap: 12px;
     margin-bottom: 44px;
     color: var(--sidebar-text);
-    /* Contrast Fix */
 }
 
 .sidebar-header i {
     font-size: 1.8rem;
     color: var(--sidebar-text);
-    /* Wallet Icon Dark Blue */
     background: #fff;
     padding: 8px;
     filter: drop-shadow(0 4px 6px rgba(130, 207, 255, 0.4));
@@ -126,10 +99,7 @@ body {
     margin: 0;
     font-size: 1.25rem;
     font-weight: 800;
-    /* Bolder */
     letter-spacing: -0.02em;
-
-    /* User Request: Sottolineato (Color matches text) */
     border-bottom: 2px solid currentColor;
     display: inline-block;
     padding-bottom: 4px;
@@ -155,15 +125,11 @@ body {
     opacity: 0.85;
 }
 
-
 .nav-item.active {
     background-color: #B3FFD9 !important;
-    /* Mint Background FORCE */
     color: #003B46 !important;
-    /* Petrol Text FORCE */
     font-weight: 800;
     box-shadow: 0 4px 15px rgba(0, 59, 70, 0.15);
-    /* Soft Dark Shadow */
     opacity: 1;
 }
 
@@ -175,14 +141,11 @@ body {
 
 .nav-item:hover:not(.active) {
     background-color: var(--warning-color);
-    /* TASK 3: Mint Green */
     color: var(--sidebar-text) !important;
-    /* TASK 3: Force Deep Petrol */
 }
 
 .nav-item:hover:not(.active) i {
     color: var(--sidebar-text) !important;
-    /* TASK 3: Force Deep Petrol */
 }
 
 /* ===================================================
@@ -192,7 +155,7 @@ body {
     flex: 1;
     padding: 30px 50px;
     overflow-y: auto;
-    margin-left: 250px;
+    margin-left: var(--sidebar-width);
 }
 
 .top-header {
@@ -207,11 +170,6 @@ body {
     font-weight: 700;
     margin: 0;
     color: var(--sidebar-text);
-}
-
-.header-controls {
-    display: flex;
-    gap: 15px;
 }
 
 /* ===================================================
@@ -271,9 +229,7 @@ body {
     width: 100%;
     height: 150px;
     border: 2px dashed rgba(0, 59, 70, 0.15);
-    /* Matching Add Button */
-    background-color: #E0F7FA;
-    /* Light Cyan Tint */
+    background-color: #FFFFFF;
     border-radius: 16px;
     padding: 0;
     display: flex;
@@ -284,18 +240,17 @@ body {
     transition: all 0.3s ease;
     gap: 15px;
     backdrop-filter: blur(4px);
+    position: relative;
 }
 
 .file-drop-area i {
     font-size: 2rem;
     color: var(--sidebar-text);
-    /* Dark Blue Default */
     transition: color 0.3s ease, transform 0.3s ease;
 }
 
 .file-drop-area .file-msg {
     color: var(--sidebar-text);
-    /* Dark Blue Default */
     font-weight: 500;
     font-size: 0.95rem;
     opacity: 0.7;
@@ -323,17 +278,12 @@ body {
 .btn-primary {
     background: var(--primary-color);
     color: var(--primary-text);
-    /* Petrol Text */
     border: none;
     font-family: 'Poppins', sans-serif;
-    /* Explicitly use Poppins */
     font-weight: 700;
     padding: 12px 32px;
     border-radius: 12px;
-    font-family: 'Poppins', sans-serif;
-    /* TASK 6: Modern Font */
     font-size: 1rem;
-    font-weight: 700;
     cursor: pointer;
     transition: all 0.2s ease-in-out;
     margin-top: 15px;
@@ -343,7 +293,6 @@ body {
     letter-spacing: 0.03em;
 }
 
-/* Consolidated btn-primary:hover */
 .btn-primary:hover {
     background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
     box-shadow: 0 6px 20px rgba(127, 200, 217, 0.45);
@@ -388,31 +337,6 @@ body {
 }
 
 /* ===================================================
-   ELENCO — Month Section
-   =================================================== */
-.month-section {
-    margin-bottom: 30px;
-    background-color: transparent;
-    border: none;
-    box-shadow: none;
-    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-    /* Sfondo Animato logic: smooth height/margin transition */
-    max-height: 2000px;
-    /* Arbitrary large max-height for transition */
-    opacity: 1;
-}
-
-.month-section.fade-out {
-    opacity: 0;
-    max-height: 0;
-    margin-bottom: 0;
-    margin-top: 0;
-    padding: 0;
-    border: none;
-    overflow: hidden;
-}
-
-/* ===================================================
    CARD STYLING
    =================================================== */
 .card {
@@ -423,14 +347,11 @@ body {
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
     transition: box-shadow 0.3s ease, transform 0.3s ease;
     overflow: hidden;
-    /* For header border-radius */
 }
 
-/* Pastel Card Header */
 .card h2,
 .card h3 {
     background-color: #E0F2F1;
-    /* Pastel Mint/Teal */
     margin: -28px -28px 20px -28px;
     padding: 20px 28px;
     border-bottom: 1px solid var(--border-color);
@@ -508,29 +429,6 @@ body {
     font-weight: 700;
 }
 
-.metric-value.positive {
-    color: #27ae60;
-}
-
-.metric-value.negative {
-    color: #c0392b;
-}
-
-.metric-delta {
-    display: block;
-    font-size: 0.85rem;
-    font-weight: 600;
-    margin-top: 4px;
-}
-
-.metric-delta.positive {
-    color: #27ae60;
-}
-
-.metric-delta.negative {
-    color: #c0392b;
-}
-
 /* ===================================================
    TABLES
    =================================================== */
@@ -554,13 +452,8 @@ body {
     letter-spacing: 0.04em;
 }
 
-.data-table th:first-child {
-    border-radius: 10px 0 0 10px;
-}
-
-.data-table th:last-child {
-    border-radius: 0 10px 10px 0;
-}
+.data-table th:first-child { border-radius: 10px 0 0 10px; }
+.data-table th:last-child  { border-radius: 0 10px 10px 0; }
 
 .data-table td {
     padding: 12px 16px;
@@ -572,44 +465,22 @@ body {
     transition: background-color 0.2s ease;
 }
 
-.data-table tbody tr:nth-child(even) {
-    background-color: rgba(184, 230, 240, 0.2);
-}
-
-.data-table tbody tr:hover {
-    background-color: rgba(127, 200, 217, 0.15);
-}
-
-.data-table tbody tr:last-child td {
-    border-bottom: none;
-}
+.data-table tbody tr:nth-child(even) { background-color: rgba(184, 230, 240, 0.2); }
+.data-table tbody tr:hover           { background-color: rgba(127, 200, 217, 0.15); }
+.data-table tbody tr:last-child td   { border-bottom: none; }
 
 /* ===================================================
    SPACER (utility)
    =================================================== */
-.spacer-vertical {
-    flex: 0;
-}
+.spacer-vertical { flex: 0; }
 
 /* ===================================================
    SCROLLBAR
    =================================================== */
-::-webkit-scrollbar {
-    width: 6px;
-}
-
-::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-    background-color: var(--primary-color);
-    border-radius: 10px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background-color: var(--primary-hover);
-}
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background-color: var(--primary-color); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background-color: var(--primary-hover); }
 
 /* ===================================================
    SELECTION
@@ -622,13 +493,8 @@ body {
 /* ===================================================
    SPA — Page Visibility
    =================================================== */
-.page {
-    display: none;
-}
-
-.page.active {
-    display: block;
-}
+.page { display: none; }
+.page.active { display: block; }
 
 /* ===================================================
    ELENCO — Search Bar (Sticky)
@@ -642,8 +508,6 @@ body {
     gap: 12px;
     padding: 18px 0 22px 0;
     background-color: transparent;
-    /* TASK 1: Transparent background */
-    /* border-bottom removed as requested */
     margin-bottom: 30px;
 }
 
@@ -665,7 +529,6 @@ body {
     top: 50%;
     transform: translateY(-50%);
     color: var(--sidebar-text);
-    /* Dark Blue */
     font-size: 0.95rem;
 }
 
@@ -674,7 +537,6 @@ body {
     padding: 12px 16px 12px 44px;
     border-radius: 14px;
     border: 1.5px solid var(--sidebar-text);
-    /* Dark Blue */
     background-color: var(--card-bg);
     color: var(--sidebar-text);
     font-family: 'Inter', sans-serif;
@@ -686,7 +548,6 @@ body {
 
 .search-input-wrapper input::placeholder {
     color: var(--sidebar-text);
-    /* Dark Blue */
     font-weight: 400;
 }
 
@@ -704,7 +565,6 @@ body {
     border-radius: 12px;
     border: none;
     background-color: #E0F7FA;
-    /* Solid Pastel Cyan */
     color: var(--sidebar-text);
     display: flex;
     align-items: center;
@@ -713,28 +573,18 @@ body {
     transition: all 0.2s ease;
     font-size: 1rem;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-    /* Slight shadow */
 }
 
 .icon-btn:hover {
     background-color: var(--primary-color);
-    border-color: var(--primary-color);
     color: var(--sidebar-text);
 }
 
-.icon-btn:focus {
-    outline: none;
-    box-shadow: none;
-}
-
-.icon-btn:focus-visible {
-    outline: 2px solid var(--primary-hover);
-    outline-offset: 2px;
-}
+.icon-btn:focus { outline: none; box-shadow: none; }
+.icon-btn:focus-visible { outline: 2px solid var(--primary-hover); outline-offset: 2px; }
 
 .icon-btn.active {
     background-color: var(--primary-hover);
-    border-color: var(--primary-hover);
     color: #FFFFFF;
 }
 
@@ -746,20 +596,14 @@ body {
     right: 0;
     top: calc(100% + 8px);
     background: #FFFFFF;
-    /* White */
-    border: none;
-    /* No Green Border */
     border-radius: 16px;
     padding: 20px;
     box-shadow: 0 8px 32px rgba(130, 207, 255, 0.2);
-    /* Softer Shadow */
     z-index: 200;
     min-width: 280px;
 }
 
-.date-popover.hidden {
-    display: none;
-}
+.date-popover.hidden { display: none; }
 
 .date-popover-content {
     display: flex;
@@ -780,7 +624,8 @@ body {
     min-width: 30px;
 }
 
-.date-field input[type="date"] {
+.date-field input[type="date"],
+.inline-form-row input[type="date"] {
     -webkit-appearance: none;
     -moz-appearance: none;
     appearance: none;
@@ -795,23 +640,14 @@ body {
     outline: none;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
     accent-color: var(--primary-hover);
-    /* Blue for calendar selection */
 }
 
-.inline-form-row input[type="date"] {
-    -webkit-appearance: none;
-    -moz-appearance: none;
-    appearance: none;
-    background-color: #E3EBF2 !important;
-    border: 1px solid #AEC6CF !important;
-}
-
-.date-field input[type="date"]:focus {
+.date-field input[type="date"]:focus,
+.inline-form-row input[type="date"]:focus {
     border-color: var(--primary-hover);
     box-shadow: 0 0 0 2px rgba(74, 158, 175, 0.15);
 }
 
-/* ── TASK 4: Calendar picker icon styling ── */
 .date-field input[type="date"]::-webkit-calendar-picker-indicator,
 .inline-form-row input[type="date"]::-webkit-calendar-picker-indicator {
     cursor: pointer;
@@ -840,77 +676,80 @@ body {
     font-weight: 600;
     cursor: pointer;
     border: none;
-    transition: all 0.2s ease;
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .btn-apply {
     background-color: var(--sidebar-text);
-    /* Dark Blue */
     color: #FFFFFF;
-    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
-
-.btn-apply:hover {
-    transform: scale(1.05);
-    /* Scale Only */
-}
+.btn-apply:hover { transform: scale(1.05); }
 
 .btn-clear {
     background-color: var(--danger-color);
-    /* Soft Red matching other cancels */
     color: #FFFFFF;
     border: none;
-    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
-
-.btn-clear:hover {
-    transform: scale(1.05);
-    /* Scale Only */
-}
+.btn-clear:hover { transform: scale(1.05); }
 
 /* ===================================================
    ELENCO — Year Header
    =================================================== */
 .year-header {
-    font-size: 1.8rem;
-    font-weight: 700;
-    color: var(--sidebar-text);
-    margin: 40px 0 12px 0;
-    padding-bottom: 10px;
-    border-bottom: 3px solid var(--sidebar-text);
-    /* Thick Dark Blue */
-    letter-spacing: -0.02em;
+    font-size: 2rem;
+    color: #003B46;
+    margin-top: 3rem;
+    margin-bottom: 0.5rem;
+    font-weight: 800;
 }
 
-.year-header:first-child {
-    margin-top: 0;
+.year-header:first-child { margin-top: 0; }
+
+.year-separator {
+    height: 4px;
+    background-color: #003B46;
+    width: 100%;
+    margin-bottom: 2.5rem;
+    border-radius: 2px;
+    opacity: 0.8;
 }
 
 /* ===================================================
    ELENCO — Month Section
    =================================================== */
 .month-section {
-    margin-bottom: 30px;
+    margin-bottom: 3rem;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    max-height: 2000px;
+    opacity: 1;
 }
 
-.month-title {
-    font-size: 1.15rem;
-    font-weight: 600;
-    color: var(--primary-hover);
-    margin: 18px 0 12px 0;
-    padding-left: 4px;
+.month-section.fade-out {
+    opacity: 0;
+    max-height: 0;
+    margin-bottom: 0;
+    margin-top: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+.month-title-rounded {
+    font-size: 1.5rem;
+    color: #003B46;
+    margin: 0;
+    font-weight: 700;
     display: flex;
     align-items: center;
-    gap: 8px;
 }
 
-.month-title::before {
+.month-title-rounded::before {
     content: '';
     display: inline-block;
-    width: 4px;
-    height: 20px;
-    background-color: var(--primary-color);
-    border-radius: 2px;
+    width: 6px;
+    height: 24px;
+    background-color: #003B46;
+    margin-right: 12px;
+    border-radius: 4px;
 }
 
 /* ===================================================
@@ -928,41 +767,21 @@ body {
     border: 1px solid var(--border-color);
 }
 
-/* Column widths (fixed layout) */
-.expense-table .col-data {
-    width: 13%;
-}
+.expense-table .col-data       { width: 13%; }
+.expense-table .col-operazione { width: 25%; }
+.expense-table .col-categoria  { width: 18%; }
+.expense-table .col-conto      { width: 17%; }
+.expense-table .col-importo    { width: 15%; }
+.expense-table .col-azioni     { width: 12%; }
 
-.expense-table .col-operazione {
-    width: 25%;
-}
-
-.expense-table .col-categoria {
-    width: 18%;
-}
-
-.expense-table .col-conto {
-    width: 17%;
-}
-
-.expense-table .col-importo {
-    width: 15%;
-}
-
-/* ── TASK 1: Right-align importo column (accounting convention) ── */
+/* Right-align importo column */
 .expense-table th:nth-child(5),
 .expense-table td:nth-child(5) {
     text-align: right;
     padding-right: 18px;
 }
 
-.expense-table .col-azioni {
-    width: 12%;
-}
-
-.expense-table thead tr {
-    background-color: var(--header-bg);
-}
+.expense-table thead tr  { background-color: var(--header-bg); }
 
 .expense-table th {
     background-color: var(--header-bg);
@@ -975,15 +794,8 @@ body {
     letter-spacing: 0.04em;
 }
 
-.expense-table th:first-child {
-    border-radius: 14px 0 0 0;
-}
-
-.expense-table th:last-child {
-    border-radius: 0 14px 0 0;
-    text-align: center;
-    width: 60px;
-}
+.expense-table th:first-child { border-radius: 14px 0 0 0; }
+.expense-table th:last-child  { border-radius: 0 14px 0 0; text-align: center; width: 60px; }
 
 .expense-table td {
     padding: 11px 14px;
@@ -992,69 +804,45 @@ body {
     font-weight: 500;
     font-size: 0.92rem;
     border-bottom: 1px solid #B2EBF2;
-    /* Grid Line Horizontal */
     border-right: 1px solid #B2EBF2;
-    /* Grid Line Vertical */
     transition: all 0.25s ease;
     word-wrap: break-word;
-    /* Prevent overflow */
     white-space: normal;
 }
 
-.expense-table td:last-child {
-    border-right: none;
-    text-align: center;
-}
+.expense-table td:last-child { border-right: none; text-align: center; }
 
 .expense-table tfoot td {
-    background-color: #B2EBF2;
-    /* Darker Pastel for Total */
-    color: #003B46;
+    padding: 12px 14px;
     font-weight: 800;
-    border-top: 2px solid #003B46;
+    font-size: 0.95rem;
+    color: var(--sidebar-text);
+    background-color: #F1F5F9;
+    border-top: 2px solid var(--primary-color);
+    border-bottom: none !important;
 }
 
-.expense-table tbody tr:nth-child(even) {
-    background-color: var(--row-alt-bg);
-}
-
-.expense-table tbody tr:hover {
-    background-color: rgba(127, 200, 217, 0.12);
-}
-
-.expense-table tbody tr:last-child td {
-    border-bottom: none;
-}
+.expense-table tbody tr:nth-child(even) { background-color: var(--row-alt-bg); }
+.expense-table tbody tr:hover           { background-color: rgba(127, 200, 217, 0.12); }
+.expense-table tbody tr:last-child td   { border-bottom: none; }
 
 /* ── Importo styling ── */
-.importo-positive {
-    color: #27ae60;
-    font-weight: 600;
-}
-
-.importo-negative {
-    color: #c0392b;
-    font-weight: 600;
-}
+.importo-positive { color: #27ae60; font-weight: 600; }
+.importo-negative { color: #c0392b; font-weight: 600; }
 
 /* ===================================================
-   ELENCO — Excluded Row (Eye Toggle)
+   ELENCO — Excluded Row
    =================================================== */
 .expense-row.excluded td {
     color: #c5c5c5 !important;
     text-decoration: line-through;
     text-decoration-color: #ddd;
 }
-
 .expense-row.excluded .importo-positive,
-.expense-row.excluded .importo-negative {
-    color: #c5c5c5 !important;
-}
-
-
+.expense-row.excluded .importo-negative { color: #c5c5c5 !important; }
 
 /* ===================================================
-   ELENCO — Reimbursable Badge (Month Header)
+   ELENCO — Month Badge
    =================================================== */
 .month-badge {
     display: inline-flex;
@@ -1064,7 +852,6 @@ body {
     font-weight: 700;
     padding: 4px 14px;
     border-radius: 20px;
-    letter-spacing: 0.01em;
     white-space: nowrap;
     transition: all 0.3s ease;
 }
@@ -1081,11 +868,13 @@ body {
     border: 1px solid rgba(231, 76, 60, 0.25);
 }
 
-.month-badge i {
-    font-size: 0.75rem;
-}
+.month-badge i { font-size: 0.75rem; }
 
-/* ── Action buttons (eye + trash + edit) ── */
+/* ===================================================
+   ACTION BUTTONS (eye / edit / trash)
+   — uniform dark-petrol color, no border on hover,
+     only a subtle scale transform
+   =================================================== */
 .action-btns {
     display: flex;
     align-items: center;
@@ -1098,6 +887,7 @@ body {
 .action-btns .delete-btn {
     background: none;
     border: none;
+    outline: none;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -1107,44 +897,38 @@ body {
     padding: 0;
     border-radius: 6px;
     font-size: 0.85rem;
+    /* All icons same petrol colour */
     color: var(--sidebar-text);
-    transition: all 0.2s ease;
+    opacity: 0.55;
+    transition: opacity 0.15s ease, transform 0.15s ease;
 }
 
-.action-btns .edit-btn,
-.action-btns .delete-btn {
-    opacity: 0.6;
-}
-
+/* Hover: brighten + slight scale — NO background, NO border */
 .action-btns .eye-toggle:hover,
 .action-btns .edit-btn:hover,
 .action-btns .delete-btn:hover {
-    background-color: rgba(127, 200, 217, 0.2);
-    color: #e74c3c;
-    /* Red for all on hover? Or separate logic? */
-    /* keeping original separate logic preferred for color */
-}
-
-/* Specific colors */
-.action-btns .eye-toggle:hover {
-    color: var(--sidebar-text);
-}
-
-.action-btns .edit-btn:hover {
+    background: none;
+    border: none;
     opacity: 1;
-    color: var(--primary-hover);
+    transform: scale(1.18);
 }
 
+/* Trash gets a red tint only on hover, still no border */
 .action-btns .delete-btn:hover {
-    opacity: 1;
     color: #e74c3c;
-    background: rgba(231, 76, 60, 0.08);
-    /* Special red bg for trash */
+    transform: scale(1.18);
 }
 
+/* ── Row fade-out animation ── */
+.expense-row.fade-out {
+    opacity: 0;
+    transform: translateX(20px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+}
 
-
-/* ── TASK 2 + 3: Refactored paid-label + custom checkbox ── */
+/* ===================================================
+   PAID LABEL & CHECKBOX
+   =================================================== */
 .paid-label {
     display: inline-flex;
     align-items: center;
@@ -1156,15 +940,9 @@ body {
     transition: color 0.2s ease;
 }
 
-.paid-label.label-paid {
-    color: #27ae60;
-}
+.paid-label.label-paid   { color: #27ae60; }
+.paid-label.label-unpaid { color: #e74c3c; }
 
-.paid-label.label-unpaid {
-    color: #e74c3c;
-}
-
-/* Custom checkbox — hidden native + styled pseudo-element */
 .paid-checkbox {
     -webkit-appearance: none;
     -moz-appearance: none;
@@ -1172,7 +950,6 @@ body {
     width: 18px;
     height: 18px;
     border: 1.5px solid var(--sidebar-text);
-    /* Dark Blue Border */
     border-radius: 4px;
     background: #FFFFFF;
     cursor: pointer;
@@ -1188,7 +965,6 @@ body {
 
 .paid-checkbox:checked {
     background: #27ae60;
-    /* Strong Green */
     border-color: #27ae60;
 }
 
@@ -1200,41 +976,25 @@ body {
     width: 5px;
     height: 10px;
     border: solid #fff;
-    /* White Check */
     border-width: 0 2px 2px 0;
     transform: rotate(45deg);
-}
-
-/* ── Row fade-out animation ── */
-.expense-row.fade-out {
-    opacity: 0;
-    transform: translateX(20px);
-    transition: opacity 0.4s ease, transform 0.4s ease;
 }
 
 /* ===================================================
    ELENCO — Table Footer (tfoot totals)
    =================================================== */
-.expense-table tfoot td {
-    padding: 12px 14px;
-    font-weight: 800;
-    font-size: 0.95rem;
-    color: var(--sidebar-text);
-    background-color: rgba(35, 176, 189, 0.1);
-    border-top: 2px solid var(--primary-color);
-    border-bottom: none;
-}
-
-.tfoot-total-label {
-    color: var(--sidebar-text);
-    font-weight: 800;
-}
+.tfoot-total-label { color: var(--sidebar-text); font-weight: 800; }
 
 .tfoot-rimborso {
     text-align: right;
-    padding-right: 18px;
+    padding-right: 18px !important;
     font-weight: 700;
 }
+
+.expense-table tfoot .paid-label.label-paid,
+.expense-table tfoot .paid-label.label-paid span  { color: #27ae60 !important; }
+.expense-table tfoot .paid-label.label-unpaid,
+.expense-table tfoot .paid-label.label-unpaid span { color: #e74c3c !important; }
 
 /* ===================================================
    ELENCO — Add Manual Expense Button & Inline Form
@@ -1248,15 +1008,12 @@ body {
     padding: 10px 0;
     margin-top: 8px;
     border: 2px dashed rgba(0, 59, 70, 0.15);
-    /* TASK 2: Dashed Gray/Teal Low Opacity */
     border-radius: 0 0 14px 14px;
     background: transparent;
     color: #5F6368;
-    /* Blue-Gray, readable */
     font-family: 'Inter', sans-serif;
     font-size: 0.88rem;
     font-weight: 700;
-    /* Bold */
     cursor: pointer;
     transition: all 0.25s ease;
 }
@@ -1267,9 +1024,7 @@ body {
     background-color: rgba(127, 200, 217, 0.06);
 }
 
-.add-expense-btn i {
-    font-size: 0.8rem;
-}
+.add-expense-btn i { font-size: 0.8rem; }
 
 /* Inline form row */
 .inline-form-row td {
@@ -1284,7 +1039,6 @@ body {
     padding: 8px 10px;
     border-radius: 8px;
     border: 1.5px solid var(--sidebar-text);
-    /* Dark Blue Border */
     font-family: 'Inter', sans-serif;
     font-size: 0.85rem;
     color: var(--sidebar-text);
@@ -1318,42 +1072,21 @@ body {
     transition: all 0.2s ease;
 }
 
-.btn-save-inline {
-    background-color: #27ae60;
-    color: #fff;
-}
+.btn-save-inline   { background-color: #27ae60; color: #fff; }
+.btn-save-inline:hover { background-color: #219a52; }
+.btn-cancel-inline { background-color: var(--danger-color); color: #FFFFFF; border: none !important; }
+.btn-cancel-inline:hover { filter: brightness(0.9); }
 
-.btn-save-inline:hover {
-    background-color: #219a52;
-}
-
-.btn-cancel-inline {
-    background-color: var(--danger-color);
-    /* Solid Red */
-    color: #FFFFFF;
-    /* White Text */
-    border: none !important;
-}
-
-.btn-cancel-inline:hover {
-    filter: brightness(0.9);
-}
-
-/* ───────────────────────────────────────────────────
-   ELENCO — Smart Autocomplete Dropdown (Portal)
-   ─────────────────────────────────────────────────── */
+/* ── Autocomplete Dropdown ── */
 .autocomplete-list {
     position: fixed;
     z-index: 10000;
     max-height: 152px;
     overflow-y: auto;
     overscroll-behavior: contain;
-    /* Prevents scroll chaining to body */
-    pointer-events: auto;
     pointer-events: auto;
     background: rgba(255, 255, 255, 0.99);
     border: none;
-    /* No Border */
     border-radius: 0 0 8px 8px;
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
     list-style: none;
@@ -1363,8 +1096,6 @@ body {
 }
 
 .autocomplete-list.drop-up {
-    border: none;
-    /* No Border */
     border-bottom: none;
     border-radius: 8px 8px 0 0;
     box-shadow: 0 -4px 14px rgba(0, 0, 0, 0.10);
@@ -1375,7 +1106,7 @@ body {
     font-size: 0.88rem;
     color: #2c3e50;
     cursor: pointer;
-    transition: background 0.15s ease, color 0.15s ease;
+    transition: background 0.15s ease;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1394,60 +1125,15 @@ body {
     padding: 0 1px;
 }
 
-/* Scrollbar styling for the dropdown */
-.autocomplete-list::-webkit-scrollbar {
-    width: 5px;
-}
-
-.autocomplete-list::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.autocomplete-list::-webkit-scrollbar-thumb {
-    background: var(--ciano-chiaro);
-    border-radius: 3px;
-}
-
 /* ===================================================
-   ELENCO — Upload Toast
-   =================================================== */
-.upload-toast {
-    padding: 14px 20px;
-    border-radius: 12px;
-    font-weight: 600;
-    font-size: 0.92rem;
-    margin: 16px 0;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    transition: opacity 0.4s ease, transform 0.4s ease;
-}
-
-.upload-toast.hidden {
-    display: none;
-}
-
-.upload-toast.success {
-    background-color: rgba(102, 187, 106, 0.15);
-    color: #27ae60;
-    border: 1px solid rgba(102, 187, 106, 0.3);
-}
-
-
-
-
-
-
-
-/* ... existing styles ... */
-
-/* ===================================================
-   ELENCO — Upload Toast
+   TOAST — centrato nell'area dei contenuti
+   (esclude la sidebar fissa)
    =================================================== */
 .upload-toast {
     position: fixed;
     top: 24px;
-    left: 50%;
+    /* offset from left: sidebar width + half of remaining content area */
+    left: calc(var(--sidebar-width) + (100vw - var(--sidebar-width)) / 2);
     transform: translateX(-50%);
     z-index: 9999;
     padding: 14px 24px;
@@ -1458,15 +1144,13 @@ body {
     align-items: center;
     gap: 10px;
     box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
-    transition: opacity 0.4s ease, transform 0.4s ease;
+    transition: opacity 0.4s ease;
     min-width: 260px;
     max-width: 480px;
     white-space: nowrap;
 }
 
-.upload-toast.hidden {
-    display: none !important;
-}
+.upload-toast.hidden { display: none !important; }
 
 .upload-toast.success {
     background-color: rgba(102, 187, 106, 0.15);
@@ -1481,7 +1165,7 @@ body {
 }
 
 /* ===================================================
-   ELENCO — Empty State
+   EMPTY STATE
    =================================================== */
 .empty-state {
     text-align: center;
@@ -1495,132 +1179,13 @@ body {
     opacity: 0.6;
 }
 
-.empty-state p {
-    font-size: 1.1rem;
-    font-weight: 600;
-    margin: 0 0 6px 0;
-}
-
-.empty-hint {
-    font-size: 0.9rem !important;
-    font-weight: 400 !important;
-    opacity: 0.7;
-}
+.empty-state p { font-size: 1.1rem; font-weight: 600; margin: 0 0 6px 0; }
+.empty-hint { font-size: 0.9rem !important; font-weight: 400 !important; opacity: 0.7; }
 
 /* ===================================================
-   ELENCO — Drop Zone (compact)
+   KEBAB MENU
    =================================================== */
-.elenco-drop-zone {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    padding: 16px 24px;
-    margin-bottom: 20px;
-    border: 2px dashed var(--border-color);
-    border-radius: 14px;
-    color: var(--primary-color);
-    font-size: 0.9rem;
-    font-weight: 500;
-    transition: all 0.3s ease;
-    cursor: pointer;
-}
-
-.elenco-drop-zone i {
-    font-size: 1.2rem;
-}
-
-.elenco-drop-zone.drag-over {
-    border-color: var(--primary-hover);
-    background-color: rgba(127, 200, 217, 0.08);
-    color: var(--primary-hover);
-}
-
-/* ===================================================
-   DASHBOARD — Entrate / Uscite Colors
-   =================================================== */
-.entrate-color {
-    color: #27ae60 !important;
-    /* Smeraldo morbido */
-}
-
-.uscite-color {
-    color: #c0392b !important;
-    /* Corallo scuro, non neon */
-}
-
-.saldo-positive {
-    color: #27ae60 !important;
-}
-
-.saldo-negative {
-    color: #c0392b !important;
-}
-
-/* ===================================================
-   DASHBOARD — Top Categories Progress Bars
-   =================================================== */
-.top-cat-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-}
-
-.top-cat-item {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.top-cat-info {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-}
-
-.top-cat-rank {
-    font-size: 0.85rem;
-    margin-right: 8px;
-}
-
-.top-cat-name {
-    flex: 1;
-    font-weight: 600;
-    color: var(--sidebar-text);
-    font-size: 0.95rem;
-}
-
-.top-cat-amount {
-    font-weight: 700;
-    color: #c0392b;
-    font-size: 0.95rem;
-}
-
-.top-cat-bar-track {
-    width: 100%;
-    height: 8px;
-    background-color: rgba(184, 230, 240, 0.3);
-    border-radius: 4px;
-    overflow: hidden;
-}
-
-.top-cat-bar-fill {
-    height: 100%;
-    border-radius: 4px;
-    background: linear-gradient(90deg, var(--primary-color), var(--primary-hover));
-    transition: width 0.6s ease;
-}
-
-
-/* ===================================================
-   KEBAB MENU (Opzioni Avanzate)
-   =================================================== */
-.kebab-wrapper {
-    position: relative;
-}
+.kebab-wrapper { position: relative; }
 
 .kebab-dropdown {
     position: absolute;
@@ -1628,8 +1193,6 @@ body {
     right: 0;
     min-width: 230px;
     background: rgba(255, 255, 255, 0.98);
-    border: none;
-    /* No Green Border */
     border-radius: 10px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
     backdrop-filter: blur(8px);
@@ -1639,15 +1202,8 @@ body {
 }
 
 @keyframes kebabFadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(-4px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
 .kebab-item {
@@ -1667,20 +1223,11 @@ body {
     text-align: left;
 }
 
-.kebab-item:hover {
-    background: rgba(127, 200, 217, 0.12);
-}
-
-.kebab-item i {
-    width: 18px;
-    text-align: center;
-    color: var(--sidebar-text);
-    /* Dark Blue Icons */
-}
-
+.kebab-item:hover { background: rgba(127, 200, 217, 0.12); }
+.kebab-item i { width: 18px; text-align: center; color: var(--sidebar-text); }
 
 /* ===================================================
-   MODALS (shared)
+   MODALS
    =================================================== */
 .modal-overlay {
     position: fixed;
@@ -1694,15 +1241,7 @@ body {
     animation: modalFadeIn 0.2s ease;
 }
 
-@keyframes modalFadeIn {
-    from {
-        opacity: 0;
-    }
-
-    to {
-        opacity: 1;
-    }
-}
+@keyframes modalFadeIn { from { opacity: 0; } to { opacity: 1; } }
 
 .modal-content {
     background: var(--card-bg);
@@ -1718,15 +1257,8 @@ body {
 }
 
 @keyframes modalSlide {
-    from {
-        opacity: 0;
-        transform: translateY(20px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
 }
 
 .modal-header {
@@ -1735,9 +1267,6 @@ body {
     justify-content: space-between;
     padding: 24px 28px;
     background-color: #FFFFFF;
-    /* White Header */
-    border-bottom: none;
-    /* Removed Border */
     border-radius: 16px 16px 0 0;
 }
 
@@ -1751,17 +1280,13 @@ body {
     margin: 0;
 }
 
-.modal-header h3 i {
-    color: var(--sidebar-text);
-    /* Dark Blue Icon */
-}
+.modal-header h3 i { color: var(--sidebar-text); }
 
 .modal-close {
     background: none;
     border: none;
     font-size: 1.4rem;
     color: var(--sidebar-text);
-    /* Dark Blue X */
     cursor: pointer;
     line-height: 1;
     padding: 4px;
@@ -1769,10 +1294,7 @@ body {
     transition: all 0.15s ease;
 }
 
-.modal-close:hover {
-    background: rgba(127, 200, 217, 0.15);
-    color: var(--sidebar-text);
-}
+.modal-close:hover { background: rgba(127, 200, 217, 0.15); }
 
 .modal-body {
     padding: 18px 22px;
@@ -1783,34 +1305,24 @@ body {
 .modal-hint {
     font-size: 0.84rem;
     color: var(--sidebar-text);
-    /* Dark Blue */
     margin: 0 0 16px 0;
     line-height: 1.5;
 }
 
 .modal-footer {
     padding: 14px 22px;
-    border-top: none;
-    /* No Green Border */
     display: flex;
     justify-content: flex-end;
 }
 
-
 /* ── Bulk Delete: Period Tree ── */
-.period-tree {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
+.period-tree { display: flex; flex-direction: column; gap: 10px; }
 
 .period-year {
     border: 1px solid #5ac8fa;
-    /* Vibrant Light Blue */
     border-radius: 10px;
     padding: 10px 14px;
     background: #FFFFFF;
-    /* White */
 }
 
 .period-year-header {
@@ -1826,10 +1338,6 @@ body {
     color: var(--sidebar-text);
     cursor: pointer;
     user-select: none;
-}
-
-.period-year-header .paid-checkbox {
-    margin: 0;
 }
 
 .period-months {
@@ -1854,23 +1362,13 @@ body {
     transition: background 0.15s ease;
 }
 
-.period-months .paid-checkbox {
-    margin: 0 !important;
-}
-
-.period-month-label:hover {
-    background: rgba(127, 200, 217, 0.12);
-}
-
-/* Removed custom size to use default 18px and fix checkmark alignment */
+.period-month-label:hover { background: rgba(127, 200, 217, 0.12); }
 
 .btn-danger {
     padding: 10px 22px;
     border-radius: 10px;
     background: var(--danger-color);
-    /* Soft Red #FF6B6B */
     color: #FFFFFF;
-    /* White Text */
     border: none;
     font-family: 'Inter', sans-serif;
     font-size: 0.88rem;
@@ -1885,15 +1383,10 @@ body {
 
 .btn-danger:hover:not(:disabled) {
     transform: scale(1.05);
-    /* Scale Up */
     box-shadow: 0 6px 16px rgba(255, 107, 107, 0.4);
 }
 
-.btn-danger:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
+.btn-danger:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* ── Keyword Management ── */
 .keyword-input-row {
@@ -1907,7 +1400,6 @@ body {
     padding: 9px 14px;
     border-radius: 8px;
     border: 1.5px solid var(--sidebar-text);
-    /* Dark Blue Border */
     font-family: 'Inter', sans-serif;
     font-size: 0.88rem;
     color: var(--sidebar-text);
@@ -1926,7 +1418,6 @@ body {
     border-radius: 8px;
     border: none;
     background: var(--sidebar-text);
-    /* Dark Blue */
     color: #fff;
     font-family: 'Inter', sans-serif;
     font-size: 0.85rem;
@@ -1939,16 +1430,9 @@ body {
     white-space: nowrap;
 }
 
-.btn-add-keyword:hover {
-    transform: scale(1.05);
-    /* Scale Only */
-}
+.btn-add-keyword:hover { transform: scale(1.05); }
 
-.keyword-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-}
+.keyword-list { display: flex; flex-wrap: wrap; gap: 8px; }
 
 .keyword-tag {
     display: inline-flex;
@@ -1956,8 +1440,9 @@ body {
     gap: 6px;
     padding: 5px 10px 5px 12px;
     border-radius: 20px;
-    background: rgba(74, 105, 189, 0.12);
-    color: #4a69bd;
+    background-color: #FFFBEB;
+    color: #2C3E50;
+    border: 1px solid #E2E8F0;
     font-size: 0.85rem;
     font-weight: 600;
     font-family: 'Inter', sans-serif;
@@ -1975,59 +1460,29 @@ body {
     transition: opacity 0.15s ease;
 }
 
-.keyword-remove:hover {
-    opacity: 1;
-}
-
-.keyword-list-empty {
-    font-size: 0.84rem;
-    color: var(--primary-hover);
-    font-style: italic;
-}
-
+.keyword-remove:hover { opacity: 1; }
 
 /* ===================================================
-   NEUTRAL ROWS (Redesign)
+   NEUTRAL ROWS
    =================================================== */
-.expense-row.neutral-row {
-    border-top: 2px solid #4a69bd;
-    border-bottom: 2px solid #4a69bd;
-    background: rgba(74, 105, 189, 0.08);
-}
-
-.expense-row.neutral-row td {
-    font-weight: 600;
-    color: #2c3a6e;
-}
-
-.importo-neutral {
-    color: var(--text-muted) !important;
-    font-weight: 700;
-}
-
-/* Keep eye hidden but preserve layout so trash aligns with other rows */
-.expense-row.neutral-row .eye-toggle {
-    visibility: hidden;
-}
-
-
-
+tr.expense-row.neutral-row,
 .expense-table tbody tr.expense-row.neutral-row {
-    background-color: var(--row-neutral-bg) !important;
-    border-left: 4px solid var(--warning-color);
+    background-color: #FFFBEB !important;
+    color: #2C3E50 !important;
 }
 
+tr.expense-row.neutral-row:hover,
 .expense-table tbody tr.expense-row.neutral-row:hover {
-    background-color: rgba(248, 205, 130, 0.25) !important;
+    background-color: #FEF3C7 !important;
 }
 
+.expense-row.neutral-row .eye-toggle { visibility: hidden; }
+.importo-neutral { color: var(--text-muted) !important; font-weight: 700; }
 
 /* ===================================================
    SMALL CONFIRM MODAL
    =================================================== */
-.modal-content-sm {
-    max-width: 420px;
-}
+.modal-content-sm { max-width: 420px; }
 
 .modal-footer-confirm {
     display: flex;
@@ -2037,15 +1492,13 @@ body {
     border-top: 1px solid var(--border-color);
 }
 
-/* ── Tooltip Error (No Alert) ── */
+/* ── Tooltip Error ── */
 .keyword-input-wrapper {
     position: relative;
     flex: 1;
 }
 
-.keyword-input-wrapper input {
-    width: 100%;
-}
+.keyword-input-wrapper input { width: 100%; }
 
 .error-tooltip {
     position: absolute;
@@ -2066,18 +1519,12 @@ body {
     transform: translateY(10px);
     transition: all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
     z-index: 10000;
-    /* High z-index to ensure visibility */
     pointer-events: none;
 }
 
-.form-data {
-    width: 100%;
-    min-width: 0;
-}
+.form-data { width: 100%; min-width: 0; }
 
-/* Tooltip Caret */
 .error-tooltip::before {
-    /* Border Arrow (Red) - Bottom Layer */
     content: '';
     position: absolute;
     top: 100%;
@@ -2089,7 +1536,6 @@ body {
 }
 
 .error-tooltip::after {
-    /* Background Arrow (White) - Top Layer */
     content: '';
     position: absolute;
     top: 100%;
@@ -2100,7 +1546,6 @@ body {
     z-index: 10002;
 }
 
-
 .error-tooltip.show-error {
     opacity: 1;
     visibility: visible;
@@ -2108,165 +1553,47 @@ body {
 }
 
 /* ===================================================
-   ROUND 3 REFINEMENTS (Appended)
+   METRIC COLORS
    =================================================== */
-
+.entrate-color   { color: #27ae60 !important; }
+.uscite-color    { color: #c0392b !important; }
+.saldo-positive  { color: #27ae60 !important; }
+.saldo-negative  { color: #c0392b !important; }
 /* ===================================================
-   ROUND 4 REFINEMENTS (Layout Mix)
+   DASHBOARD — Top Categories Progress Bars
    =================================================== */
-
-/* Year Header */
-.year-header {
-    font-size: 2rem;
-    color: #003B46;
-    /* Petrol */
-    margin-top: 3rem;
-    margin-bottom: 0.5rem;
-    font-weight: 800;
-}
-
-/* Horizontal Bar after Year */
-.year-separator {
-    height: 4px;
-    background-color: #003B46;
-    /* Petrol (Dark Blue) */
-    width: 100%;
-    margin-bottom: 2.5rem;
-    border-radius: 2px;
-    opacity: 0.8;
-}
-
-/* Month Title (Rounded Bar) */
-.month-title-rounded {
-    font-size: 1.5rem;
-    color: #003B46;
+.top-cat-list {
+    list-style: none;
+    padding: 0;
     margin: 0;
-    font-weight: 700;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.top-cat-item { display: flex; flex-direction: column; gap: 6px; }
+
+.top-cat-info {
     display: flex;
     align-items: center;
+    justify-content: space-between;
 }
 
-.month-title-rounded::before {
-    content: '';
-    display: inline-block;
-    width: 6px;
-    height: 24px;
-    background-color: #003B46;
-    /* Petrol */
-    margin-right: 12px;
+.top-cat-rank  { font-size: 0.85rem; margin-right: 8px; }
+.top-cat-name  { flex: 1; font-weight: 600; color: var(--sidebar-text); font-size: 0.95rem; }
+.top-cat-amount { font-weight: 700; color: #c0392b; font-size: 0.95rem; }
+
+.top-cat-bar-track {
+    width: 100%;
+    height: 8px;
+    background-color: rgba(184, 230, 240, 0.3);
     border-radius: 4px;
-    /* Rounded Edges (Pill) */
+    overflow: hidden;
 }
 
-/* Remove Card Style (Make Transparent) */
-.month-section {
-    margin-bottom: 3rem;
-    /* No background, no shadow */
-}
-
-/* Keep Buttons & Tables from Round 3 (Already below) */
-
-
-/* Neutral Rows (Cream) */
-.neutral-row {
-    background-color: #FFFBEB !important;
-    color: var(--text-color);
-}
-
-.neutral-row:hover {
-    background-color: #FEF3C7 !important;
-}
-
-.importo-neutral {
-    color: var(--text-muted);
-    font-style: italic;
-}
-
-/* Manual Add Button code moved to Round 5 block */
-
-/* Table Footer Fix */
-.expense-table tfoot {
-    background-color: #F1F5F9;
-    border-top: 2px solid #334155;
-}
-
-.expense-table tfoot td {
-    border: none !important;
-    padding: 14px;
-    color: #1E293B;
-    font-weight: 700;
-    background-color: #F1F5F9;
-    /* Ensure override */
-}
-
-.expense-table tfoot .paid-label {
-    color: #1E293B;
-}
-
-/* Fix Elenco Drop Zone (Override previous) */
-.elenco-drop-zone {
-    color: #003B46 !important;
-}
-
-/* ===================================================
-   FIX: Neutral Row Specificity (Force Cream)
-   =================================================== */
-tr.expense-row.neutral-row,
-.expense-table tbody tr.expense-row.neutral-row {
-    background-color: #FFFBEB !important;
-    /* Cream Yellow */
-    color: #2C3E50 !important;
-}
-
-tr.expense-row.neutral-row:hover,
-.expense-table tbody tr.expense-row.neutral-row:hover {
-    background-color: #FEF3C7 !important;
-    /* Darker Cream */
-}
-
-/* Fix Modal Keyword Chips (Coherence) */
-.keyword-tag {
-    background-color: #FFFBEB !important;
-    color: #2C3E50 !important;
-    border: 1px solid #E2E8F0;
-}
-
-/* ===================================================
-   ROUND 6 REFINEMENTS (Polish)
-   =================================================== */
-
-/* Text Colors */
-.text-danger {
-    color: #c0392b !important;
-}
-
-.text-success {
-    color: #27ae60 !important;
-}
-
-/* Dashboard Upload Zone (Standard Dashed - Light Gray) */
-.file-drop-area {
-    position: relative;
-    padding: 40px;
-    background-color: #FFFFFF;
-    border-radius: 16px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.3s ease;
-
-    /* Standard Dashed Border (Elenco Style) but Light Gray */
-}
-
-
-/* Footer Refund Label Colors (High Specificity) */
-.expense-table tfoot .paid-label.label-paid,
-.expense-table tfoot .paid-label.label-paid span {
-    color: #27ae60 !important;
-    /* Green */
-}
-
-.expense-table tfoot .paid-label.label-unpaid,
-.expense-table tfoot .paid-label.label-unpaid span {
-    color: #e74c3c !important;
-    /* Red */
+.top-cat-bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    background: linear-gradient(90deg, var(--primary-color), var(--primary-hover));
+    transition: width 0.6s ease;
 }
