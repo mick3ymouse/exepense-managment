@@ -1,27 +1,63 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+
 /* ===================================================
    EXPENSE MANAGEMENT DASHBOARD — Pastel Cyan Theme
    =================================================== */
 
 :root {
-    /* Palette Principale - Toni Ciano/Azzurro */
-    --ciano-scuro: #2C6E7C;
-    /* Sidebar - Ciano scuro */
-    --ciano-medio: #4A9EAF;
-    /* Primario - Ciano medio */
-    --azzurro-pastello: #7FC8D9;
-    /* Secondario - Azzurro chiaro */
-    --azzurro-chiaro: #B8E6F0;
-    /* Accenti chiari */
-    --bianco-caldo: #F5F9FA;
-    /* Sfondo principale - contrasto netto */
+    /* Palette Mint & Ice (Electric Pastels) */
+    --background-color: #F0FDFF;
+    /* Ice White (Page) */
+    --sidebar-bg: #63E5FF;
+    /* Electric Cyan Sidebar */
+    --sidebar-text: #003B46;
+    /* Deep Petrol Text (Critical Contrast) */
 
-    /* Semantici */
-    --accent-green: #66BB6A;
-    --accent-red: #EF5350;
+    /* Accents & Buttons */
+    --primary-color: #82CFFF;
+    /* Sky Blue (Buttons) */
+    --primary-text: #003B46;
+    /* Petrol Text on Blue */
+    --primary-hover: #5AC8FA;
+    /* Vibrating Blue Hover */
+
+    --success-color: #7DFFD4;
+    /* Aquamarine (Rimborsato) */
+    --danger-color: #FF6B6B;
+    /* Soft Red (Darkened) */
+    --warning-color: #B3FFD9;
+    /* Pale Mint (Neutral/Wait) */
+
+    /* Neutrals & Text */
+    --text-color: #2C3E50;
+    /* Dark Slate Main Text */
+    --text-muted: #607D8B;
+    /* Blue Grey */
+
+    /* Table Rows */
+    --row-alt-bg: #F5FFFF;
+    /* Very Pale Ice */
+    --row-neutral-bg: rgba(179, 255, 217, 0.25);
+    /* Pale Mint Tint */
+    --header-bg: #63E5FF;
+    /* Electric Cyan Header */
+    --header-text: #003B46;
+    /* Petrol Header Text */
+
     --card-bg: #FFFFFF;
-    --border-color: rgba(127, 200, 217, 0.25);
-    --shadow-color: rgba(44, 110, 124, 0.18);
+    --border-color: #B3FFD9;
+    /* Mint Border */
+    --shadow-color: rgba(99, 229, 255, 0.25);
+    /* Cyan Glow */
 }
+
+
+
+
+
+
+
+
 
 /* ---- Reset & Base ---- */
 *,
@@ -33,8 +69,8 @@
 body {
     margin: 0;
     font-family: 'Inter', sans-serif;
-    background-color: var(--bianco-caldo);
-    color: var(--ciano-scuro);
+    background-color: var(--background-color);
+    color: var(--text-color);
     -webkit-font-smoothing: antialiased;
 }
 
@@ -52,16 +88,18 @@ body {
    =================================================== */
 .sidebar {
     width: 250px;
-    background-color: var(--ciano-scuro);
+    background-color: var(--sidebar-bg);
     padding: 28px 20px;
     display: flex;
     flex-direction: column;
-    border-right: 1px solid var(--border-color);
+    border-right: 1px solid rgba(0, 0, 0, 0.05);
     position: fixed;
     top: 0;
     left: 0;
     bottom: 0;
     z-index: 200;
+    color: var(--sidebar-text);
+    /* Deep Teal Text */
 }
 
 .sidebar-header {
@@ -69,19 +107,32 @@ body {
     align-items: center;
     gap: 12px;
     margin-bottom: 44px;
-    color: #FFFFFF;
+    color: var(--sidebar-text);
+    /* Contrast Fix */
 }
 
 .sidebar-header i {
-    font-size: 1.5rem;
-    color: var(--azzurro-chiaro);
+    font-size: 1.8rem;
+    color: var(--sidebar-text);
+    /* Wallet Icon Dark Blue */
+    background: #fff;
+    padding: 8px;
+    filter: drop-shadow(0 4px 6px rgba(130, 207, 255, 0.4));
+    border-radius: 50%;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 .sidebar-header h2 {
     margin: 0;
     font-size: 1.25rem;
-    font-weight: 700;
+    font-weight: 800;
+    /* Bolder */
     letter-spacing: -0.02em;
+
+    /* User Request: Sottolineato (Color matches text) */
+    border-bottom: 2px solid currentColor;
+    display: inline-block;
+    padding-bottom: 4px;
 }
 
 .sidebar-nav {
@@ -96,11 +147,24 @@ body {
     gap: 14px;
     padding: 12px 16px;
     text-decoration: none;
-    color: rgba(255, 255, 255, 0.8);
-    border-radius: 10px;
-    transition: all 0.25s ease;
-    font-weight: 500;
+    color: var(--sidebar-text);
+    border-radius: 30px !important;
+    transition: all 0.2s ease;
+    font-weight: 600;
     font-size: 0.95rem;
+    opacity: 0.85;
+}
+
+
+.nav-item.active {
+    background-color: #B3FFD9 !important;
+    /* Mint Background FORCE */
+    color: #003B46 !important;
+    /* Petrol Text FORCE */
+    font-weight: 800;
+    box-shadow: 0 4px 15px rgba(0, 59, 70, 0.15);
+    /* Soft Dark Shadow */
+    opacity: 1;
 }
 
 .nav-item i {
@@ -109,23 +173,16 @@ body {
     text-align: center;
 }
 
-.nav-item.active {
-    background-color: var(--ciano-medio);
-    color: #FFFFFF;
-    box-shadow: 0 4px 12px rgba(74, 158, 175, 0.5);
-}
-
-.nav-item.active i {
-    color: #FFFFFF;
-}
-
 .nav-item:hover:not(.active) {
-    background-color: rgba(127, 200, 217, 0.2);
-    color: var(--azzurro-chiaro);
+    background-color: var(--warning-color);
+    /* TASK 3: Mint Green */
+    color: var(--sidebar-text) !important;
+    /* TASK 3: Force Deep Petrol */
 }
 
 .nav-item:hover:not(.active) i {
-    color: var(--azzurro-chiaro);
+    color: var(--sidebar-text) !important;
+    /* TASK 3: Force Deep Petrol */
 }
 
 /* ===================================================
@@ -149,7 +206,7 @@ body {
     font-size: 2rem;
     font-weight: 700;
     margin: 0;
-    color: var(--ciano-scuro);
+    color: var(--sidebar-text);
 }
 
 .header-controls {
@@ -165,7 +222,7 @@ body {
     border-radius: 20px;
     border: 1px solid transparent;
     background-color: rgba(255, 255, 255, 0.7);
-    color: var(--ciano-scuro);
+    color: var(--sidebar-text);
     font-family: 'Inter', sans-serif;
     font-size: 0.95rem;
     font-weight: 500;
@@ -182,13 +239,13 @@ body {
 
 .minimal-select:hover {
     background-color: #FFFFFF;
-    border-color: var(--azzurro-pastello);
+    border-color: var(--primary-color);
     box-shadow: 0 2px 8px rgba(127, 200, 217, 0.15);
 }
 
 .minimal-select:focus-visible {
     background-color: #FFFFFF;
-    border-color: var(--ciano-medio);
+    border-color: var(--primary-hover);
     box-shadow: 0 0 0 3px rgba(74, 158, 175, 0.18);
 }
 
@@ -213,14 +270,16 @@ body {
 .file-drop-area {
     width: 100%;
     height: 150px;
-    border: 2.5px dashed var(--azzurro-pastello);
+    border: 2px dashed rgba(0, 59, 70, 0.15);
+    /* Matching Add Button */
+    background-color: #E0F7FA;
+    /* Light Cyan Tint */
     border-radius: 16px;
     padding: 0;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    background-color: rgba(255, 255, 255, 0.5);
     cursor: pointer;
     transition: all 0.3s ease;
     gap: 15px;
@@ -229,26 +288,32 @@ body {
 
 .file-drop-area i {
     font-size: 2rem;
-    color: var(--ciano-medio);
+    color: var(--sidebar-text);
+    /* Dark Blue Default */
     transition: color 0.3s ease, transform 0.3s ease;
 }
 
 .file-drop-area .file-msg {
-    color: var(--ciano-scuro);
+    color: var(--sidebar-text);
+    /* Dark Blue Default */
     font-weight: 500;
     font-size: 0.95rem;
     opacity: 0.7;
 }
 
 .file-drop-area:hover {
-    border-color: var(--ciano-medio);
+    border-color: var(--primary-hover) !important;
     background-color: rgba(127, 200, 217, 0.06);
     box-shadow: 0 4px 20px rgba(74, 158, 175, 0.15);
 }
 
 .file-drop-area:hover i {
-    color: var(--ciano-medio);
+    color: var(--primary-hover);
     transform: translateY(-3px);
+}
+
+.file-drop-area:hover .file-msg {
+    color: var(--primary-hover);
 }
 
 .file-input {
@@ -256,24 +321,34 @@ body {
 }
 
 .btn-primary {
-    background: linear-gradient(135deg, var(--ciano-medio), var(--azzurro-pastello));
-    color: #FFFFFF;
+    background: var(--primary-color);
+    color: var(--primary-text);
+    /* Petrol Text */
     border: none;
+    font-family: 'Poppins', sans-serif;
+    /* Explicitly use Poppins */
+    font-weight: 700;
     padding: 12px 32px;
-    border-radius: 10px;
-    font-family: 'Inter', sans-serif;
+    border-radius: 12px;
+    font-family: 'Poppins', sans-serif;
+    /* TASK 6: Modern Font */
     font-size: 1rem;
-    font-weight: 600;
+    font-weight: 700;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s ease-in-out;
     margin-top: 15px;
-    box-shadow: 0 4px 14px rgba(74, 158, 175, 0.35);
+    box-shadow: 0 4px 14px rgba(130, 207, 255, 0.4);
+    user-select: none;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
 }
 
+/* Consolidated btn-primary:hover */
 .btn-primary:hover {
-    background: linear-gradient(135deg, var(--azzurro-pastello), var(--ciano-medio));
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
     box-shadow: 0 6px 20px rgba(127, 200, 217, 0.45);
     transform: translateY(-1px);
+    color: var(--primary-text);
 }
 
 .btn-primary:active {
@@ -313,15 +388,53 @@ body {
 }
 
 /* ===================================================
+   ELENCO — Month Section
+   =================================================== */
+.month-section {
+    margin-bottom: 30px;
+    background-color: transparent;
+    border: none;
+    box-shadow: none;
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    /* Sfondo Animato logic: smooth height/margin transition */
+    max-height: 2000px;
+    /* Arbitrary large max-height for transition */
+    opacity: 1;
+}
+
+.month-section.fade-out {
+    opacity: 0;
+    max-height: 0;
+    margin-bottom: 0;
+    margin-top: 0;
+    padding: 0;
+    border: none;
+    overflow: hidden;
+}
+
+/* ===================================================
    CARD STYLING
    =================================================== */
 .card {
     background-color: var(--card-bg);
-    border-radius: 18px;
+    border-radius: 16px;
     border: 1px solid var(--border-color);
     padding: 28px;
-    box-shadow: 0 6px 24px var(--shadow-color);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
     transition: box-shadow 0.3s ease, transform 0.3s ease;
+    overflow: hidden;
+    /* For header border-radius */
+}
+
+/* Pastel Card Header */
+.card h2,
+.card h3 {
+    background-color: #E0F2F1;
+    /* Pastel Mint/Teal */
+    margin: -28px -28px 20px -28px;
+    padding: 20px 28px;
+    border-bottom: 1px solid var(--border-color);
+    color: #003B46;
 }
 
 .card:hover {
@@ -334,7 +447,7 @@ body {
     font-weight: 700;
     text-align: center;
     margin: 0 0 12px 0;
-    color: var(--ciano-scuro);
+    color: var(--sidebar-text);
     letter-spacing: -0.01em;
 }
 
@@ -382,7 +495,7 @@ body {
 .metric-label {
     display: block;
     font-size: 0.85rem;
-    color: var(--ciano-medio);
+    color: var(--primary-hover);
     margin-bottom: 6px;
     font-weight: 600;
     text-transform: uppercase;
@@ -396,11 +509,11 @@ body {
 }
 
 .metric-value.positive {
-    color: var(--accent-green);
+    color: #27ae60;
 }
 
 .metric-value.negative {
-    color: var(--accent-red);
+    color: #c0392b;
 }
 
 .metric-delta {
@@ -411,11 +524,11 @@ body {
 }
 
 .metric-delta.positive {
-    color: var(--accent-green);
+    color: #27ae60;
 }
 
 .metric-delta.negative {
-    color: var(--accent-red);
+    color: #c0392b;
 }
 
 /* ===================================================
@@ -428,14 +541,14 @@ body {
 }
 
 .data-table thead tr {
-    background-color: var(--azzurro-pastello);
+    background-color: var(--primary-color);
 }
 
 .data-table th {
     padding: 12px 16px;
     text-align: left;
     font-weight: 600;
-    color: var(--ciano-scuro);
+    color: var(--sidebar-text);
     font-size: 0.9rem;
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -452,7 +565,7 @@ body {
 .data-table td {
     padding: 12px 16px;
     text-align: left;
-    color: var(--ciano-scuro);
+    color: var(--sidebar-text);
     font-weight: 500;
     font-size: 0.95rem;
     border-bottom: 1px solid rgba(184, 230, 240, 0.5);
@@ -490,12 +603,12 @@ body {
 }
 
 ::-webkit-scrollbar-thumb {
-    background-color: var(--azzurro-pastello);
+    background-color: var(--primary-color);
     border-radius: 10px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background-color: var(--ciano-medio);
+    background-color: var(--primary-hover);
 }
 
 /* ===================================================
@@ -503,7 +616,7 @@ body {
    =================================================== */
 ::selection {
     background-color: rgba(127, 200, 217, 0.3);
-    color: var(--ciano-scuro);
+    color: var(--sidebar-text);
 }
 
 /* ===================================================
@@ -528,8 +641,9 @@ body {
     align-items: center;
     gap: 12px;
     padding: 18px 0 22px 0;
-    background-color: var(--bianco-caldo);
-    border-bottom: 1px solid var(--border-color);
+    background-color: transparent;
+    /* TASK 1: Transparent background */
+    /* border-bottom removed as requested */
     margin-bottom: 30px;
 }
 
@@ -550,7 +664,8 @@ body {
     left: 16px;
     top: 50%;
     transform: translateY(-50%);
-    color: var(--azzurro-pastello);
+    color: var(--sidebar-text);
+    /* Dark Blue */
     font-size: 0.95rem;
 }
 
@@ -558,9 +673,10 @@ body {
     width: 100%;
     padding: 12px 16px 12px 44px;
     border-radius: 14px;
-    border: 1.5px solid var(--border-color);
+    border: 1.5px solid var(--sidebar-text);
+    /* Dark Blue */
     background-color: var(--card-bg);
-    color: var(--ciano-scuro);
+    color: var(--sidebar-text);
     font-family: 'Inter', sans-serif;
     font-size: 0.95rem;
     font-weight: 500;
@@ -569,12 +685,13 @@ body {
 }
 
 .search-input-wrapper input::placeholder {
-    color: var(--azzurro-pastello);
+    color: var(--sidebar-text);
+    /* Dark Blue */
     font-weight: 400;
 }
 
 .search-input-wrapper input:focus {
-    border-color: var(--ciano-medio);
+    border-color: var(--primary-hover);
     box-shadow: 0 0 0 3px rgba(74, 158, 175, 0.15);
 }
 
@@ -582,24 +699,27 @@ body {
    ELENCO — Icon Buttons
    =================================================== */
 .icon-btn {
-    width: 44px;
-    height: 44px;
+    width: 42px;
+    height: 42px;
     border-radius: 12px;
-    border: 1.5px solid var(--border-color);
-    background-color: var(--card-bg);
-    color: var(--ciano-medio);
-    font-size: 1.1rem;
-    cursor: pointer;
+    border: none;
+    background-color: #E0F7FA;
+    /* Solid Pastel Cyan */
+    color: var(--sidebar-text);
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.25s ease;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 1rem;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    /* Slight shadow */
 }
 
 .icon-btn:hover {
-    background-color: var(--azzurro-chiaro);
-    border-color: var(--azzurro-pastello);
-    color: var(--ciano-scuro);
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: var(--sidebar-text);
 }
 
 .icon-btn:focus {
@@ -608,13 +728,13 @@ body {
 }
 
 .icon-btn:focus-visible {
-    outline: 2px solid var(--ciano-medio);
+    outline: 2px solid var(--primary-hover);
     outline-offset: 2px;
 }
 
 .icon-btn.active {
-    background-color: var(--ciano-medio);
-    border-color: var(--ciano-medio);
+    background-color: var(--primary-hover);
+    border-color: var(--primary-hover);
     color: #FFFFFF;
 }
 
@@ -625,11 +745,14 @@ body {
     position: absolute;
     right: 0;
     top: calc(100% + 8px);
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
+    background: #FFFFFF;
+    /* White */
+    border: none;
+    /* No Green Border */
     border-radius: 16px;
     padding: 20px;
-    box-shadow: 0 8px 32px var(--shadow-color);
+    box-shadow: 0 8px 32px rgba(130, 207, 255, 0.2);
+    /* Softer Shadow */
     z-index: 200;
     min-width: 280px;
 }
@@ -653,7 +776,7 @@ body {
 .date-field label {
     font-weight: 600;
     font-size: 0.9rem;
-    color: var(--ciano-scuro);
+    color: var(--sidebar-text);
     min-width: 30px;
 }
 
@@ -667,10 +790,12 @@ body {
     border: 1px solid #AEC6CF;
     font-family: 'Inter', sans-serif;
     font-size: 0.9rem;
-    color: var(--ciano-scuro);
+    color: var(--sidebar-text);
     background-color: #E3EBF2;
     outline: none;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    accent-color: var(--primary-hover);
+    /* Blue for calendar selection */
 }
 
 .inline-form-row input[type="date"] {
@@ -682,7 +807,7 @@ body {
 }
 
 .date-field input[type="date"]:focus {
-    border-color: var(--ciano-medio);
+    border-color: var(--primary-hover);
     box-shadow: 0 0 0 2px rgba(74, 158, 175, 0.15);
 }
 
@@ -719,22 +844,28 @@ body {
 }
 
 .btn-apply {
-    background-color: var(--ciano-medio);
+    background-color: var(--sidebar-text);
+    /* Dark Blue */
     color: #FFFFFF;
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .btn-apply:hover {
-    background-color: var(--ciano-scuro);
+    transform: scale(1.05);
+    /* Scale Only */
 }
 
 .btn-clear {
-    background-color: transparent;
-    color: var(--ciano-medio);
-    border: 1.5px solid var(--border-color);
+    background-color: var(--danger-color);
+    /* Soft Red matching other cancels */
+    color: #FFFFFF;
+    border: none;
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .btn-clear:hover {
-    background-color: var(--bianco-caldo);
+    transform: scale(1.05);
+    /* Scale Only */
 }
 
 /* ===================================================
@@ -743,10 +874,11 @@ body {
 .year-header {
     font-size: 1.8rem;
     font-weight: 700;
-    color: var(--ciano-scuro);
+    color: var(--sidebar-text);
     margin: 40px 0 12px 0;
     padding-bottom: 10px;
-    border-bottom: 2px solid var(--azzurro-pastello);
+    border-bottom: 3px solid var(--sidebar-text);
+    /* Thick Dark Blue */
     letter-spacing: -0.02em;
 }
 
@@ -764,7 +896,7 @@ body {
 .month-title {
     font-size: 1.15rem;
     font-weight: 600;
-    color: var(--ciano-medio);
+    color: var(--primary-hover);
     margin: 18px 0 12px 0;
     padding-left: 4px;
     display: flex;
@@ -777,7 +909,7 @@ body {
     display: inline-block;
     width: 4px;
     height: 20px;
-    background-color: var(--azzurro-pastello);
+    background-color: var(--primary-color);
     border-radius: 2px;
 }
 
@@ -798,11 +930,11 @@ body {
 
 /* Column widths (fixed layout) */
 .expense-table .col-data {
-    width: 12%;
+    width: 13%;
 }
 
 .expense-table .col-operazione {
-    width: 28%;
+    width: 25%;
 }
 
 .expense-table .col-categoria {
@@ -825,18 +957,19 @@ body {
 }
 
 .expense-table .col-azioni {
-    width: 10%;
+    width: 12%;
 }
 
 .expense-table thead tr {
-    background-color: var(--azzurro-pastello);
+    background-color: var(--header-bg);
 }
 
 .expense-table th {
-    padding: 11px 14px;
+    background-color: var(--header-bg);
+    color: var(--header-text);
+    font-weight: 700;
+    padding: 14px 10px;
     text-align: left;
-    font-weight: 600;
-    color: var(--ciano-scuro);
     font-size: 0.82rem;
     text-transform: uppercase;
     letter-spacing: 0.04em;
@@ -855,22 +988,34 @@ body {
 .expense-table td {
     padding: 11px 14px;
     text-align: left;
-    color: var(--ciano-scuro);
+    color: var(--text-color);
     font-weight: 500;
     font-size: 0.92rem;
-    border-bottom: 1px solid rgba(184, 230, 240, 0.4);
+    border-bottom: 1px solid #B2EBF2;
+    /* Grid Line Horizontal */
+    border-right: 1px solid #B2EBF2;
+    /* Grid Line Vertical */
     transition: all 0.25s ease;
     word-wrap: break-word;
-    overflow-wrap: break-word;
+    /* Prevent overflow */
     white-space: normal;
 }
 
 .expense-table td:last-child {
+    border-right: none;
     text-align: center;
 }
 
+.expense-table tfoot td {
+    background-color: #B2EBF2;
+    /* Darker Pastel for Total */
+    color: #003B46;
+    font-weight: 800;
+    border-top: 2px solid #003B46;
+}
+
 .expense-table tbody tr:nth-child(even) {
-    background-color: rgba(184, 230, 240, 0.12);
+    background-color: var(--row-alt-bg);
 }
 
 .expense-table tbody tr:hover {
@@ -883,12 +1028,12 @@ body {
 
 /* ── Importo styling ── */
 .importo-positive {
-    color: var(--accent-green);
+    color: #27ae60;
     font-weight: 600;
 }
 
 .importo-negative {
-    color: var(--accent-red);
+    color: #c0392b;
     font-weight: 600;
 }
 
@@ -906,25 +1051,7 @@ body {
     color: #c5c5c5 !important;
 }
 
-.eye-toggle {
-    background: none;
-    border: none;
-    cursor: pointer;
-    font-size: 1.1rem;
-    color: var(--ciano-medio);
-    padding: 4px 8px;
-    border-radius: 6px;
-    transition: all 0.2s ease;
-}
 
-.eye-toggle:hover {
-    background-color: rgba(127, 200, 217, 0.2);
-    color: var(--ciano-scuro);
-}
-
-.expense-row.excluded .eye-toggle {
-    color: #c5c5c5;
-}
 
 /* ===================================================
    ELENCO — Reimbursable Badge (Month Header)
@@ -958,31 +1085,64 @@ body {
     font-size: 0.75rem;
 }
 
-/* ── Action buttons (eye + trash) ── */
+/* ── Action buttons (eye + trash + edit) ── */
 .action-btns {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: 4px;
 }
 
-.delete-btn {
+.action-btns .eye-toggle,
+.action-btns .edit-btn,
+.action-btns .delete-btn {
     background: none;
     border: none;
     cursor: pointer;
-    color: var(--ciano-medio);
-    font-size: 0.85rem;
-    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
     border-radius: 6px;
+    font-size: 0.85rem;
+    color: var(--sidebar-text);
     transition: all 0.2s ease;
-    opacity: 0.5;
 }
 
-.delete-btn:hover {
-    color: #e74c3c;
-    opacity: 1;
-    background: rgba(231, 76, 60, 0.08);
+.action-btns .edit-btn,
+.action-btns .delete-btn {
+    opacity: 0.6;
 }
+
+.action-btns .eye-toggle:hover,
+.action-btns .edit-btn:hover,
+.action-btns .delete-btn:hover {
+    background-color: rgba(127, 200, 217, 0.2);
+    color: #e74c3c;
+    /* Red for all on hover? Or separate logic? */
+    /* keeping original separate logic preferred for color */
+}
+
+/* Specific colors */
+.action-btns .eye-toggle:hover {
+    color: var(--sidebar-text);
+}
+
+.action-btns .edit-btn:hover {
+    opacity: 1;
+    color: var(--primary-hover);
+}
+
+.action-btns .delete-btn:hover {
+    opacity: 1;
+    color: #e74c3c;
+    background: rgba(231, 76, 60, 0.08);
+    /* Special red bg for trash */
+}
+
+
 
 /* ── TASK 2 + 3: Refactored paid-label + custom checkbox ── */
 .paid-label {
@@ -1011,9 +1171,10 @@ body {
     appearance: none;
     width: 18px;
     height: 18px;
-    border: 1.5px solid #779ECB;
+    border: 1.5px solid var(--sidebar-text);
+    /* Dark Blue Border */
     border-radius: 4px;
-    background: rgba(255, 255, 255, 0.9);
+    background: #FFFFFF;
     cursor: pointer;
     position: relative;
     flex-shrink: 0;
@@ -1027,6 +1188,7 @@ body {
 
 .paid-checkbox:checked {
     background: #27ae60;
+    /* Strong Green */
     border-color: #27ae60;
 }
 
@@ -1038,6 +1200,7 @@ body {
     width: 5px;
     height: 10px;
     border: solid #fff;
+    /* White Check */
     border-width: 0 2px 2px 0;
     transform: rotate(45deg);
 }
@@ -1054,17 +1217,17 @@ body {
    =================================================== */
 .expense-table tfoot td {
     padding: 12px 14px;
-    font-weight: 700;
-    font-size: 0.9rem;
-    color: var(--ciano-scuro);
-    background-color: rgba(184, 230, 240, 0.25);
-    border-top: 2px solid var(--azzurro-pastello);
+    font-weight: 800;
+    font-size: 0.95rem;
+    color: var(--sidebar-text);
+    background-color: rgba(35, 176, 189, 0.1);
+    border-top: 2px solid var(--primary-color);
     border-bottom: none;
 }
 
 .tfoot-total-label {
-    color: var(--ciano-medio);
-    font-weight: 600;
+    color: var(--sidebar-text);
+    font-weight: 800;
 }
 
 .tfoot-rimborso {
@@ -1084,20 +1247,23 @@ body {
     width: 100%;
     padding: 10px 0;
     margin-top: 8px;
-    border: 2px dashed var(--border-color);
+    border: 2px dashed rgba(0, 59, 70, 0.15);
+    /* TASK 2: Dashed Gray/Teal Low Opacity */
     border-radius: 0 0 14px 14px;
     background: transparent;
-    color: var(--azzurro-pastello);
+    color: #5F6368;
+    /* Blue-Gray, readable */
     font-family: 'Inter', sans-serif;
     font-size: 0.88rem;
-    font-weight: 600;
+    font-weight: 700;
+    /* Bold */
     cursor: pointer;
     transition: all 0.25s ease;
 }
 
 .add-expense-btn:hover {
-    border-color: var(--ciano-medio);
-    color: var(--ciano-medio);
+    border-color: var(--primary-hover);
+    color: var(--primary-hover);
     background-color: rgba(127, 200, 217, 0.06);
 }
 
@@ -1117,10 +1283,11 @@ body {
     width: 100%;
     padding: 8px 10px;
     border-radius: 8px;
-    border: 1.5px solid var(--border-color);
+    border: 1.5px solid var(--sidebar-text);
+    /* Dark Blue Border */
     font-family: 'Inter', sans-serif;
     font-size: 0.85rem;
-    color: var(--ciano-scuro);
+    color: var(--sidebar-text);
     background-color: var(--card-bg);
     outline: none;
     transition: border-color 0.2s ease;
@@ -1128,7 +1295,7 @@ body {
 }
 
 .inline-form-row input:focus {
-    border-color: var(--ciano-medio);
+    border-color: var(--primary-hover);
     box-shadow: 0 0 0 2px rgba(74, 158, 175, 0.15);
 }
 
@@ -1161,13 +1328,15 @@ body {
 }
 
 .btn-cancel-inline {
-    background-color: transparent;
-    color: var(--ciano-medio);
-    border: 1.5px solid var(--border-color) !important;
+    background-color: var(--danger-color);
+    /* Solid Red */
+    color: #FFFFFF;
+    /* White Text */
+    border: none !important;
 }
 
 .btn-cancel-inline:hover {
-    background-color: rgba(127, 200, 217, 0.1);
+    filter: brightness(0.9);
 }
 
 /* ───────────────────────────────────────────────────
@@ -1181,9 +1350,10 @@ body {
     overscroll-behavior: contain;
     /* Prevents scroll chaining to body */
     pointer-events: auto;
-    background: rgba(255, 255, 255, 0.97);
-    border: 1px solid var(--border-color);
-    border-top: none;
+    pointer-events: auto;
+    background: rgba(255, 255, 255, 0.99);
+    border: none;
+    /* No Border */
     border-radius: 0 0 8px 8px;
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
     list-style: none;
@@ -1193,7 +1363,8 @@ body {
 }
 
 .autocomplete-list.drop-up {
-    border-top: 1px solid var(--border-color);
+    border: none;
+    /* No Border */
     border-bottom: none;
     border-radius: 8px 8px 0 0;
     box-shadow: 0 -4px 14px rgba(0, 0, 0, 0.10);
@@ -1213,7 +1384,7 @@ body {
 .autocomplete-list li:hover,
 .autocomplete-list li.ac-active {
     background: linear-gradient(135deg, rgba(127, 200, 217, 0.18), rgba(127, 200, 217, 0.08));
-    color: var(--ciano-scuro);
+    color: var(--sidebar-text);
 }
 
 .autocomplete-list li mark {
@@ -1258,13 +1429,54 @@ body {
 
 .upload-toast.success {
     background-color: rgba(102, 187, 106, 0.15);
-    color: var(--accent-green);
+    color: #27ae60;
+    border: 1px solid rgba(102, 187, 106, 0.3);
+}
+
+
+
+
+
+
+
+/* ... existing styles ... */
+
+/* ===================================================
+   ELENCO — Upload Toast
+   =================================================== */
+.upload-toast {
+    position: fixed;
+    top: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    padding: 14px 24px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.92rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+    min-width: 260px;
+    max-width: 480px;
+    white-space: nowrap;
+}
+
+.upload-toast.hidden {
+    display: none !important;
+}
+
+.upload-toast.success {
+    background-color: rgba(102, 187, 106, 0.15);
+    color: #27ae60;
     border: 1px solid rgba(102, 187, 106, 0.3);
 }
 
 .upload-toast.error {
     background-color: rgba(239, 83, 80, 0.12);
-    color: var(--accent-red);
+    color: #c0392b;
     border: 1px solid rgba(239, 83, 80, 0.3);
 }
 
@@ -1274,7 +1486,7 @@ body {
 .empty-state {
     text-align: center;
     padding: 80px 20px;
-    color: var(--azzurro-pastello);
+    color: var(--primary-color);
 }
 
 .empty-state i {
@@ -1307,7 +1519,7 @@ body {
     margin-bottom: 20px;
     border: 2px dashed var(--border-color);
     border-radius: 14px;
-    color: var(--azzurro-pastello);
+    color: var(--primary-color);
     font-size: 0.9rem;
     font-weight: 500;
     transition: all 0.3s ease;
@@ -1319,9 +1531,9 @@ body {
 }
 
 .elenco-drop-zone.drag-over {
-    border-color: var(--ciano-medio);
+    border-color: var(--primary-hover);
     background-color: rgba(127, 200, 217, 0.08);
-    color: var(--ciano-medio);
+    color: var(--primary-hover);
 }
 
 /* ===================================================
@@ -1377,7 +1589,7 @@ body {
 .top-cat-name {
     flex: 1;
     font-weight: 600;
-    color: var(--ciano-scuro);
+    color: var(--sidebar-text);
     font-size: 0.95rem;
 }
 
@@ -1398,7 +1610,7 @@ body {
 .top-cat-bar-fill {
     height: 100%;
     border-radius: 4px;
-    background: linear-gradient(90deg, var(--azzurro-pastello), var(--ciano-medio));
+    background: linear-gradient(90deg, var(--primary-color), var(--primary-hover));
     transition: width 0.6s ease;
 }
 
@@ -1416,7 +1628,8 @@ body {
     right: 0;
     min-width: 230px;
     background: rgba(255, 255, 255, 0.98);
-    border: 1px solid var(--border-color);
+    border: none;
+    /* No Green Border */
     border-radius: 10px;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
     backdrop-filter: blur(8px);
@@ -1448,7 +1661,7 @@ body {
     font-family: 'Inter', sans-serif;
     font-size: 0.88rem;
     font-weight: 500;
-    color: var(--ciano-scuro);
+    color: var(--sidebar-text);
     cursor: pointer;
     transition: background 0.15s ease;
     text-align: left;
@@ -1461,7 +1674,8 @@ body {
 .kebab-item i {
     width: 18px;
     text-align: center;
-    color: var(--ciano-medio);
+    color: var(--sidebar-text);
+    /* Dark Blue Icons */
 }
 
 
@@ -1519,14 +1733,18 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 18px 22px;
-    border-bottom: 1px solid var(--border-color);
+    padding: 24px 28px;
+    background-color: #FFFFFF;
+    /* White Header */
+    border-bottom: none;
+    /* Removed Border */
+    border-radius: 16px 16px 0 0;
 }
 
 .modal-header h3 {
     font-size: 1.05rem;
     font-weight: 700;
-    color: var(--ciano-scuro);
+    color: var(--sidebar-text);
     display: flex;
     align-items: center;
     gap: 8px;
@@ -1534,14 +1752,16 @@ body {
 }
 
 .modal-header h3 i {
-    color: var(--ciano-medio);
+    color: var(--sidebar-text);
+    /* Dark Blue Icon */
 }
 
 .modal-close {
     background: none;
     border: none;
     font-size: 1.4rem;
-    color: var(--ciano-medio);
+    color: var(--sidebar-text);
+    /* Dark Blue X */
     cursor: pointer;
     line-height: 1;
     padding: 4px;
@@ -1551,7 +1771,7 @@ body {
 
 .modal-close:hover {
     background: rgba(127, 200, 217, 0.15);
-    color: var(--ciano-scuro);
+    color: var(--sidebar-text);
 }
 
 .modal-body {
@@ -1562,14 +1782,16 @@ body {
 
 .modal-hint {
     font-size: 0.84rem;
-    color: var(--ciano-medio);
+    color: var(--sidebar-text);
+    /* Dark Blue */
     margin: 0 0 16px 0;
     line-height: 1.5;
 }
 
 .modal-footer {
     padding: 14px 22px;
-    border-top: 1px solid var(--border-color);
+    border-top: none;
+    /* No Green Border */
     display: flex;
     justify-content: flex-end;
 }
@@ -1583,10 +1805,12 @@ body {
 }
 
 .period-year {
-    border: 1px solid var(--border-color);
+    border: 1px solid #5ac8fa;
+    /* Vibrant Light Blue */
     border-radius: 10px;
     padding: 10px 14px;
-    background: rgba(184, 230, 240, 0.08);
+    background: #FFFFFF;
+    /* White */
 }
 
 .period-year-header {
@@ -1599,7 +1823,7 @@ body {
 .period-year-header label {
     font-weight: 700;
     font-size: 0.92rem;
-    color: var(--ciano-scuro);
+    color: var(--sidebar-text);
     cursor: pointer;
     user-select: none;
 }
@@ -1623,7 +1847,7 @@ body {
     line-height: 1;
     cursor: pointer;
     font-size: 0.85rem;
-    color: var(--ciano-scuro);
+    color: var(--sidebar-text);
     user-select: none;
     padding: 3px 8px;
     border-radius: 6px;
@@ -1642,22 +1866,27 @@ body {
 
 .btn-danger {
     padding: 10px 22px;
-    border-radius: 8px;
+    border-radius: 10px;
+    background: var(--danger-color);
+    /* Soft Red #FF6B6B */
+    color: #FFFFFF;
+    /* White Text */
     border: none;
-    background: #e74c3c;
-    color: #fff;
     font-family: 'Inter', sans-serif;
     font-size: 0.88rem;
-    font-weight: 600;
+    font-weight: 700;
     cursor: pointer;
     display: flex;
     align-items: center;
     gap: 8px;
-    transition: all 0.2s ease;
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 4px 10px rgba(255, 107, 107, 0.3);
 }
 
 .btn-danger:hover:not(:disabled) {
-    background: #c0392b;
+    transform: scale(1.05);
+    /* Scale Up */
+    box-shadow: 0 6px 16px rgba(255, 107, 107, 0.4);
 }
 
 .btn-danger:disabled {
@@ -1677,17 +1906,18 @@ body {
     flex: 1;
     padding: 9px 14px;
     border-radius: 8px;
-    border: 1.5px solid var(--border-color);
+    border: 1.5px solid var(--sidebar-text);
+    /* Dark Blue Border */
     font-family: 'Inter', sans-serif;
     font-size: 0.88rem;
-    color: var(--ciano-scuro);
+    color: var(--sidebar-text);
     background: var(--card-bg);
     outline: none;
     transition: border-color 0.2s ease;
 }
 
 .keyword-input-row input:focus {
-    border-color: var(--ciano-medio);
+    border-color: var(--primary-hover);
     box-shadow: 0 0 0 2px rgba(74, 158, 175, 0.15);
 }
 
@@ -1695,7 +1925,8 @@ body {
     padding: 8px 16px;
     border-radius: 8px;
     border: none;
-    background: var(--ciano-medio);
+    background: var(--sidebar-text);
+    /* Dark Blue */
     color: #fff;
     font-family: 'Inter', sans-serif;
     font-size: 0.85rem;
@@ -1704,12 +1935,13 @@ body {
     display: flex;
     align-items: center;
     gap: 6px;
-    transition: background 0.2s ease;
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     white-space: nowrap;
 }
 
 .btn-add-keyword:hover {
-    background: var(--ciano-scuro);
+    transform: scale(1.05);
+    /* Scale Only */
 }
 
 .keyword-list {
@@ -1749,7 +1981,7 @@ body {
 
 .keyword-list-empty {
     font-size: 0.84rem;
-    color: var(--ciano-medio);
+    color: var(--primary-hover);
     font-style: italic;
 }
 
@@ -1769,7 +2001,7 @@ body {
 }
 
 .importo-neutral {
-    color: #4a69bd !important;
+    color: var(--text-muted) !important;
     font-weight: 700;
 }
 
@@ -1780,8 +2012,13 @@ body {
 
 
 
+.expense-table tbody tr.expense-row.neutral-row {
+    background-color: var(--row-neutral-bg) !important;
+    border-left: 4px solid var(--warning-color);
+}
+
 .expense-table tbody tr.expense-row.neutral-row:hover {
-    background-color: rgba(74, 105, 189, 0.12) !important;
+    background-color: rgba(248, 205, 130, 0.25) !important;
 }
 
 
@@ -1828,34 +2065,208 @@ body {
     visibility: hidden;
     transform: translateY(10px);
     transition: all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
-    z-index: 10;
+    z-index: 10000;
+    /* High z-index to ensure visibility */
     pointer-events: none;
 }
 
-.error-tooltip::after {
+.form-data {
+    width: 100%;
+    min-width: 0;
+}
+
+/* Tooltip Caret */
+.error-tooltip::before {
+    /* Border Arrow (Red) - Bottom Layer */
     content: '';
     position: absolute;
     top: 100%;
-    left: 20px;
+    left: 12px;
     border-width: 6px;
     border-style: solid;
     border-color: #e74c3c transparent transparent transparent;
+    z-index: 10001;
 }
 
-.error-tooltip::before {
-    /* Inner white arrow to cover the border arrow's base line */
+.error-tooltip::after {
+    /* Background Arrow (White) - Top Layer */
     content: '';
     position: absolute;
     top: 100%;
-    left: 21px;
+    left: 13px;
     border-width: 5px;
     border-style: solid;
     border-color: #fff transparent transparent transparent;
-    z-index: 1;
+    z-index: 10002;
 }
+
 
 .error-tooltip.show-error {
     opacity: 1;
     visibility: visible;
     transform: translateY(0);
+}
+
+/* ===================================================
+   ROUND 3 REFINEMENTS (Appended)
+   =================================================== */
+
+/* ===================================================
+   ROUND 4 REFINEMENTS (Layout Mix)
+   =================================================== */
+
+/* Year Header */
+.year-header {
+    font-size: 2rem;
+    color: #003B46;
+    /* Petrol */
+    margin-top: 3rem;
+    margin-bottom: 0.5rem;
+    font-weight: 800;
+}
+
+/* Horizontal Bar after Year */
+.year-separator {
+    height: 4px;
+    background-color: #003B46;
+    /* Petrol (Dark Blue) */
+    width: 100%;
+    margin-bottom: 2.5rem;
+    border-radius: 2px;
+    opacity: 0.8;
+}
+
+/* Month Title (Rounded Bar) */
+.month-title-rounded {
+    font-size: 1.5rem;
+    color: #003B46;
+    margin: 0;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+}
+
+.month-title-rounded::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 24px;
+    background-color: #003B46;
+    /* Petrol */
+    margin-right: 12px;
+    border-radius: 4px;
+    /* Rounded Edges (Pill) */
+}
+
+/* Remove Card Style (Make Transparent) */
+.month-section {
+    margin-bottom: 3rem;
+    /* No background, no shadow */
+}
+
+/* Keep Buttons & Tables from Round 3 (Already below) */
+
+
+/* Neutral Rows (Cream) */
+.neutral-row {
+    background-color: #FFFBEB !important;
+    color: var(--text-color);
+}
+
+.neutral-row:hover {
+    background-color: #FEF3C7 !important;
+}
+
+.importo-neutral {
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+/* Manual Add Button code moved to Round 5 block */
+
+/* Table Footer Fix */
+.expense-table tfoot {
+    background-color: #F1F5F9;
+    border-top: 2px solid #334155;
+}
+
+.expense-table tfoot td {
+    border: none !important;
+    padding: 14px;
+    color: #1E293B;
+    font-weight: 700;
+    background-color: #F1F5F9;
+    /* Ensure override */
+}
+
+.expense-table tfoot .paid-label {
+    color: #1E293B;
+}
+
+/* Fix Elenco Drop Zone (Override previous) */
+.elenco-drop-zone {
+    color: #003B46 !important;
+}
+
+/* ===================================================
+   FIX: Neutral Row Specificity (Force Cream)
+   =================================================== */
+tr.expense-row.neutral-row,
+.expense-table tbody tr.expense-row.neutral-row {
+    background-color: #FFFBEB !important;
+    /* Cream Yellow */
+    color: #2C3E50 !important;
+}
+
+tr.expense-row.neutral-row:hover,
+.expense-table tbody tr.expense-row.neutral-row:hover {
+    background-color: #FEF3C7 !important;
+    /* Darker Cream */
+}
+
+/* Fix Modal Keyword Chips (Coherence) */
+.keyword-tag {
+    background-color: #FFFBEB !important;
+    color: #2C3E50 !important;
+    border: 1px solid #E2E8F0;
+}
+
+/* ===================================================
+   ROUND 6 REFINEMENTS (Polish)
+   =================================================== */
+
+/* Text Colors */
+.text-danger {
+    color: #c0392b !important;
+}
+
+.text-success {
+    color: #27ae60 !important;
+}
+
+/* Dashboard Upload Zone (Standard Dashed - Light Gray) */
+.file-drop-area {
+    position: relative;
+    padding: 40px;
+    background-color: #FFFFFF;
+    border-radius: 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    /* Standard Dashed Border (Elenco Style) but Light Gray */
+}
+
+
+/* Footer Refund Label Colors (High Specificity) */
+.expense-table tfoot .paid-label.label-paid,
+.expense-table tfoot .paid-label.label-paid span {
+    color: #27ae60 !important;
+    /* Green */
+}
+
+.expense-table tfoot .paid-label.label-unpaid,
+.expense-table tfoot .paid-label.label-unpaid span {
+    color: #e74c3c !important;
+    /* Red */
 }
