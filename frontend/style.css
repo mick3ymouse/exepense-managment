@@ -54,6 +54,15 @@
 
     /* ── Layout ── */
     --sidebar-width: 250px;
+
+    /* ── Focus-visible standard (unico per tutta l'app) ── */
+    --focus-ring: 0 0 0 3px rgba(74, 158, 175, 0.15);
+    --focus-border: var(--primary-hover);
+
+    /* ── Transition system ── */
+    --transition-fast:   0.15s ease;          /* stati sottili: opacity, icone */
+    --transition-base:   0.2s ease;           /* colori, bordi, sfondi, box-shadow */
+    --transition-spring: 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* solo transform geometrico */
 }
 
 /* ---- Reset & Base ---- */
@@ -140,7 +149,7 @@ body {
     text-decoration: none;
     color: var(--sidebar-text);
     border-radius: 30px !important;
-    transition: all 0.2s ease;
+    transition: background-color var(--transition-base), color var(--transition-base), box-shadow var(--transition-base);
     font-weight: 600;
     font-size: 0.95rem;
     opacity: 0.85;
@@ -167,6 +176,12 @@ body {
 
 .nav-item:hover:not(.active) i {
     color: var(--sidebar-text) !important;
+}
+
+.nav-item:focus-visible {
+    outline: none;
+    border-color: var(--focus-border) !important;
+    box-shadow: var(--focus-ring) !important;
 }
 
 /* ===================================================
@@ -206,7 +221,7 @@ body {
     font-size: 0.95rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.25s ease;
+    transition: background-color var(--transition-base), border-color var(--transition-base), box-shadow var(--transition-base);
     outline: none;
     appearance: none;
     background-image: url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%232C6E7C%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E");
@@ -224,8 +239,9 @@ body {
 
 .minimal-select:focus-visible {
     background-color: var(--color-white);
-    border-color: var(--primary-hover);
-    box-shadow: 0 0 0 3px rgba(74, 158, 175, 0.18);
+    border-color: var(--focus-border);
+    box-shadow: var(--focus-ring);
+    outline: none;
 }
 
 .section-divider {
@@ -258,7 +274,7 @@ body {
     justify-content: center;
     align-items: center;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: border-color var(--transition-base), background-color var(--transition-base), box-shadow var(--transition-base);
     gap: 15px;
     backdrop-filter: blur(4px);
     position: relative;
@@ -267,7 +283,7 @@ body {
 .file-drop-area i {
     font-size: 2rem;
     color: var(--sidebar-text);
-    transition: color 0.3s ease, transform 0.3s ease;
+    transition: color var(--transition-base), transform var(--transition-base);
 }
 
 .file-drop-area .file-msg {
@@ -292,6 +308,12 @@ body {
     color: var(--primary-hover);
 }
 
+.file-drop-area:focus-visible {
+    outline: none;
+    border-color: var(--focus-border) !important;
+    box-shadow: var(--focus-ring) !important;
+}
+
 .file-input {
     display: none;
 }
@@ -306,7 +328,7 @@ body {
     border-radius: 12px;
     font-size: 1rem;
     cursor: pointer;
-    transition: all 0.2s ease-in-out;
+    transition: background var(--transition-base), box-shadow var(--transition-base), transform var(--transition-base);
     margin-top: 15px;
     box-shadow: 0 4px 14px rgba(130, 207, 255, 0.4);
     user-select: none;
@@ -324,6 +346,12 @@ body {
 .btn-primary:active {
     transform: translateY(0);
     box-shadow: 0 2px 8px rgba(44, 110, 124, 0.25);
+}
+
+.btn-primary:focus-visible {
+    outline: none;
+    border-color: var(--focus-border);
+    box-shadow: var(--focus-ring);
 }
 
 /* ===================================================
@@ -427,7 +455,7 @@ body {
     border-radius: 12px;
     background-color: rgba(184, 230, 240, 0.35);
     min-width: 140px;
-    transition: background-color 0.2s ease;
+    transition: background-color var(--transition-base);
 }
 
 .metric-item:hover {
@@ -483,7 +511,7 @@ body {
     font-weight: 500;
     font-size: 0.95rem;
     border-bottom: 1px solid rgba(184, 230, 240, 0.5);
-    transition: background-color 0.2s ease;
+    transition: background-color var(--transition-base);
 }
 
 .data-table tbody tr:nth-child(even) { background-color: rgba(184, 230, 240, 0.2); }
@@ -564,7 +592,7 @@ body {
     font-size: 0.95rem;
     font-weight: 500;
     outline: none;
-    transition: all 0.25s ease;
+    transition: border-color var(--transition-base), box-shadow var(--transition-base);
 }
 
 .search-input-wrapper input::placeholder {
@@ -573,8 +601,8 @@ body {
 }
 
 .search-input-wrapper input:focus {
-    border-color: var(--primary-hover);
-    box-shadow: 0 0 0 3px rgba(74, 158, 175, 0.15);
+    border-color: var(--focus-border);
+    box-shadow: var(--focus-ring);
 }
 
 /* ===================================================
@@ -591,7 +619,7 @@ body {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: background-color var(--transition-base), color var(--transition-base), border-color var(--transition-base), box-shadow var(--transition-base);
     font-size: 1rem;
     box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 }
@@ -604,9 +632,9 @@ body {
 .icon-btn:focus { outline: none; box-shadow: none; }
 
 .icon-btn:focus-visible {
-    box-shadow: 0 0 0 3px rgba(74, 158, 175, 0.25) !important;
-    border-color: var(--primary-hover) !important;
-    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+    outline: none;
+    box-shadow: var(--focus-ring) !important;
+    border-color: var(--focus-border) !important;
     z-index: 10;
     position: relative;
 }
@@ -667,7 +695,7 @@ body {
     color: var(--sidebar-text);
     background-color: var(--color-input-bg);
     outline: none;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    transition: border-color var(--transition-base), box-shadow var(--transition-base);
     accent-color: var(--primary-hover);
 }
 
@@ -678,8 +706,15 @@ body {
 
 .date-field input[type="date"]:focus,
 .inline-form-row input[type="date"]:focus {
-    border-color: var(--primary-hover);
-    box-shadow: 0 0 0 2px rgba(74, 158, 175, 0.15);
+    border-color: var(--focus-border);
+    box-shadow: var(--focus-ring);
+}
+
+.date-field input[type="date"]:focus-visible,
+.inline-form-row input[type="date"]:focus-visible {
+    outline: none;
+    border-color: var(--focus-border);
+    box-shadow: var(--focus-ring);
 }
 
 .date-field input[type="date"]::-webkit-calendar-picker-indicator,
@@ -687,7 +722,7 @@ body {
     cursor: pointer;
     filter: invert(19%) sepia(12%) saturate(3065%) hue-rotate(152deg) brightness(95%) contrast(102%);
     opacity: 0.7;
-    transition: opacity 0.2s ease;
+    transition: opacity var(--transition-base);
 }
 
 .date-field input[type="date"]::-webkit-calendar-picker-indicator:hover,
@@ -711,7 +746,12 @@ body {
     font-weight: 600;
     cursor: pointer;
     border: none;
-    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: background-color var(--transition-base), color var(--transition-base);
+}
+
+.btn-small:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
 }
 
 .btn-apply {
@@ -838,7 +878,7 @@ body {
     font-size: 0.92rem;
     border-bottom: 1px solid var(--color-table-border);
     border-right: 1px solid var(--color-table-border);
-    transition: all 0.25s ease;
+    transition: background-color var(--transition-base);
     word-wrap: break-word;
     white-space: normal;
 }
@@ -887,7 +927,7 @@ body {
     padding: 4px 14px;
     border-radius: 20px;
     white-space: nowrap;
-    transition: all 0.3s ease;
+    transition: color var(--transition-base), background var(--transition-base), border-color var(--transition-base);
 }
 
 .month-badge.badge-paid {
@@ -931,7 +971,7 @@ body {
     font-size: 0.85rem;
     color: var(--sidebar-text);
     opacity: 0.55;
-    transition: opacity 0.15s ease, transform 0.15s ease;
+    transition: opacity var(--transition-fast), transform var(--transition-fast);
 }
 
 .action-btns .eye-toggle:hover,
@@ -940,6 +980,15 @@ body {
     background: none;
     border: none;
     opacity: 1;
+}
+
+.action-btns .eye-toggle:focus-visible,
+.action-btns .edit-btn:focus-visible,
+.action-btns .delete-btn:focus-visible {
+    outline: none;
+    opacity: 1;
+    box-shadow: var(--focus-ring);
+    border: 1px solid var(--focus-border);
 }
 
 .expense-row {
@@ -967,7 +1016,7 @@ body {
     font-weight: 700;
     cursor: pointer;
     user-select: none;
-    transition: color 0.2s ease;
+    transition: color var(--transition-base);
 }
 
 .paid-label.label-paid   { color: var(--color-success); }
@@ -985,7 +1034,7 @@ body {
     cursor: pointer;
     position: relative;
     flex-shrink: 0;
-    transition: all 0.2s ease;
+    transition: background-color var(--transition-base), border-color var(--transition-base), box-shadow var(--transition-base);
 }
 
 .paid-checkbox:hover {
@@ -1011,12 +1060,11 @@ body {
 }
 
 .paid-checkbox:focus-visible {
-    box-shadow: 0 0 0 3px rgba(74, 158, 175, 0.25) !important;
-    border-color: var(--primary-hover) !important;
-    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+    outline: none !important;
+    box-shadow: var(--focus-ring) !important;
+    border-color: var(--focus-border) !important;
     z-index: 10;
     position: relative;
-    outline: none !important;
 }
 
 /* ===================================================
@@ -1054,7 +1102,7 @@ body {
     font-size: 0.88rem;
     font-weight: 700;
     cursor: pointer;
-    transition: all 0.25s ease;
+    transition: border-color var(--transition-base), color var(--transition-base), background-color var(--transition-base);
 }
 
 .add-expense-btn:hover {
@@ -1062,12 +1110,13 @@ body {
     color: var(--primary-hover);
     background-color: rgba(127, 200, 217, 0.06);
 }
+
 .add-expense-btn:focus-visible {
     outline: none !important;
-    border-color: var(--primary-hover) !important;
+    border-color: var(--focus-border) !important;
     color: var(--primary-hover) !important;
-    background-color: rgba(90, 200, 250, 0.06) !important; 
-    box-shadow: 0 0 0 3px var(--shadow-color) !important;
+    background-color: rgba(90, 200, 250, 0.06) !important;
+    box-shadow: var(--focus-ring) !important;
     border-style: dashed !important;
 }
 
@@ -1091,13 +1140,17 @@ body {
     color: var(--sidebar-text);
     background-color: var(--card-bg);
     outline: none;
-    transition: border-color 0.2s ease;
+    transition: border-color var(--transition-base), box-shadow var(--transition-base);
     box-sizing: border-box;
 }
 
-.inline-form-row input:focus {
-    border-color: var(--primary-hover);
-    
+.inline-form-row input:focus,
+.inline-form-row input:focus-visible,
+.inline-form-row select:focus,
+.inline-form-row select:focus-visible {
+    outline: none;
+    border-color: var(--focus-border);
+    box-shadow: var(--focus-ring);
 }
 
 .inline-form-actions {
@@ -1116,7 +1169,12 @@ body {
     align-items: center;
     justify-content: center;
     font-size: 0.85rem;
-    transition: all 0.2s ease;
+    transition: background-color var(--transition-base), filter var(--transition-base), transform var(--transition-spring);
+}
+
+.inline-form-actions button:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
 }
 
 .btn-save-inline   { background-color: var(--color-success); color: var(--color-white); }
@@ -1153,7 +1211,7 @@ body {
     font-size: 0.88rem;
     color: var(--text-color);
     cursor: pointer;
-    transition: background 0.15s ease;
+    transition: background var(--transition-fast);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -1271,11 +1329,16 @@ body {
     font-weight: 500;
     color: var(--sidebar-text);
     cursor: pointer;
-    transition: background 0.15s ease;
+    transition: background var(--transition-fast);
     text-align: left;
 }
 
 .kebab-item:hover { background: rgba(127, 200, 217, 0.12); }
+.kebab-item:focus-visible {
+    outline: none;
+    background: rgba(127, 200, 217, 0.12);
+    box-shadow: inset var(--focus-ring);
+}
 .kebab-item i { width: 18px; text-align: center; color: var(--sidebar-text); }
 
 /* ===================================================
@@ -1343,12 +1406,18 @@ body {
     line-height: 1;
     padding: 4px;
     border-radius: 6px;
-    transition: all 0.15s ease;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
 }
 
 .modal-close:hover {
     background-color: rgba(231, 76, 60, 0.1);
     color: var(--color-danger);
+}
+
+.modal-close:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+    border: 1px solid var(--focus-border);
 }
 
 .modal-body {
@@ -1423,7 +1492,7 @@ body {
     user-select: none;
     padding: 3px 8px;
     border-radius: 6px;
-    transition: background 0.15s ease;
+    transition: background var(--transition-fast);
 }
 
 .period-month-label:hover { background: rgba(127, 200, 217, 0.12); }
@@ -1441,10 +1510,15 @@ body {
     display: flex;
     align-items: center;
     gap: 8px;
-    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: background-color var(--transition-base), transform var(--transition-spring);
 }
 
 .btn-danger:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.btn-danger:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+}
 
 /* ── Keyword Management ── */
 .keyword-input-row {
@@ -1463,12 +1537,14 @@ body {
     color: var(--sidebar-text);
     background: var(--card-bg);
     outline: none;
-    transition: border-color 0.2s ease;
+    transition: border-color var(--transition-base), box-shadow var(--transition-base);
 }
 
-.keyword-input-row input:focus {
-    border-color: var(--primary-hover);
-    box-shadow: 0 0 0 2px rgba(74, 158, 175, 0.15);
+.keyword-input-row input:focus,
+.keyword-input-row input:focus-visible {
+    outline: none;
+    border-color: var(--focus-border);
+    box-shadow: var(--focus-ring);
 }
 
 .btn-add-keyword {
@@ -1484,8 +1560,13 @@ body {
     display: flex;
     align-items: center;
     gap: 6px;
-    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: background-color var(--transition-base), transform var(--transition-spring);
     white-space: nowrap;
+}
+
+.btn-add-keyword:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
 }
 
 .keyword-list { display: flex; flex-wrap: wrap; gap: 8px; }
@@ -1513,12 +1594,19 @@ body {
     opacity: 0.6;
     padding: 0 2px;
     line-height: 1;
-    transition: opacity 0.15s ease;
+    transition: opacity var(--transition-fast), color var(--transition-fast);
 }
 
 .keyword-remove:hover {
     opacity: 1;
     color: var(--color-danger);
+}
+
+.keyword-remove:focus-visible {
+    outline: none;
+    opacity: 1;
+    box-shadow: var(--focus-ring);
+    border-radius: 3px;
 }
 
 /* ===================================================
@@ -1659,9 +1747,9 @@ tr.expense-row.neutral-row:hover,
 }
 
 /* ===================================================
-   UNIFORM HOVER — Scale + Spring Transition
-   Applied to all interactive buttons app-wide.
-   btn-primary uses translateY instead (intentional exception).
+   UNIFORM HOVER — Spring transform per bottoni interattivi.
+   Il cubic-bezier è usato SOLO qui, sulle proprietà geometriche.
+   btn-primary usa translateY (eccezione intenzionale documentata sopra).
    =================================================== */
 .btn-danger:not(:disabled):hover,
 .btn-small:hover,
@@ -1672,9 +1760,9 @@ tr.expense-row.neutral-row:hover,
 .btn-add-keyword:hover,
 .btn-save-inline:hover,
 .btn-cancel-inline:hover {
-    transform: scale(1.05) !important;
-    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275),
-                background-color 0.2s ease,
-                color 0.2s ease,
-                border-color 0.2s ease !important;
+    transform: scale(1.05);
+    transition: transform var(--transition-spring),
+                background-color var(--transition-base),
+                color var(--transition-base),
+                border-color var(--transition-base) !important;
 }
