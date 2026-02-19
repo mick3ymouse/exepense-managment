@@ -55,14 +55,14 @@
     /* ── Layout ── */
     --sidebar-width: 250px;
 
-    /* ── Focus-visible standard (unico per tutta l'app) ── */
+    /* ── Focus-visible standard ── */
     --focus-ring: 0 0 0 3px rgba(74, 158, 175, 0.15);
     --focus-border: var(--primary-hover);
 
     /* ── Transition system ── */
-    --transition-fast:   0.15s ease;          /* stati sottili: opacity, icone */
-    --transition-base:   0.2s ease;           /* colori, bordi, sfondi, box-shadow */
-    --transition-spring: 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* solo transform geometrico */
+    --transition-fast:   0.15s ease;
+    --transition-base:   0.2s ease;
+    --transition-spring: 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 /* ---- Reset & Base ---- */
@@ -375,12 +375,13 @@ body {
 }
 
 /* ===================================================
-   DASHBOARD GRID
+   DASHBOARD GRID — adjusted column ratio
    =================================================== */
 .dashboard-grid {
     display: grid;
-    grid-template-columns: 2fr 1fr;
+    grid-template-columns: 1.4fr 1fr;
     gap: 30px;
+    align-items: start;
 }
 
 .col-left {
@@ -392,28 +393,28 @@ body {
 .col-right {
     display: flex;
     flex-direction: column;
-    justify-content: center;
 }
 
 /* ===================================================
-   CARD STYLING
+   CARD STYLING — white background only, no green header fill
    =================================================== */
 .card {
     background-color: var(--card-bg);
     border-radius: 16px;
-    border: 1px solid var(--border-color);
+    border: 1px solid var(--primary-color);
     padding: 28px;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
     transition: box-shadow 0.3s ease, transform 0.3s ease;
     overflow: hidden;
 }
 
+/* Card headings: plain style, no colored background */
 .card h2,
 .card h3 {
-    background-color: #E0F2F1;
-    margin: -28px -28px 20px -28px;
-    padding: 20px 28px;
-    border-bottom: 1px solid var(--border-color);
+    background-color: transparent;
+    margin: 0 0 20px 0;
+    padding: 0;
+    border-bottom: none;
     color: var(--sidebar-text);
 }
 
@@ -425,7 +426,6 @@ body {
 .card-title {
     font-size: 1.15rem;
     font-weight: 700;
-    text-align: center;
     margin: 0 0 12px 0;
     color: var(--sidebar-text);
     letter-spacing: -0.01em;
@@ -443,49 +443,75 @@ body {
 .panoramica-content {
     display: flex;
     align-items: center;
-    gap: 24px;
+    gap: 20px;
 }
 
 .chart-container {
     flex: 1;
-    height: 200px;
+    height: 180px;
 }
 
 .metrics-container {
-    flex: 0.8;
     display: flex;
     flex-direction: column;
-    gap: 24px;
-    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
 }
 
 .metric-item {
     text-align: center;
-    padding: 12px 20px;
-    border-radius: 12px;
+    padding: 8px 12px;
+    border-radius: 10px;
     background-color: rgba(184, 230, 240, 0.35);
-    min-width: 140px;
+    width: 120px;          /* larghezza fissa uguale per tutti */
     transition: background-color var(--transition-base);
+    overflow: hidden;
 }
 
-.metric-item:hover {
-    background-color: rgba(127, 200, 217, 0.4);
-}
+
 
 .metric-label {
     display: block;
-    font-size: 0.85rem;
-    color: var(--primary-hover);
-    margin-bottom: 6px;
-    font-weight: 600;
+    font-size: 0.68rem;
+    color: var(--sidebar-text);
+    margin-bottom: 4px;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
 }
 
 .metric-value {
     display: block;
-    font-size: 1.8rem;
+    font-size: 1.1rem;
     font-weight: 700;
+    white-space: nowrap;   /* impedisce il capo del simbolo € */
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ── Card panoramica + top-categories unificata ── */
+.card-panoramica-combined {
+    /* eredita .card — nessuna override strutturale */
+}
+
+/* Divisore interno cyan chiaro stile year-separator */
+.card-inner-divider {
+    height: 3px;
+    background-color: var(--primary-hover);
+    border-radius: 2px;
+    margin: 22px 0 20px 0;
+    opacity: 0.5;
+    width: 100%;
+}
+
+/* Sottotitolo sezione inside card */
+.card-subtitle {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--sidebar-text);
+    margin: 0 0 16px 0;
+    letter-spacing: -0.01em;
 }
 
 /* ===================================================
@@ -1112,7 +1138,7 @@ body {
     border-radius: 0 0 14px 14px;
     background: transparent;
     color: var(--text-muted);
-    font-family: 'Poppins', sans-serif; 
+    font-family: 'Poppins', sans-serif;
     font-size: 0.88rem;
     font-weight: 700;
     cursor: pointer;
@@ -1717,9 +1743,9 @@ tr.expense-row.neutral-row:hover,
    METRIC COLORS
    =================================================== */
 .entrate-color   { color: var(--color-success) !important; }
-.uscite-color    { color: var(--color-negative) !important; }
+.uscite-color    { color: var(--color-danger-light) !important; }
 .saldo-positive  { color: var(--color-success) !important; }
-.saldo-negative  { color: var(--color-negative) !important; }
+.saldo-negative  { color: var(--color-danger-light) !important; }
 
 /* ===================================================
    DASHBOARD — Top Categories Progress Bars
@@ -1743,7 +1769,7 @@ tr.expense-row.neutral-row:hover,
 
 .top-cat-rank  { font-size: 0.85rem; margin-right: 8px; }
 .top-cat-name  { flex: 1; font-weight: 600; color: var(--sidebar-text); font-size: 0.95rem; }
-.top-cat-amount { font-weight: 700; color: var(--color-negative); font-size: 0.95rem; }
+.top-cat-amount { font-weight: 700; color: var(--color-danger-light); font-size: 0.95rem; }
 
 .top-cat-bar-track {
     width: 100%;
@@ -1761,9 +1787,162 @@ tr.expense-row.neutral-row:hover,
 }
 
 /* ===================================================
+   GESTIONE BONIFICI — Card Header
+   =================================================== */
+.card-bonifici {
+    padding: 0;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.bonifici-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px 18px 24px;
+    background-color: var(--color-white);
+    flex-shrink: 0;
+}
+
+.bonifici-title {
+    margin: 0 !important;
+    font-size: 1.05rem !important;
+    font-weight: 700 !important;
+    color: var(--sidebar-text) !important;
+}
+
+/* ── Year Navigator ── */
+.year-navigator {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    background-color: rgba(255, 255, 255, 0.7);
+    border-radius: 20px;
+    padding: 4px 8px;
+    border: 1px solid transparent;
+    transition: background-color var(--transition-base), border-color var(--transition-base), box-shadow var(--transition-base);
+    backdrop-filter: blur(4px);
+}
+
+.year-nav-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    border: 2px solid var(--sidebar-text);
+    background-color: rgba(255, 255, 255, 0.7);
+    color: var(--sidebar-text);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    transition: background-color var(--transition-base), color var(--transition-base), border-color var(--transition-base), box-shadow var(--transition-base);
+    flex-shrink: 0;
+}
+
+.year-nav-btn:hover {
+    background-color: var(--color-warning-bg);
+    color: var(--sidebar-text);
+}
+
+.year-nav-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.year-nav-btn:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring) !important;
+    border-color: var(--focus-border) !important;
+}
+
+.year-nav-label {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: var(--sidebar-text);
+    min-width: 42px;
+    text-align: center;
+    letter-spacing: 0.02em;
+    line-height: 28px;
+}
+
+/* ── Bonifici Table Wrapper — rounded sub-block ── */
+.bonifici-table-wrapper {
+    padding: 16px 20px 20px 20px;
+    overflow-y: auto;
+    max-height: 480px;
+}
+
+/* ── Bonifici Table (inherits .expense-table, overrides specific cols) ── */
+.bonifici-table {
+    border-radius: 12px !important;
+    box-shadow: 0 2px 10px rgba(99, 229, 255, 0.18) !important;
+    border: 1px solid var(--primary-color) !important;
+    overflow: hidden;
+}
+
+.bonifici-table th:first-child { border-radius: 12px 0 0 0 !important; }
+.bonifici-table th:last-child  { border-radius: 0 12px 0 0 !important; }
+
+.col-bonifici-mese    { width: 45%; }
+.col-bonifici-importo { width: 35%; }
+.col-bonifici-azioni  { width: 20%; }
+
+/* Mese column: centered */
+.bonifici-table td:nth-child(1),
+.bonifici-table th:nth-child(1) {
+    text-align: center !important;
+    vertical-align: middle;
+    font-weight: 700;
+}
+
+/* Importo column in bonifici: centered */
+.bonifici-table td:nth-child(2),
+.bonifici-table th:nth-child(2) {
+    text-align: center !important;
+    padding-right: 14px !important;
+    vertical-align: middle;
+    font-weight: 700;
+}
+
+/* Bonifici tfoot total value */
+.bonifici-tfoot-total {
+    text-align: center !important;
+    padding-right: 14px !important;
+    color: var(--color-danger-light) !important;
+    font-weight: 800;
+}
+
+/* Paid label in bonifici: centered */
+.bonifici-table td:nth-child(3) {
+    text-align: center;
+    vertical-align: middle;
+}
+
+/* All bonifici cells: middle vertical align */
+.bonifici-table td,
+.bonifici-table th {
+    vertical-align: middle;
+}
+
+/* Row highlight when paid */
+.bonifici-row-paid td {
+    background-color: rgba(39, 174, 96, 0.04) !important;
+}
+
+.bonifici-row-paid:hover td {
+    background-color: rgba(39, 174, 96, 0.08) !important;
+}
+
+/* Empty row */
+.bonifici-empty-row td {
+    border-right: none !important;
+}
+
+/* ===================================================
    UNIFORM HOVER — Spring transform per bottoni interattivi.
-   Il cubic-bezier è usato SOLO qui, sulle proprietà geometriche.
-   btn-primary usa translateY (eccezione intenzionale documentata sopra).
    =================================================== */
 .btn-danger:not(:disabled):hover,
 .btn-small:hover,
@@ -1773,7 +1952,8 @@ tr.expense-row.neutral-row:hover,
 .keyword-remove:hover,
 .btn-add-keyword:hover,
 .btn-save-inline:hover,
-.btn-cancel-inline:hover {
+.btn-cancel-inline:hover,
+.year-nav-btn:hover {
     transform: scale(1.05);
     transition: transform var(--transition-spring),
                 background-color var(--transition-base),

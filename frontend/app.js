@@ -6,6 +6,7 @@
  * - Utils: Formatting, helpers
  * - API: Backend communication
  * - UI: DOM manipulation, rendering
+ * - Bonifici: Dashboard reimbursement table with year navigation
  * - App: State management, event listeners, initialization
  */
 
@@ -43,10 +44,10 @@ const Utils = {
     /** Format Currency absolute value */
     formatEuro(value) {
         const num = parseFloat(value);
-        if (isNaN(num)) return '— €';
+        if (isNaN(num)) return '—\u00a0€';
         return Math.abs(num).toLocaleString('it-IT', {
             minimumFractionDigits: 2, maximumFractionDigits: 2
-        }) + ' €';
+        }) + '\u00a0€';
     },
 
     /**
@@ -56,20 +57,12 @@ const Utils = {
     formatImportoForInput(value) {
         const num = parseFloat(value);
         if (isNaN(num)) return '';
-        // Use fixed 2 decimals with comma as decimal separator (Italian)
         return num.toFixed(2).replace('.', ',');
     },
 
     /**
      * Parse an importo string typed by the user into a numeric string
      * safe to send to the backend (dot as decimal separator, no thousands).
-     *
-     * Rules:
-     *   - If both '.' and ',' present → Italian format "1.200,50" → "1200.50"
-     *   - If only ',' present         → Italian decimal "10,3" → "10.3"
-     *   - If only '.' or neither      → already standard, leave as-is
-     *
-     * Returns a string like "10.30" or "-1200.50", or null if invalid.
      */
     parseImportoInput(raw) {
         if (!raw) return null;
@@ -79,13 +72,10 @@ const Utils = {
         const hasComma = s.includes(',');
 
         if (hasDot && hasComma) {
-            // Italian thousands+decimal: "1.200,50" → remove dots, comma→dot
             s = s.replace(/\./g, '').replace(',', '.');
         } else if (hasComma && !hasDot) {
-            // Italian decimal only: "10,3" or "10,30" → "10.3"
             s = s.replace(',', '.');
         }
-        // else: standard float string, leave as-is
 
         const num = parseFloat(s);
         return isNaN(num) ? null : String(num);
@@ -146,9 +136,7 @@ const API = {
     /** Extract a human-readable error message from any API response */
     extractError(res) {
         if (!res) return 'Errore sconosciuto';
-        // Custom app errors: { error: "..." }
         if (res.data?.error) return res.data.error;
-        // FastAPI validation errors: { detail: [{msg: "...", loc: [...]}] }
         if (res.data?.detail) {
             if (typeof res.data.detail === 'string') return res.data.detail;
             if (Array.isArray(res.data.detail)) {
@@ -296,7 +284,14 @@ const UI = {
             // Keywords
             keywordInput: document.getElementById('keyword-input'),
             keywordList: document.getElementById('keyword-list'),
-            addKeywordBtn: document.getElementById('add-keyword-btn')
+            addKeywordBtn: document.getElementById('add-keyword-btn'),
+
+            // Bonifici
+            bonificiYearLabel: document.getElementById('bonifici-year-label'),
+            bonificiYearPrev: document.getElementById('bonifici-year-prev'),
+            bonificiYearNext: document.getElementById('bonifici-year-next'),
+            bonificiTbody: document.getElementById('bonifici-tbody'),
+            bonificiTfootTotal: document.getElementById('bonifici-tfoot-total')
         };
     },
 
@@ -307,10 +302,12 @@ const UI = {
 
     renderDashboardStats(data) {
         if (this.elements.metricEntrate) this.elements.metricEntrate.textContent = Utils.formatEuro(data.entrate);
-        if (this.elements.metricUscite) this.elements.metricUscite.textContent = '-' + Utils.formatEuro(data.uscite);
+        if (this.elements.metricUscite) this.elements.metricUscite.textContent = Utils.formatEuro(data.uscite);
         if (this.elements.metricSaldo) {
-            this.elements.metricSaldo.textContent = (data.saldo >= 0 ? '+' : '') + Utils.formatEuro(data.saldo);
-            this.elements.metricSaldo.className = 'metric-value ' + (data.saldo >= 0 ? 'saldo-positive' : 'saldo-negative');
+            const saldo = parseFloat(data.saldo);
+            const sign = saldo >= 0 ? '+' : '−';
+            this.elements.metricSaldo.textContent = sign + '\u00a0' + Utils.formatEuro(saldo);
+            this.elements.metricSaldo.className = 'metric-value ' + (saldo >= 0 ? 'saldo-positive' : 'saldo-negative');
         }
         this.renderChart(data);
         this.renderTopCategories(data.top_categories || []);
@@ -333,8 +330,8 @@ const UI = {
                 datasets: [{
                     label: 'EUR',
                     data: [data.entrate, data.uscite],
-                    backgroundColor: ['rgba(39, 174, 96, 0.65)', 'rgba(192, 57, 43, 0.55)'],
-                    hoverBackgroundColor: ['rgba(39, 174, 96, 0.85)', 'rgba(192, 57, 43, 0.75)'],
+                    backgroundColor: ['rgba(39, 174, 96, 0.65)', 'rgba(255, 107, 107, 0.60)'],
+                    hoverBackgroundColor: ['rgba(39, 174, 96, 0.85)', 'rgba(255, 107, 107, 0.80)'],
                     borderWidth: 0,
                     borderRadius: 8,
                     barThickness: 44
@@ -640,7 +637,6 @@ const UI = {
             const contoInput = tr.querySelector('.form-conto');
             const importoInput = tr.querySelector('.form-importo');
 
-            // Validate date
             if (!dataInput.value) {
                 UI.showErrorTooltip(dataInput, 'Inserisci una data!');
                 return;
@@ -701,21 +697,14 @@ const UI = {
         });
     },
 
-    /**
-     * Show inline edit form replacing an existing expense row.
-     * Called from the edit-btn click handler in setupElenco.
-     */
     showInlineEditForm(row) {
-        // Prevent multiple edit forms
         if (row.nextElementSibling?.classList.contains('inline-edit-row')) return;
 
         const id = row.dataset.id;
         const rawDate = row.dataset.date;
         const rawImp = row.dataset.importo;
         const cells = row.querySelectorAll('td');
-        // cells: [0]=data display, [1]=operazione, [2]=categoria, [3]=conto, [4]=importo, [5]=azioni
 
-        // Hide original row
         row.style.display = 'none';
 
         const tr = document.createElement('tr');
@@ -736,7 +725,6 @@ const UI = {
         `;
         row.insertAdjacentElement('afterend', tr);
 
-        // Attach autocomplete
         const uniqueCats = Utils.extractUniqueValues(App.state.lastExpenseData, 'categoria');
         const uniqueAccs = Utils.extractUniqueValues(App.state.lastExpenseData, 'conto_carta');
         UI.attachAutocomplete(tr.querySelector('.form-categoria'), uniqueCats);
@@ -756,7 +744,6 @@ const UI = {
             const contoInput = tr.querySelector('.form-conto');
             const importoInput = tr.querySelector('.form-importo');
 
-            // Validate
             let isValid = true;
             if (!dataInput.value) {
                 UI.showErrorTooltip(dataInput, 'Inserisci una data!'); isValid = false;
@@ -872,6 +859,249 @@ const UI = {
 };
 
 /* ══════════════════════════════════════════════════
+   3b. BONIFICI MODULE
+   Manages the Dashboard "Gestione Bonifici" card:
+   - Year navigation
+   - Populating the table from /expenses + /monthly-status
+   - Bidirectional sync with Elenco checkboxes
+   ══════════════════════════════════════════════════ */
+const Bonifici = {
+    /** The year currently displayed in the card */
+    currentYear: null,
+    /** Sorted list of available years across all data */
+    availableYears: [],
+    /** Cache: { "YYYY-MM": reimbursableAmount } computed from expenses data */
+    monthlyAmounts: {},
+    /** Cache: { "YYYY-MM": isPaid } from monthly-status */
+    statusMap: {},
+
+    /**
+     * Initialize with the available years array.
+     * Called once after periods are fetched.
+     */
+    init(years) {
+        this.availableYears = [...years].sort((a, b) => b - a);
+        this.currentYear = this.availableYears[0] || new Date().getFullYear();
+        this.updateYearLabel();
+        this.updateNavButtons();
+    },
+
+    /** Set year from outside (e.g. after new data upload) */
+    setYear(year) {
+        if (this.availableYears.includes(year)) {
+            this.currentYear = year;
+        } else {
+            // If year not in list, pick closest available or keep
+            this.currentYear = this.availableYears[0] || year;
+        }
+        this.updateYearLabel();
+        this.updateNavButtons();
+    },
+
+    updateYearLabel() {
+        const label = UI.elements.bonificiYearLabel;
+        if (label) label.textContent = this.currentYear || '—';
+    },
+
+    updateNavButtons() {
+        const { bonificiYearPrev, bonificiYearNext } = UI.elements;
+        if (!bonificiYearPrev || !bonificiYearNext) return;
+        const idx = this.availableYears.indexOf(this.currentYear);
+        // Prev = older year = higher idx in descending array
+        bonificiYearPrev.disabled = idx >= this.availableYears.length - 1;
+        // Next = newer year = lower idx
+        bonificiYearNext.disabled = idx <= 0;
+    },
+
+    navigateYear(direction) {
+        const idx = this.availableYears.indexOf(this.currentYear);
+        let newIdx = idx + direction; // direction: +1 = older, -1 = newer
+        if (newIdx < 0 || newIdx >= this.availableYears.length) return;
+        this.currentYear = this.availableYears[newIdx];
+        this.updateYearLabel();
+        this.updateNavButtons();
+        this.render();
+    },
+
+    /**
+     * Compute monthly reimbursable amounts from the raw expenses data object
+     * (the same grouped structure returned by /expenses).
+     * Only non-excluded, non-neutral expenses count.
+     */
+    computeAmountsFromData(expensesData) {
+        this.monthlyAmounts = {};
+        if (!expensesData) return;
+
+        const MONTH_ORDER = {};
+        Object.entries(Utils.MONTH_NAMES).forEach(([num, name]) => MONTH_ORDER[name] = parseInt(num));
+
+        Object.entries(expensesData).forEach(([year, months]) => {
+            Object.entries(months).forEach(([monthName, expenses]) => {
+                const monthNum = MONTH_ORDER[monthName];
+                if (!monthNum) return;
+                const key = `${year}-${String(monthNum).padStart(2, '0')}`;
+                let total = 0;
+                expenses.forEach(exp => {
+                    if (!exp.is_excluded && !exp.is_neutral) {
+                        total += parseFloat(exp.importo) || 0;
+                    }
+                });
+                this.monthlyAmounts[key] = total;
+            });
+        });
+    },
+
+    /**
+     * Full async load: fetch expenses (no filters) + monthly status,
+     * compute amounts, then render.
+     */
+    async load() {
+        const [expRes, statusRes] = await Promise.all([
+            API.getExpenses({}),
+            API.getMonthlyStatus()
+        ]);
+
+        if (expRes.ok) {
+            this.computeAmountsFromData(expRes.data);
+        }
+        if (statusRes.ok) {
+            this.statusMap = statusRes.data || {};
+        }
+
+        this.render();
+    },
+
+    /**
+     * Render the table rows for the currentYear.
+     * Shows all 12 months; greys out months with no data.
+     */
+    render() {
+        const tbody = UI.elements.bonificiTbody;
+        const tfootTotal = UI.elements.bonificiTfootTotal;
+        if (!tbody) return;
+
+        tbody.innerHTML = '';
+        let yearTotal = 0;
+
+        const allMonths = Object.keys(Utils.MONTH_NAMES).map(Number); // [1..12]
+
+        allMonths.forEach(monthNum => {
+            const key = `${this.currentYear}-${String(monthNum).padStart(2, '0')}`;
+            const amount = this.monthlyAmounts[key];
+            const isPaid = !!this.statusMap[key];
+            const hasData = amount !== undefined;
+
+            if (!hasData) return; // Only show months that have data
+
+            yearTotal += amount;
+
+            const tr = document.createElement('tr');
+            tr.className = 'expense-row' + (isPaid ? ' bonifici-row-paid' : '');
+            tr.dataset.year = this.currentYear;
+            tr.dataset.month = monthNum;
+
+            const importoClass = amount < 0 ? 'importo-negative' : (amount > 0 ? 'importo-positive' : '');
+            const labelClass = isPaid ? 'label-paid' : 'label-unpaid';
+
+            tr.innerHTML = `
+                <td>${Utils.MONTH_NAMES[monthNum]}</td>
+                <td class="${importoClass}" style="text-align:right; padding-right:18px;">
+                    ${Utils.formatImporto(amount)}
+                </td>
+                <td style="text-align:center;">
+                    <label class="paid-label ${labelClass}">
+                        <input type="checkbox" class="paid-checkbox bonifici-paid-cb"
+                            data-year="${this.currentYear}"
+                            data-month="${monthNum}"
+                            ${isPaid ? 'checked' : ''}>
+                    </label>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        if (tbody.children.length === 0) {
+            const emptyTr = document.createElement('tr');
+            emptyTr.className = 'bonifici-empty-row';
+            emptyTr.innerHTML = `<td colspan="3" style="text-align:center; color: var(--text-muted); padding: 32px 0; font-weight:500;">Nessun dato per il ${this.currentYear}</td>`;
+            tbody.appendChild(emptyTr);
+        }
+
+        if (tfootTotal) {
+            tfootTotal.textContent = Utils.formatImporto(yearTotal);
+        }
+    },
+
+    /**
+     * Update a single row's visual state (paid/unpaid) without re-rendering the whole table.
+     * Called after a checkbox change.
+     */
+    updateRowState(year, month, isPaid) {
+        if (parseInt(year) !== this.currentYear) return;
+
+        const key = `${year}-${String(month).padStart(2, '0')}`;
+        this.statusMap[key] = isPaid;
+
+        const tbody = UI.elements.bonificiTbody;
+        if (!tbody) return;
+
+        const row = tbody.querySelector(`tr[data-year="${year}"][data-month="${month}"]`);
+        if (!row) return;
+
+        // Update checkbox
+        const cb = row.querySelector('.bonifici-paid-cb');
+        if (cb) cb.checked = isPaid;
+
+        // Update label class
+        const label = row.querySelector('.paid-label');
+        if (label) {
+            label.classList.toggle('label-paid', isPaid);
+            label.classList.toggle('label-unpaid', !isPaid);
+        }
+
+        // Update row background
+        row.classList.toggle('bonifici-row-paid', isPaid);
+    },
+
+    /**
+     * Called when Elenco recalculates month totals (e.g. after toggle exclude).
+     * Updates the amount cache and refreshes the corresponding row if visible.
+     */
+    updateMonthAmount(year, month, newAmount) {
+        const key = `${year}-${String(month).padStart(2, '0')}`;
+        this.monthlyAmounts[key] = newAmount;
+
+        if (parseInt(year) !== this.currentYear) return;
+
+        const tbody = UI.elements.bonificiTbody;
+        if (!tbody) return;
+
+        const row = tbody.querySelector(`tr[data-year="${year}"][data-month="${month}"]`);
+        if (!row) {
+            // Month might not be in table yet (e.g. was empty) — re-render
+            this.render();
+            return;
+        }
+
+        const amountCell = row.querySelector('td:nth-child(2)');
+        if (amountCell) {
+            amountCell.textContent = Utils.formatImporto(newAmount);
+            amountCell.className = newAmount < 0 ? 'importo-negative' : (newAmount > 0 ? 'importo-positive' : '');
+            amountCell.style.cssText = 'text-align:right; padding-right:18px;';
+        }
+
+        // Update footer total
+        let yearTotal = 0;
+        Object.entries(this.monthlyAmounts).forEach(([k, v]) => {
+            if (k.startsWith(`${this.currentYear}-`)) yearTotal += v;
+        });
+        if (UI.elements.bonificiTfootTotal) {
+            UI.elements.bonificiTfootTotal.textContent = Utils.formatImporto(yearTotal);
+        }
+    }
+};
+
+/* ══════════════════════════════════════════════════
    4. APP LOGIC
    ══════════════════════════════════════════════════ */
 const App = {
@@ -888,6 +1118,7 @@ const App = {
         this.setupNavigation();
         this.setupDashboard();
         this.setupElenco();
+        this.setupBonifici();
 
         const savedTab = localStorage.getItem('activeTab') || 'dashboard';
         this.navigateTo(savedTab);
@@ -914,6 +1145,8 @@ const App = {
         } else if (viewId === 'dashboard' && this.state.dashboardDirty) {
             this.state.dashboardDirty = false;
             this.loadDashboard(this.state.currentYear, this.state.currentMonth);
+            // Refresh Bonifici amounts when returning to dashboard
+            Bonifici.load();
         } else if (viewId === 'dashboard' && !this.state.currentYear) {
             this.initDashboardData();
         }
@@ -940,6 +1173,10 @@ const App = {
             UI.elements.monthFilter.value = this.state.currentMonth;
 
             this.loadDashboard(this.state.currentYear, this.state.currentMonth);
+
+            // Initialize Bonifici with available years
+            Bonifici.init(years);
+            Bonifici.load();
         }
     },
 
@@ -993,7 +1230,7 @@ const App = {
             UI.elements.uploadBtn.disabled = false;
             UI.elements.fileInput.value = '';
 
-            this.initDashboardData();
+            await this.initDashboardData();
         };
 
         if (UI.elements.dropArea) {
@@ -1010,6 +1247,46 @@ const App = {
         }
     },
 
+    /**
+     * Setup the Bonifici year navigator buttons.
+     * The card's checkbox changes are handled here and also sync to Elenco.
+     */
+    setupBonifici() {
+        UI.elements.bonificiYearPrev?.addEventListener('click', () => Bonifici.navigateYear(+1));
+        UI.elements.bonificiYearNext?.addEventListener('click', () => Bonifici.navigateYear(-1));
+
+        // Delegated click on Bonifici table checkboxes
+        UI.elements.bonificiTbody?.addEventListener('change', async (e) => {
+            const cb = e.target.closest('.bonifici-paid-cb');
+            if (!cb) return;
+
+            const year = cb.dataset.year;
+            const month = parseInt(cb.dataset.month);
+            const isPaid = cb.checked;
+
+            // Persist to backend
+            await API.setMonthlyStatus(year, month, isPaid);
+
+            // Update Bonifici state immediately
+            Bonifici.updateRowState(year, month, isPaid);
+
+            // ── SYNC TO ELENCO ──────────────────────────────────
+            // Find the corresponding paid-checkbox in Elenco and update it
+            const elencoSection = document.querySelector(
+                `#page-elenco .month-section[data-year="${year}"][data-month="${month}"]`
+            );
+            if (elencoSection) {
+                const elencoCb = elencoSection.querySelector(`.paid-checkbox[data-year="${year}"][data-month="${month}"]`);
+                if (elencoCb && elencoCb.checked !== isPaid) {
+                    elencoCb.checked = isPaid;
+                    UI.recalcMonthTotals(elencoSection);
+                }
+            }
+
+            this.state.dashboardDirty = false; // We already refreshed inline
+        });
+    },
+
     setupElenco() {
         // Upload (+)
         UI.elements.elencoExportBtn?.addEventListener('click', () => UI.elements.elencoFileInput.click());
@@ -1018,7 +1295,8 @@ const App = {
             if (!files.length) return;
             const res = await API.uploadFiles(files);
             Utils.showToast(UI.elements.elencoToast, `✓ ${res.totalNew} nuovi, ${res.totalDup} duplicati`, 'success');
-            this.loadElenco();
+            await this.loadElenco();
+            Bonifici.load();
         });
 
         // Real-time Search
@@ -1065,20 +1343,16 @@ const App = {
                     const row = btnDelete.closest('.expense-row');
                     const section = row.closest('.month-section');
 
-                    // 1. Aggiungi la classe CSS che fa partire l'animazione
                     row.classList.add('fade-out');
 
-                    // 2. Aspetta 500ms (la durata della transition nel CSS) prima di rimuovere dal DOM
                     setTimeout(() => {
                         row.remove();
 
-                        // 3. Logica per rimuovere la sezione se vuota o ricalcolare i totali
                         if (section.querySelectorAll('.expense-row').length === 0) {
                             let yearHeader = section.previousElementSibling;
                             while (yearHeader && !yearHeader.classList.contains('year-header')) {
                                 yearHeader = yearHeader.previousElementSibling;
                             }
-                            // Anche qui animiamo la sparizione della sezione intera
                             section.classList.add('fade-out');
                             setTimeout(() => {
                                 section.remove();
@@ -1097,14 +1371,15 @@ const App = {
                             }, 500);
                         } else {
                             UI.recalcMonthTotals(section);
+                            // Refresh Bonifici amount for this month
+                            this._syncBonificiAmountFromSection(section);
                         }
-                    }, 500); // <-- Tempo di attesa identico al CSS (0.5s)
+                    }, 500);
 
                     this.state.dashboardDirty = true;
                 }
 
             } else if (btnEdit) {
-                // Prevent triggering if an edit form is already open for this row
                 const row = btnEdit.closest('.expense-row');
                 if (row.nextElementSibling?.classList.contains('inline-edit-row')) return;
                 UI.showInlineEditForm(row);
@@ -1118,20 +1393,31 @@ const App = {
                     const icon = btnEye.querySelector('i');
                     icon.className = `fa-solid ${res.data.is_excluded ? 'fa-eye-slash' : 'fa-eye'}`;
                     btnEye.title = res.data.is_excluded ? 'Includi' : 'Escludi';
-                    UI.recalcMonthTotals(row.closest('.month-section'));
+                    const section = row.closest('.month-section');
+                    UI.recalcMonthTotals(section);
+                    // ── SYNC Bonifici amount ──
+                    this._syncBonificiAmountFromSection(section);
                     this.state.dashboardDirty = true;
                 }
             }
         });
 
         UI.elements.expensesList?.addEventListener('change', async (e) => {
-            if (e.target.classList.contains('paid-checkbox')) {
+            if (e.target.classList.contains('paid-checkbox') && !e.target.classList.contains('bonifici-paid-cb')) {
                 const cb = e.target;
                 const section = cb.closest('.month-section');
+                const year = cb.dataset.year;
+                const month = parseInt(cb.dataset.month);
+                const isPaid = cb.checked;
+
                 try {
-                    await API.setMonthlyStatus(cb.dataset.year, cb.dataset.month, cb.checked);
+                    await API.setMonthlyStatus(year, month, isPaid);
                     UI.recalcMonthTotals(section);
                     this.state.dashboardDirty = true;
+
+                    // ── SYNC TO BONIFICI DASHBOARD ──────────────────────
+                    Bonifici.updateRowState(year, month, isPaid);
+
                 } catch (err) {
                     cb.checked = !cb.checked;
                 }
@@ -1139,6 +1425,26 @@ const App = {
         });
 
         this.setupModals();
+    },
+
+    /**
+     * Helper: read the reimbursable total from an Elenco month-section
+     * and push the update to Bonifici.
+     */
+    _syncBonificiAmountFromSection(section) {
+        if (!section) return;
+        const year = section.dataset.year;
+        const month = section.dataset.month;
+
+        // Recompute reimbursable (non-excluded, non-neutral) from DOM
+        let total = 0;
+        section.querySelectorAll('.expense-row').forEach(row => {
+            if (!row.classList.contains('excluded') && !row.classList.contains('neutral-row')) {
+                total += parseFloat(row.dataset.importo) || 0;
+            }
+        });
+
+        Bonifici.updateMonthAmount(year, parseInt(month), total);
     },
 
     setupModals() {
@@ -1191,7 +1497,6 @@ const App = {
                 this.state.dashboardDirty = true;
                 if (document.getElementById('page-elenco').classList.contains('active')) this.loadElenco();
             } else {
-                // Show tooltip on keyword input
                 UI.showErrorTooltip(UI.elements.keywordInput, API.extractError(res));
             }
         });
@@ -1215,6 +1520,14 @@ const App = {
         if (expRes.ok) {
             this.state.lastExpenseData = expRes.data;
             UI.renderExpenses(expRes.data, statsRes.data || {});
+
+            // Keep Bonifici amounts in sync with the full (unfiltered) data
+            // Only if no filters are active (to avoid partial data)
+            if (!params.search_text && !params.start_date && !params.end_date) {
+                Bonifici.computeAmountsFromData(expRes.data);
+                if (statsRes.ok) Bonifici.statusMap = statsRes.data || {};
+                Bonifici.render();
+            }
         }
     },
 
@@ -1263,7 +1576,6 @@ const App = {
         tree.querySelectorAll('input[data-month]').forEach(mCb => {
             mCb.addEventListener('change', () => {
                 this.checkBulkDeleteBtn();
-                // Auto-check year if all months checked
                 const year = mCb.dataset.year;
                 const yearCb = tree.querySelector(`input[data-year="${year}"]:not([data-month])`);
                 const allMonths = tree.querySelectorAll(`input[data-year="${year}"][data-month]`);

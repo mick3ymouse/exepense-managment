@@ -93,12 +93,14 @@
                 <!-- Dashboard Grid -->
                 <div class="dashboard-grid">
 
-                    <!-- Left Column -->
+                    <!-- Left Column: Panoramica + Dove Spendo (unica card) -->
                     <div class="col-left">
 
-                        <!-- Panoramica Card -->
-                        <div class="card">
+                        <div class="card card-panoramica-combined">
+                            <!-- Intestazione card -->
                             <h3 class="card-title">Panoramica</h3>
+
+                            <!-- Grafico + metriche -->
                             <div class="panoramica-content">
                                 <div class="chart-container">
                                     <canvas id="panoramicaChart"></canvas>
@@ -106,27 +108,27 @@
                                 <div class="metrics-container" id="metrics-container">
                                     <div class="metric-item">
                                         <span class="metric-label">Entrate</span>
-                                        <span class="metric-value entrate-color" id="metric-entrate">— €</span>
+                                        <span class="metric-value entrate-color" id="metric-entrate">—&nbsp;€</span>
                                     </div>
                                     <div class="metric-item">
                                         <span class="metric-label">Uscite</span>
-                                        <span class="metric-value uscite-color" id="metric-uscite">— €</span>
+                                        <span class="metric-value uscite-color" id="metric-uscite">—&nbsp;€</span>
                                     </div>
                                     <div class="metric-item">
                                         <span class="metric-label">Saldo</span>
-                                        <span class="metric-value" id="metric-saldo">— €</span>
+                                        <span class="metric-value" id="metric-saldo">—&nbsp;€</span>
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <!-- Top Categories Card -->
-                        <div class="card">
-                            <h3 class="card-title">Dove spendo di più</h3>
+                            <!-- Divisore interno stile year-separator -->
+                            <div class="card-inner-divider"></div>
+
+                            <!-- Titolo sezione Top Categories -->
+                            <h4 class="card-subtitle">Dove spendo di più</h4>
                             <div id="top-categories-container">
-                                <!-- JS populates top 3 categories -->
                                 <p class="top-cat-empty"
-                                    style="color: var(--azzurro-pastello); text-align: center; padding: 20px; font-weight: 500;">
+                                    style="color: var(--text-muted); text-align: center; padding: 20px; font-weight: 500;">
                                     Carica dati per visualizzare le categorie.</p>
                             </div>
                         </div>
@@ -136,24 +138,56 @@
                     <!-- Right Column -->
                     <div class="col-right">
 
-                        <div class="spacer-vertical"></div>
+                        <!-- Gestione Bonifici Card -->
+                        <div class="card card-bonifici">
 
-                        <!-- Bonifici Card -->
-                        <div class="card">
-                            <h3 class="card-title">Gestione Bonifici</h3>
+                            <!-- Card Header: title + year navigator -->
+                            <div class="bonifici-header">
+                                <h3 class="card-title bonifici-title">Gestione Bonifici</h3>
+                                <div class="year-navigator" id="bonifici-year-navigator">
+                                    <button class="year-nav-btn" id="bonifici-year-prev" title="Anno precedente">
+                                        <i class="fa-solid fa-chevron-left"></i>
+                                    </button>
+                                    <span class="year-nav-label" id="bonifici-year-label">—</span>
+                                    <button class="year-nav-btn" id="bonifici-year-next" title="Anno successivo">
+                                        <i class="fa-solid fa-chevron-right"></i>
+                                    </button>
+                                </div>
+                            </div>
 
-                            <table class="data-table">
-                                <thead>
-                                    <tr>
-                                        <th>Mese</th>
-                                        <th>Importo</th>
-                                        <th></th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                </tbody>
-                            </table>
+                            <!-- Bonifici Table -->
+                            <div class="bonifici-table-wrapper">
+                                <table class="expense-table bonifici-table" id="bonifici-table">
+                                    <colgroup>
+                                        <col class="col-bonifici-mese">
+                                        <col class="col-bonifici-importo">
+                                        <col class="col-bonifici-azioni">
+                                    </colgroup>
+                                    <thead>
+                                        <tr>
+                                            <th>Mese</th>
+                                            <th>Importo</th>
+                                            <th></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="bonifici-tbody">
+                                        <!-- JS populates rows -->
+                                        <tr class="bonifici-empty-row">
+                                            <td colspan="3" style="text-align:center; color: var(--text-muted); padding: 32px 0; font-weight:500;">
+                                                Nessun dato disponibile
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                    <tfoot>
+                                        <tr>
+                                            <td colspan="3" class="tfoot-total-label">Totale Anno: <span id="bonifici-tfoot-total" class="bonifici-tfoot-total-val">— €</span></td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+
                         </div>
+
                     </div>
 
                 </div>
@@ -300,7 +334,6 @@
 
                 <!-- Expenses Timeline -->
                 <div id="expenses-list" class="expenses-list">
-                    <!-- JS populates: Year headers > Month sections > Tables -->
                     <div class="empty-state" id="empty-state">
                         <i class="fa-solid fa-inbox"></i>
                         <p>Nessuna spesa trovata.</p>
