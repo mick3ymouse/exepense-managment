@@ -75,7 +75,7 @@ const Utils = {
         if (!raw) return null;
         let s = raw.trim().replace(/[€$£\s]/g, '');
 
-        const hasDot   = s.includes('.');
+        const hasDot = s.includes('.');
         const hasComma = s.includes(',');
 
         if (hasDot && hasComma) {
@@ -106,7 +106,7 @@ const Utils = {
         if (!element) return;
         element.textContent = message;
         element.className = `upload-toast ${type}`;
-        setTimeout(() => element.classList.add('hidden'), 6000);
+        setTimeout(() => element.classList.add('hidden'), 3000);
     },
 
     /** Extract unique values from data for autocomplete */
@@ -410,6 +410,10 @@ const UI = {
             yearHeader.textContent = `Anno ${year}`;
             container.appendChild(yearHeader);
 
+            const yearSeparator = document.createElement('div');
+            yearSeparator.className = 'year-separator';
+            container.appendChild(yearSeparator);
+
             const months = data[year];
             const sortedMonths = Object.keys(months).sort((a, b) => (MONTH_ORDER[b] || 0) - (MONTH_ORDER[a] || 0));
 
@@ -612,7 +616,7 @@ const UI = {
             <td><input type="text" class="form-operazione" placeholder="Operazione"></td>
             <td><input type="text" class="form-categoria" placeholder="Categoria"></td>
             <td><input type="text" class="form-conto" placeholder="Conto"></td>
-            <td><input type="text" class="form-importo" placeholder="-10,50"></td>
+            <td><input type="text" class="form-importo" placeholder="Importo"></td>
             <td>
                 <div class="inline-form-actions">
                     <button class="btn-save-inline" title="Salva"><i class="fa-solid fa-check"></i></button>
@@ -630,11 +634,11 @@ const UI = {
         tr.querySelector('.form-operazione').focus();
 
         const saveForm = async () => {
-            const dataInput      = tr.querySelector('.form-data');
+            const dataInput = tr.querySelector('.form-data');
             const operazioneInput = tr.querySelector('.form-operazione');
             const categoriaInput = tr.querySelector('.form-categoria');
-            const contoInput     = tr.querySelector('.form-conto');
-            const importoInput   = tr.querySelector('.form-importo');
+            const contoInput = tr.querySelector('.form-conto');
+            const importoInput = tr.querySelector('.form-importo');
 
             // Validate date
             if (!dataInput.value) {
@@ -705,10 +709,10 @@ const UI = {
         // Prevent multiple edit forms
         if (row.nextElementSibling?.classList.contains('inline-edit-row')) return;
 
-        const id       = row.dataset.id;
-        const rawDate  = row.dataset.date;
-        const rawImp   = row.dataset.importo;
-        const cells    = row.querySelectorAll('td');
+        const id = row.dataset.id;
+        const rawDate = row.dataset.date;
+        const rawImp = row.dataset.importo;
+        const cells = row.querySelectorAll('td');
         // cells: [0]=data display, [1]=operazione, [2]=categoria, [3]=conto, [4]=importo, [5]=azioni
 
         // Hide original row
@@ -746,11 +750,11 @@ const UI = {
         };
 
         const saveEdit = async () => {
-            const dataInput       = tr.querySelector('.form-data');
+            const dataInput = tr.querySelector('.form-data');
             const operazioneInput = tr.querySelector('.form-operazione');
-            const categoriaInput  = tr.querySelector('.form-categoria');
-            const contoInput      = tr.querySelector('.form-conto');
-            const importoInput    = tr.querySelector('.form-importo');
+            const categoriaInput = tr.querySelector('.form-categoria');
+            const contoInput = tr.querySelector('.form-conto');
+            const importoInput = tr.querySelector('.form-importo');
 
             // Validate
             let isValid = true;
@@ -1050,8 +1054,8 @@ const App = {
         // Action Delegation (Delete, Toggle Eye, Edit)
         UI.elements.expensesList?.addEventListener('click', async (e) => {
             const btnDelete = e.target.closest('.delete-btn');
-            const btnEye    = e.target.closest('.eye-toggle');
-            const btnEdit   = e.target.closest('.edit-btn');
+            const btnEye = e.target.closest('.eye-toggle');
+            const btnEdit = e.target.closest('.edit-btn');
 
             if (btnDelete) {
                 const id = btnDelete.dataset.id;
@@ -1060,25 +1064,42 @@ const App = {
                     Utils.showToast(UI.elements.elencoToast, '✓ Spesa eliminata.', 'success');
                     const row = btnDelete.closest('.expense-row');
                     const section = row.closest('.month-section');
-                    row.remove();
-                    if (section.querySelectorAll('.expense-row').length === 0) {
-                        let yearHeader = section.previousElementSibling;
-                        while (yearHeader && !yearHeader.classList.contains('year-header')) {
-                            yearHeader = yearHeader.previousElementSibling;
-                        }
-                        section.classList.add('fade-out');
-                        setTimeout(() => {
-                            section.remove();
-                            if (yearHeader) {
-                                const next = yearHeader.nextElementSibling;
-                                if (!next || !next.classList.contains('month-section')) {
-                                    yearHeader.remove();
-                                }
+
+                    // 1. Aggiungi la classe CSS che fa partire l'animazione
+                    row.classList.add('fade-out');
+
+                    // 2. Aspetta 500ms (la durata della transition nel CSS) prima di rimuovere dal DOM
+                    setTimeout(() => {
+                        row.remove();
+
+                        // 3. Logica per rimuovere la sezione se vuota o ricalcolare i totali
+                        if (section.querySelectorAll('.expense-row').length === 0) {
+                            let yearHeader = section.previousElementSibling;
+                            while (yearHeader && !yearHeader.classList.contains('year-header')) {
+                                yearHeader = yearHeader.previousElementSibling;
                             }
-                        }, 500);
-                    } else {
-                        UI.recalcMonthTotals(section);
-                    }
+                            // Anche qui animiamo la sparizione della sezione intera
+                            section.classList.add('fade-out');
+                            setTimeout(() => {
+                                section.remove();
+                                if (yearHeader) {
+                                    let next = yearHeader.nextElementSibling;
+                                    let separator = null;
+                                    if (next && next.classList.contains('year-separator')) {
+                                        separator = next;
+                                        next = next.nextElementSibling;
+                                    }
+                                    if (!next || !next.classList.contains('month-section')) {
+                                        yearHeader.remove();
+                                        if (separator) separator.remove();
+                                    }
+                                }
+                            }, 500);
+                        } else {
+                            UI.recalcMonthTotals(section);
+                        }
+                    }, 500); // <-- Tempo di attesa identico al CSS (0.5s)
+
                     this.state.dashboardDirty = true;
                 }
 
@@ -1159,7 +1180,10 @@ const App = {
         });
         UI.elements.addKeywordBtn?.addEventListener('click', async () => {
             const kw = UI.elements.keywordInput.value.trim();
-            if (!kw) return;
+            if (!kw) {
+                UI.showErrorTooltip(UI.elements.keywordInput, 'Inserisci una keyword');
+                return;
+            }
             const res = await API.addKeyword(kw);
             if (res.ok) {
                 UI.elements.keywordInput.value = '';
@@ -1236,7 +1260,18 @@ const App = {
                 this.checkBulkDeleteBtn();
             });
         });
-        tree.querySelectorAll('input[data-month]').forEach(mCb => mCb.addEventListener('change', () => this.checkBulkDeleteBtn()));
+        tree.querySelectorAll('input[data-month]').forEach(mCb => {
+            mCb.addEventListener('change', () => {
+                this.checkBulkDeleteBtn();
+                // Auto-check year if all months checked
+                const year = mCb.dataset.year;
+                const yearCb = tree.querySelector(`input[data-year="${year}"]:not([data-month])`);
+                const allMonths = tree.querySelectorAll(`input[data-year="${year}"][data-month]`);
+                if (yearCb && allMonths.length > 0) {
+                    yearCb.checked = Array.from(allMonths).every(cb => cb.checked);
+                }
+            });
+        });
     },
 
     checkBulkDeleteBtn() {

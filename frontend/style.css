@@ -518,6 +518,11 @@ body {
     flex-shrink: 0;
 }
 
+
+.date-field input[type="date"] {
+    flex: unset; 
+    width: 150px; 
+}
 .search-input-wrapper {
     flex: 1;
     position: relative;
@@ -563,8 +568,8 @@ body {
     width: 42px;
     height: 42px;
     border-radius: 12px;
-    border: none;
-    background-color: #E0F7FA;
+    border: 2px solid var(--sidebar-text);
+    background-color: rgba(255, 255, 255, 0.7);
     color: var(--sidebar-text);
     display: flex;
     align-items: center;
@@ -576,12 +581,17 @@ body {
 }
 
 .icon-btn:hover {
-    background-color: var(--primary-color);
+    background-color: var(--warning-color);
     color: var(--sidebar-text);
 }
 
 .icon-btn:focus { outline: none; box-shadow: none; }
-.icon-btn:focus-visible { outline: 2px solid var(--primary-hover); outline-offset: 2px; }
+
+.icon-btn:focus-visible { box-shadow: 0 0 0 3px rgba(74, 158, 175, 0.25) !important; 
+    border-color: var(--primary-hover) !important; 
+    transition: box-shadow 0.2s ease, border-color 0.2s ease; 
+    z-index: 10; position: relative; 
+}
 
 .icon-btn.active {
     background-color: var(--primary-hover);
@@ -600,7 +610,7 @@ body {
     padding: 20px;
     box-shadow: 0 8px 32px rgba(130, 207, 255, 0.2);
     z-index: 200;
-    min-width: 280px;
+    min-width: auto;
 }
 
 .date-popover.hidden { display: none; }
@@ -608,7 +618,7 @@ body {
 .date-popover-content {
     display: flex;
     flex-direction: column;
-    gap: 14px;
+    gap: 6px;
 }
 
 .date-field {
@@ -642,6 +652,11 @@ body {
     accent-color: var(--primary-hover);
 }
 
+.inline-form-row input::placeholder {
+    color: var(--sidebar-text);
+    opacity: 1;
+}
+
 .date-field input[type="date"]:focus,
 .inline-form-row input[type="date"]:focus {
     border-color: var(--primary-hover);
@@ -651,7 +666,7 @@ body {
 .date-field input[type="date"]::-webkit-calendar-picker-indicator,
 .inline-form-row input[type="date"]::-webkit-calendar-picker-indicator {
     cursor: pointer;
-    filter: invert(40%) sepia(15%) saturate(600%) hue-rotate(160deg);
+    filter: invert(19%) sepia(12%) saturate(3065%) hue-rotate(152deg) brightness(95%) contrast(102%);
     opacity: 0.7;
     transition: opacity 0.2s ease;
 }
@@ -664,8 +679,9 @@ body {
 .date-popover-actions {
     display: flex;
     gap: 10px;
-    justify-content: flex-end;
-    margin-top: 4px;
+    justify-content: space-between;
+    margin-top: 15px;
+    width: 100%;
 }
 
 .btn-small {
@@ -820,6 +836,7 @@ body {
     background-color: #F1F5F9;
     border-top: 2px solid var(--primary-color);
     border-bottom: none !important;
+    border-right: none !important;
 }
 
 .expense-table tbody tr:nth-child(even) { background-color: var(--row-alt-bg); }
@@ -913,17 +930,18 @@ body {
     transform: scale(1.18);
 }
 
-/* Trash gets a red tint only on hover, still no border */
-.action-btns .delete-btn:hover {
-    color: #e74c3c;
-    transform: scale(1.18);
+.expense-row {
+    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 1;
+    transform: translateX(0);
+    display: table-row;
 }
 
-/* ── Row fade-out animation ── */
 .expense-row.fade-out {
-    opacity: 0;
-    transform: translateX(20px);
-    transition: opacity 0.4s ease, transform 0.4s ease;
+    opacity: 0 !important;
+    transform: translateX(100px) !important;
+    background-color: rgba(231, 76, 60, 0.1) !important;
+    pointer-events: none;
 }
 
 /* ===================================================
@@ -978,6 +996,15 @@ body {
     border: solid #fff;
     border-width: 0 2px 2px 0;
     transform: rotate(45deg);
+}
+
+
+.paid-checkbox:focus-visble{
+    box-shadow: 0 0 0 3px rgba(74, 158, 175, 0.25) !important;
+    border-color: var(--primary-hover) !important;
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+    z-index: 10;
+    position: relative;
 }
 
 /* ===================================================
@@ -1125,10 +1152,7 @@ body {
     padding: 0 1px;
 }
 
-/* ===================================================
-   TOAST — centrato nell'area dei contenuti
-   (esclude la sidebar fissa)
-   =================================================== */
+
 .upload-toast {
     position: fixed;
     top: 24px;
@@ -1148,20 +1172,30 @@ body {
     min-width: 260px;
     max-width: 480px;
     white-space: nowrap;
+    transition: opacity 0.5s ease, visibility 0.5s ease; /* Aggiungi questa riga */
+    opacity: 1;
+    visibility: visible;
 }
 
-.upload-toast.hidden { display: none !important; }
+.upload-toast.hidden { 
+    opacity: 0 !important;
+    visibility: hidden; 
+ }
 
 .upload-toast.success {
-    background-color: rgba(102, 187, 106, 0.15);
-    color: #27ae60;
-    border: 1px solid rgba(102, 187, 106, 0.3);
+    background-color: #FFFFFF;      
+    color: #27ae60;                 
+    border: 2px solid #27ae60;      
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15); 
+    opacity: 1;                     
 }
 
 .upload-toast.error {
-    background-color: rgba(239, 83, 80, 0.12);
-    color: #c0392b;
-    border: 1px solid rgba(239, 83, 80, 0.3);
+    background-color: #FFFFFF;      
+    color: #c0392b;                 
+    border: 2px solid #c0392b;      
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    opacity: 1;
 }
 
 /* ===================================================
@@ -1294,7 +1328,11 @@ body {
     transition: all 0.15s ease;
 }
 
-.modal-close:hover { background: rgba(127, 200, 217, 0.15); }
+.modal-close:hover {
+    background-color: rgba(231, 76, 60, 0.1); 
+    color: #e74c3c; 
+    transform: scale(1.1); 
+}
 
 .modal-body {
     padding: 18px 22px;
@@ -1303,10 +1341,10 @@ body {
 }
 
 .modal-hint {
-    font-size: 0.84rem;
+    font-size: 0.9rem;
     color: var(--sidebar-text);
-    margin: 0 0 16px 0;
-    line-height: 1.5;
+    margin: 0 0 25px 0;
+    line-height: 1.6;
 }
 
 .modal-footer {
@@ -1316,13 +1354,22 @@ body {
 }
 
 /* ── Bulk Delete: Period Tree ── */
-.period-tree { display: flex; flex-direction: column; gap: 10px; }
+.period-tree { 
+    display: flex; 
+    flex-direction: column; 
+    gap: 10px; 
+}
 
 .period-year {
     border: 1px solid #5ac8fa;
     border-radius: 10px;
     padding: 10px 14px;
     background: #FFFFFF;
+}
+
+.period-year:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    border-color: #82CFFF;
 }
 
 .period-year-header {
@@ -1378,12 +1425,10 @@ body {
     align-items: center;
     gap: 8px;
     transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    box-shadow: 0 4px 10px rgba(255, 107, 107, 0.3);
 }
 
 .btn-danger:hover:not(:disabled) {
     transform: scale(1.05);
-    box-shadow: 0 6px 16px rgba(255, 107, 107, 0.4);
 }
 
 .btn-danger:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -1392,7 +1437,7 @@ body {
 .keyword-input-row {
     display: flex;
     gap: 8px;
-    margin-bottom: 16px;
+    margin-bottom: 35px;
 }
 
 .keyword-input-row input {
@@ -1460,7 +1505,11 @@ body {
     transition: opacity 0.15s ease;
 }
 
-.keyword-remove:hover { opacity: 1; }
+.keyword-remove:hover { 
+    opacity: 1; 
+    color: #e74c3c; 
+    transform: scale(1.2); 
+}
 
 /* ===================================================
    NEUTRAL ROWS
@@ -1477,7 +1526,7 @@ tr.expense-row.neutral-row:hover,
 }
 
 .expense-row.neutral-row .eye-toggle { visibility: hidden; }
-.importo-neutral { color: var(--text-muted) !important; font-weight: 700; }
+.importo-neutral { color: var(--text-color) !important; font-weight: 700; }
 
 /* ===================================================
    SMALL CONFIRM MODAL
@@ -1597,3 +1646,30 @@ tr.expense-row.neutral-row:hover,
     background: linear-gradient(90deg, var(--primary-color), var(--primary-hover));
     transition: width 0.6s ease;
 }
+
+/* =========================================
+   UNIFORMAZIONE HOVER (Tutti i bottoni)
+   ========================================= */
+
+/* Lista di tutti i bottoni dell'app */
+.btn-primary:hover,               /* Bottone Carica */
+.btn-danger:hover:not(:disabled), /* Bottoni Eliminazione */
+.btn-small:hover,                 /* Applica/Cancella date */
+.icon-btn:hover,                  /* Bottoni in alto (+, Cal, Menu) */
+.action-btns button:hover,        /* Occhio, Matita, Cestino tabella */
+.modal-close:hover,               /* X delle modali */
+.keyword-remove:hover,            /* X delle keyword */
+.btn-add-keyword:hover,           /* Bottone aggiungi keyword */
+.btn-save-inline:hover,           /* Spunta verde salvataggio */
+.btn-cancel-inline:hover {        /* X rossa annulla */
+    
+    /* IMPOSTA QUI LA GRANDEZZA PER TUTTI */
+    transform: scale(1.05) !important; 
+    
+    /* Aggiunge un effetto "molla" fluido a tutti */
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), 
+                background-color 0.2s ease, 
+                color 0.2s ease, 
+                border-color 0.2s ease !important;
+}
+
