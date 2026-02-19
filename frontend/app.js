@@ -478,7 +478,7 @@ const UI = {
 
         const addBtn = document.createElement('button');
         addBtn.className = 'add-expense-btn';
-        addBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Aggiungi Spesa Manuale';
+        addBtn.innerHTML = '<i class="fa-solid fa-plus"></i> Aggiungi Spesa';
         addBtn.addEventListener('click', () => this.showInlineForm(section, tbody, year, monthNum));
         section.appendChild(addBtn);
 

@@ -77,8 +77,9 @@
                     <!-- Upload Toast Notification -->
                     <div id="upload-toast" class="upload-toast hidden"></div>
 
-                    <hr class="section-divider">
+                    <div class="dashboard-divider"></div>
 
+                    <!-- Filter Buttons-->
                     <div class="filters-bar">
                         <select id="month-filter" class="custom-select minimal-select">
                             <!-- JS populates from /available-periods -->
@@ -98,8 +99,6 @@
                         <!-- Panoramica Card -->
                         <div class="card">
                             <h3 class="card-title">Panoramica</h3>
-                            <hr class="card-divider">
-
                             <div class="panoramica-content">
                                 <div class="chart-container">
                                     <canvas id="panoramicaChart"></canvas>
@@ -124,8 +123,6 @@
                         <!-- Top Categories Card -->
                         <div class="card">
                             <h3 class="card-title">Dove spendo di più</h3>
-                            <hr class="card-divider">
-
                             <div id="top-categories-container">
                                 <!-- JS populates top 3 categories -->
                                 <p class="top-cat-empty"
@@ -143,29 +140,17 @@
 
                         <!-- Bonifici Card -->
                         <div class="card">
-                            <h3 class="card-title">Bonifici Fatti</h3>
-                            <hr class="card-divider">
+                            <h3 class="card-title">Gestione Bonifici</h3>
 
                             <table class="data-table">
                                 <thead>
                                     <tr>
-                                        <th>DA</th>
+                                        <th>Mese</th>
                                         <th>Importo</th>
+                                        <th></th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <tr>
-                                        <td>Mario</td>
-                                        <td>50 €</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Luca</td>
-                                        <td>20 €</td>
-                                    </tr>
-                                    <tr>
-                                        <td>Paolo</td>
-                                        <td>30 €</td>
-                                    </tr>
                                 </tbody>
                             </table>
                         </div>
