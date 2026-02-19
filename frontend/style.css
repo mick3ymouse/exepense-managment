@@ -468,8 +468,6 @@ body {
     overflow: hidden;
 }
 
-
-
 .metric-label {
     display: block;
     font-size: 0.68rem;
@@ -497,11 +495,11 @@ body {
 
 /* Divisore interno cyan chiaro stile year-separator */
 .card-inner-divider {
-    height: 3px;
-    background-color: var(--primary-hover);
+    height: 1px;
+    background-color: var(--sidebar-text);
     border-radius: 2px;
     margin: 22px 0 20px 0;
-    opacity: 0.5;
+    opacity: 1;
     width: 100%;
 }
 
@@ -1890,21 +1888,32 @@ tr.expense-row.neutral-row:hover,
 .col-bonifici-importo { width: 35%; }
 .col-bonifici-azioni  { width: 20%; }
 
-/* Mese column: centered */
-.bonifici-table td:nth-child(1),
+/* Mese column: header bold, body rows normal */
 .bonifici-table th:nth-child(1) {
     text-align: center !important;
     vertical-align: middle;
     font-weight: 700;
+    color: var(--sidebar-text);
+}
+.bonifici-table tbody td:nth-child(1) {
+    text-align: center !important;
+    vertical-align: middle;
+    font-weight: 500;
+    color: var(--sidebar-text);
 }
 
-/* Importo column in bonifici: centered */
-.bonifici-table td:nth-child(2),
+/* Importo column: header bold, body rows normal */
 .bonifici-table th:nth-child(2) {
     text-align: center !important;
     padding-right: 14px !important;
     vertical-align: middle;
     font-weight: 700;
+}
+.bonifici-table tbody td:nth-child(2) {
+    text-align: center !important;
+    padding-right: 14px !important;
+    vertical-align: middle;
+    font-weight: 500;
 }
 
 /* Bonifici tfoot total value */
