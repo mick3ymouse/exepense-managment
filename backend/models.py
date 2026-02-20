@@ -71,5 +71,20 @@ def init_db():
         )
     """)
 
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS rimborso_settings (
+            id INTEGER PRIMARY KEY,
+            keyword_id INTEGER,
+            tolleranza REAL DEFAULT 5.0,
+            attivo INTEGER DEFAULT 1
+        )
+    """)
+
+    # Ensure default row exists
+    cursor.execute("""
+        INSERT OR IGNORE INTO rimborso_settings (id, keyword_id, tolleranza, attivo)
+        VALUES (1, NULL, 5.0, 1)
+    """)
+
     conn.commit()
     conn.close()

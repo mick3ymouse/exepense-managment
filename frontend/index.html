@@ -231,6 +231,9 @@
                                 <button class="kebab-item" id="kebab-keywords">
                                     <i class="fa-solid fa-filter"></i> Gestione Keyword Neutre
                                 </button>
+                                <button class="kebab-item" id="kebab-rimborso">
+                                    <i class="fa-solid fa-money-bill-transfer"></i> Rilevamento Rimborsi
+                                </button>
                             </div>
                         </div>
                         <input type="file" id="elenco-file-input" accept=".xlsx" multiple style="display: none;">
@@ -331,6 +334,61 @@
                             <div id="keyword-list" class="keyword-list">
                                 <!-- JS populates keyword tags -->
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Modal: Impostazioni Rilevamento Rimborsi ── -->
+                <div class="modal-overlay hidden" id="modal-rimborso-settings">
+                    <div class="modal-content modal-content-sm">
+                        <div class="modal-header">
+                            <h3><i class="fa-solid fa-money-bill-transfer"></i> Rilevamento Rimborsi</h3>
+                            <button class="modal-close" id="close-rimborso-settings">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            <p class="modal-hint">Dopo ogni caricamento, il sistema cercherà automaticamente bonifici di rimborso e proporrà di spuntare i mesi corrispondenti.</p>
+                            <div class="rimborso-settings-form">
+                                <div class="rimborso-field">
+                                    <label class="rimborso-label">Nome mittente (Operazione)</label>
+                                    <input type="text" id="rimborso-pattern-input" placeholder="es. Mario Rossi, Azienda SRL...">
+                                    <p class="rimborso-hint">Verrà aggiunto automaticamente alle keyword neutre.</p>
+                                </div>
+                                <div class="rimborso-field">
+                                    <label class="rimborso-label">Tolleranza massima (€)</label>
+                                    <input type="number" id="rimborso-tolleranza-input" value="5" min="0" max="100" step="0.5">
+                                </div>
+                                <div class="rimborso-field rimborso-toggle-row">
+                                    <label class="rimborso-label">Rilevamento attivo</label>
+                                    <label class="toggle-switch">
+                                        <input type="checkbox" id="rimborso-attivo-input" checked>
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn-primary" id="save-rimborso-settings-btn">
+                                <i class="fa-solid fa-floppy-disk"></i> Salva
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── Modal: Conferma Rimborso Rilevato ── -->
+                <div class="modal-overlay hidden" id="modal-rimborso-confirm">
+                    <div class="modal-content modal-content-sm">
+                        <div class="modal-header">
+                            <h3><i class="fa-solid fa-magnifying-glass-dollar"></i> Rimborso Rilevato</h3>
+                        </div>
+                        <div class="modal-body">
+                            <p class="modal-hint">È stato rilevato un possibile bonifico di rimborso. Vuoi spuntare i mesi corrispondenti come rimborsati?</p>
+                            <div id="rimborso-confirm-details" class="rimborso-candidate-card"></div>
+                        </div>
+                        <div class="modal-footer-confirm">
+                            <button type="button" class="btn-small btn-apply" id="rimborso-skip-btn">Ignora</button>
+                            <button type="button" class="btn-primary" id="rimborso-confirm-btn">
+                                <i class="fa-solid fa-check"></i> Conferma
+                            </button>
                         </div>
                     </div>
                 </div>

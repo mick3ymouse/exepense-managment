@@ -236,6 +236,22 @@ const API = {
 
     async removeKeyword(id) {
         return this.fetchJSON(`/neutral-keywords/${id}`, { method: 'DELETE' });
+    },
+
+    async getRimborsoSettings() {
+        return this.fetchJSON('/rimborso-settings');
+    },
+
+    async saveRimborsoSettings(data) {
+        return this.fetchJSON('/rimborso-settings', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+    },
+
+    async detectRimborso() {
+        return this.fetchJSON('/detect-rimborso');
     }
 };
 
@@ -291,7 +307,13 @@ const UI = {
             bonificiYearPrev: document.getElementById('bonifici-year-prev'),
             bonificiYearNext: document.getElementById('bonifici-year-next'),
             bonificiTbody: document.getElementById('bonifici-tbody'),
-            bonificiTfootTotal: document.getElementById('bonifici-tfoot-total')
+            bonificiTfootTotal: document.getElementById('bonifici-tfoot-total'),
+
+            // Rimborso
+            rimborsoPatternInput: document.getElementById('rimborso-pattern-input'),
+            rimborsoTolleranzaInput: document.getElementById('rimborso-tolleranza-input'),
+            rimborsoAttivoInput: document.getElementById('rimborso-attivo-input'),
+            rimborsoConfirmDetails: document.getElementById('rimborso-confirm-details')
         };
     },
 
@@ -1222,12 +1244,64 @@ const App = {
             this.loadDashboard(this.state.currentYear, this.state.currentMonth);
         });
 
-        const handleFiles = async (files) => {
-            if (!files.length) return;
+        let pendingFiles = [];  // ← NUOVO: file in attesa di upload
+
+        const updateDropAreaPreview = () => {
+            const area = UI.elements.dropArea;
+            if (!area) return;
+
+            // Rimuovi lista file precedente se esiste
+            area.querySelector('.file-preview-list')?.remove();
+
+            if (pendingFiles.length === 0) {
+                area.querySelector('i').style.display = '';
+                area.querySelector('.file-msg').style.display = '';
+                area.classList.remove('has-files');
+                UI.elements.uploadBtn.textContent = 'Carica e Analizza';
+            } else {
+                // Nasconde icona e messaggio di default
+                area.querySelector('i').style.display = 'none';
+                area.querySelector('.file-msg').style.display = 'none';
+                area.classList.add('has-files');
+                UI.elements.uploadBtn.textContent = `Carica ${pendingFiles.length} file`;
+
+                // Crea la lista di tag file
+                const list = document.createElement('div');
+                list.className = 'file-preview-list';
+                pendingFiles.forEach((f, index) => {
+                    const tag = document.createElement('div');
+                    tag.className = 'file-preview-tag';
+                    tag.innerHTML = `
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                            <polyline points="14 2 14 8 20 8"/>
+                        </svg>
+                        <span>${f.name}</span>
+                        <button class="file-tag-remove" title="Rimuovi"><i class="fa-solid fa-xmark"></i></button>
+                    `;
+                    tag.querySelector('.file-tag-remove').addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        pendingFiles.splice(index, 1);
+                        UI.elements.fileInput.value = ''; // ← aggiunge questo
+                        updateDropAreaPreview();
+                    });
+                    list.appendChild(tag);
+                });
+                area.appendChild(list);
+            }
+        };
+
+        const setPendingFiles = (files) => {
+            pendingFiles = files.filter(f => f.name.endsWith('.xlsx'));
+            updateDropAreaPreview();
+        };
+
+        const uploadPendingFiles = async () => {
+            if (!pendingFiles.length) return;
             UI.elements.uploadBtn.textContent = 'Caricamento...';
             UI.elements.uploadBtn.disabled = true;
 
-            const result = await API.uploadFiles(files);
+            const result = await API.uploadFiles(pendingFiles);
 
             Utils.showToast(UI.elements.uploadToast,
                 `✓ ${result.totalNew} importati, ${result.totalDup} duplicati` + (result.totalErr ? `, ${result.totalErr} errori` : ''),
@@ -1236,24 +1310,53 @@ const App = {
 
             if (result.lastError) Utils.showToast(UI.elements.uploadToast, result.lastError, 'error');
 
-            UI.elements.uploadBtn.textContent = 'Carica e Analizza';
-            UI.elements.uploadBtn.disabled = false;
+            pendingFiles = [];
             UI.elements.fileInput.value = '';
+            updateDropAreaPreview();
+            UI.elements.uploadBtn.disabled = false;
 
             await this.initDashboardData();
+
+            // Rimborso detection after upload
+            if (result.totalNew > 0) await this.detectAndPromptRimborso();
         };
 
         if (UI.elements.dropArea) {
-            UI.elements.dropArea.addEventListener('click', () => UI.elements.fileInput.click());
-            UI.elements.dropArea.addEventListener('dragover', (e) => { e.preventDefault(); UI.elements.dropArea.classList.add('highlight'); });
-            UI.elements.dropArea.addEventListener('dragleave', () => UI.elements.dropArea.classList.remove('highlight'));
+            // Click sulla drop area: apre il file picker SOLO se non ci sono file pendenti
+            UI.elements.dropArea.addEventListener('click', (e) => {
+                if (pendingFiles.length === 0) {
+                    UI.elements.fileInput.click();
+                }
+            });
+
+            UI.elements.dropArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                UI.elements.dropArea.classList.add('highlight');
+            });
+            UI.elements.dropArea.addEventListener('dragleave', () => {
+                UI.elements.dropArea.classList.remove('highlight');
+            });
             UI.elements.dropArea.addEventListener('drop', (e) => {
                 e.preventDefault();
                 UI.elements.dropArea.classList.remove('highlight');
-                handleFiles(Array.from(e.dataTransfer.files).filter(f => f.name.endsWith('.xlsx')));
+                // Salva i file ma NON fa l'upload → aspetta il bottone
+                setPendingFiles(Array.from(e.dataTransfer.files));
             });
-            UI.elements.fileInput?.addEventListener('change', (e) => handleFiles(Array.from(e.target.files)));
-            UI.elements.uploadBtn?.addEventListener('click', () => handleFiles(Array.from(UI.elements.fileInput.files)));
+
+            // Selezione via file picker → salva in pending, non fa upload
+            UI.elements.fileInput?.addEventListener('change', (e) => {
+                setPendingFiles(Array.from(e.target.files));
+            });
+
+            // Il bottone: se non ci sono file pending → apre il file picker
+            //             se ci sono file pending → fa l'upload
+            UI.elements.uploadBtn?.addEventListener('click', () => {
+                if (pendingFiles.length === 0) {
+                    UI.elements.fileInput.click();
+                } else {
+                    uploadPendingFiles();
+                }
+            });
         }
     },
 
@@ -1307,6 +1410,9 @@ const App = {
             Utils.showToast(UI.elements.elencoToast, `✓ ${res.totalNew} nuovi, ${res.totalDup} duplicati`, 'success');
             await this.loadElenco();
             Bonifici.load();
+
+            // Rimborso detection after upload
+            if (res.totalNew > 0) await this.detectAndPromptRimborso();
         });
 
         // Real-time Search
@@ -1524,6 +1630,13 @@ const App = {
             UI.openModal('modal-keywords');
             this.loadKeywordsList();
         });
+        document.getElementById('kebab-rimborso')?.addEventListener('click', async () => {
+            UI.openModal('modal-rimborso-settings');
+            this.loadRimborsoSettings();
+        });
+        document.getElementById('save-rimborso-settings-btn')?.addEventListener('click', async () => {
+            await this.saveRimborsoSettings();
+        });
         UI.elements.addKeywordBtn?.addEventListener('click', async () => {
             const kw = UI.elements.keywordInput.value.trim();
             if (!kw) {
@@ -1640,13 +1753,118 @@ const App = {
             res.data.forEach(k => {
                 const tag = document.createElement('span');
                 tag.className = 'keyword-tag';
-                tag.innerHTML = `${Utils.escapeHtml(k.keyword)} <button class="keyword-remove"><i class="fa-solid fa-xmark"></i></button>`;
+                const badge = k.is_rimborso
+                    ? '<span class="keyword-rimborso-badge"><i class="fa-solid fa-money-bill-transfer"></i></span>'
+                    : '';
+                tag.innerHTML = `${badge}${Utils.escapeHtml(k.keyword)} <button class="keyword-remove"><i class="fa-solid fa-xmark"></i></button>`;
                 tag.querySelector('button').addEventListener('click', async () => {
                     await API.removeKeyword(k.id);
                     this.loadKeywordsList();
+                    // If it was the rimborso keyword, refresh rimborso settings modal if open
+                    if (k.is_rimborso && UI.elements.rimborsoPatternInput) {
+                        UI.elements.rimborsoPatternInput.value = '';
+                    }
                 });
                 list.appendChild(tag);
             });
         }
+    },
+
+    async loadRimborsoSettings() {
+        const res = await API.getRimborsoSettings();
+        if (res.ok) {
+            if (UI.elements.rimborsoPatternInput)
+                UI.elements.rimborsoPatternInput.value = res.data.operazione_pattern || '';
+            if (UI.elements.rimborsoTolleranzaInput)
+                UI.elements.rimborsoTolleranzaInput.value = res.data.tolleranza ?? 5;
+            if (UI.elements.rimborsoAttivoInput)
+                UI.elements.rimborsoAttivoInput.checked = res.data.attivo !== false;
+        }
+    },
+
+    async saveRimborsoSettings() {
+        const pattern = UI.elements.rimborsoPatternInput?.value.trim() || '';
+        const tolleranza = parseFloat(UI.elements.rimborsoTolleranzaInput?.value) || 5.0;
+        const attivo = UI.elements.rimborsoAttivoInput?.checked !== false;
+
+        const res = await API.saveRimborsoSettings({ operazione_pattern: pattern, tolleranza, attivo });
+        if (res.ok) {
+            Utils.showToast(UI.elements.elencoToast, '✓ Impostazioni rimborso salvate', 'success');
+            UI.closeModal('modal-rimborso-settings');
+            // Reload elenco to reflect possible is_neutral changes
+            if (document.getElementById('page-elenco').classList.contains('active')) {
+                await this.loadElenco();
+            }
+        } else {
+            Utils.showToast(UI.elements.elencoToast, 'Errore nel salvataggio', 'error');
+        }
+    },
+
+    async detectAndPromptRimborso() {
+        const res = await API.detectRimborso();
+        if (!res.ok || !res.data.candidates?.length) return;
+        await this._processRimborsoCandidate(res.data.candidates, 0);
+    },
+
+    async _processRimborsoCandidate(candidates, idx) {
+        if (idx >= candidates.length) return;
+        const candidate = candidates[idx];
+
+        return new Promise((resolve) => {
+            const details = UI.elements.rimborsoConfirmDetails;
+            if (details) {
+                const tx = candidate.transaction;
+                const monthTags = candidate.months.map(m =>
+                    `<span class="rimborso-candidate-tag">${m.month_name} ${m.year} (${Utils.formatImporto(m.amount)})</span>`
+                ).join('');
+                const counter = candidates.length > 1
+                    ? `<div class="rimborso-counter">${idx + 1} di ${candidates.length}</div>` : '';
+                details.innerHTML = `
+                    ${counter}
+                    <div class="rc-tx">
+                        <i class="fa-solid fa-arrow-down-to-line" style="color:var(--color-success)"></i>
+                        ${Utils.escapeHtml(tx.operazione)} — <strong>${Utils.formatImporto(tx.importo)}</strong>
+                        <span style="font-weight:400; font-size:0.82rem; color:var(--text-muted)"> del ${Utils.formatDateDisplay(tx.data_valuta)}</span>
+                    </div>
+                    <div class="rc-months">${monthTags}</div>
+                    ${candidate.diff > 0 ? `<div class="rimborso-diff">Differenza: ${Utils.formatImporto(candidate.diff)}</div>` : ''}
+                `;
+            }
+
+            UI.openModal('modal-rimborso-confirm');
+
+            const confirmBtn = document.getElementById('rimborso-confirm-btn');
+            const skipBtn = document.getElementById('rimborso-skip-btn');
+
+            const cleanup = () => {
+                confirmBtn.replaceWith(confirmBtn.cloneNode(true));
+                skipBtn.replaceWith(skipBtn.cloneNode(true));
+                UI.closeModal('modal-rimborso-confirm');
+            };
+
+            document.getElementById('rimborso-confirm-btn').addEventListener('click', async () => {
+                cleanup();
+                // Mark all candidate months as paid and sync UI
+                for (const month of candidate.months) {
+                    await API.setMonthlyStatus(month.year, month.month, true);
+                    Bonifici.updateRowState(String(month.year), month.month, true);
+                    const section = document.querySelector(
+                        `#page-elenco .month-section[data-year="${month.year}"][data-month="${month.month}"]`
+                    );
+                    if (section) {
+                        const cb = section.querySelector(`.paid-checkbox[data-year="${month.year}"][data-month="${month.month}"]`);
+                        if (cb) { cb.checked = true; UI.recalcMonthTotals(section); }
+                    }
+                }
+                resolve();
+                setTimeout(() => this._processRimborsoCandidate(candidates, idx + 1), 300);
+            }, { once: true });
+
+            document.getElementById('rimborso-skip-btn').addEventListener('click', () => {
+                cleanup();
+                resolve();
+                setTimeout(() => this._processRimborsoCandidate(candidates, idx + 1), 300);
+            }, { once: true });
+        });
     }
 };
