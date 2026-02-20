@@ -79,15 +79,6 @@
 
                     <div class="dashboard-divider"></div>
 
-                    <!-- Filter Buttons-->
-                    <div class="filters-bar">
-                        <select id="month-filter" class="custom-select minimal-select">
-                            <!-- JS populates from /available-periods -->
-                        </select>
-                        <select id="year-filter" class="custom-select minimal-select">
-                            <!-- JS populates from /available-periods -->
-                        </select>
-                    </div>
                 </div>
 
                 <!-- Dashboard Grid -->
@@ -97,8 +88,18 @@
                     <div class="col-left">
 
                         <div class="card card-panoramica-combined">
-                            <!-- Intestazione card -->
-                            <h3 class="card-title">Panoramica</h3>
+                            <!-- Intestazione card: titolo + filtri mese/anno -->
+                            <div class="card-header-row">
+                                <h3 class="card-title">Panoramica</h3>
+                                <div class="card-filters">
+                                    <select id="month-filter" class="custom-select minimal-select">
+                                        <!-- JS populates from /available-periods -->
+                                    </select>
+                                    <select id="year-filter" class="custom-select minimal-select">
+                                        <!-- JS populates from /available-periods -->
+                                    </select>
+                                </div>
+                            </div>
 
                             <!-- Grafico + metriche -->
                             <div class="panoramica-content">
@@ -198,6 +199,11 @@
                  PAGE: ELENCO
                  ════════════════════════════════════════════════ -->
             <section id="page-elenco" class="page">
+
+                <!-- Header -->
+                <header class="top-header">
+                    <h1>Elenco</h1>
+                </header>
 
                 <!-- Sticky Search Bar -->
                 <div class="elenco-search-bar">

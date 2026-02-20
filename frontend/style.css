@@ -200,7 +200,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 30px;
+    margin-bottom: 20px;
 }
 
 .top-header h1 {
@@ -367,11 +367,24 @@ body {
 /* ===================================================
    FILTERS BAR
    =================================================== */
-.filters-bar {
+/* ── Card header row: titolo a sinistra, filtri a destra ── */
+.card-header-row {
     display: flex;
-    justify-content: flex-end;
-    gap: 15px;
-    margin-bottom: 25px;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    gap: 12px;
+}
+
+.card-header-row .card-title {
+    margin: 0;
+    flex-shrink: 0;
+}
+
+.card-filters {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 /* ===================================================
