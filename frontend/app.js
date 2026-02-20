@@ -300,6 +300,16 @@ const UI = {
         this.elements.kebabDropdown?.classList.add('hidden');
     },
 
+    closeModal(id) {
+        const overlay = document.getElementById(id);
+        if (!overlay) return;
+        overlay.classList.add('modal-closing');
+        overlay.addEventListener('animationend', () => {
+            overlay.classList.remove('modal-closing');
+            overlay.classList.add('hidden');
+        }, { once: true });
+    },
+
     renderDashboardStats(data) {
         if (this.elements.metricEntrate) this.elements.metricEntrate.textContent = Utils.formatEuro(data.entrate);
         if (this.elements.metricUscite) this.elements.metricUscite.textContent = Utils.formatEuro(data.uscite);
@@ -1345,6 +1355,23 @@ const App = {
 
                     row.classList.add('fade-out');
 
+                    row.addEventListener('animationend', () => {
+                        row.querySelectorAll('td').forEach(td => {
+                            const h = td.offsetHeight;
+                            const wrapper = document.createElement('div');
+                            wrapper.style.height = h + 'px';
+                            wrapper.style.overflow = 'hidden';
+                            wrapper.style.transition = 'height 0.28s ease';
+                            while (td.firstChild) wrapper.appendChild(td.firstChild);
+                            td.style.padding = '0';
+                            td.style.border = 'none';
+                            td.appendChild(wrapper);
+                        });
+                        requestAnimationFrame(() => requestAnimationFrame(() => {
+                            row.querySelectorAll('td > div').forEach(w => w.style.height = '0');
+                        }));
+                    }, { once: true });
+
                     setTimeout(() => {
                         row.remove();
 
@@ -1374,7 +1401,7 @@ const App = {
                             // Refresh Bonifici amount for this month
                             this._syncBonificiAmountFromSection(section);
                         }
-                    }, 500);
+                    }, 720);
 
                     this.state.dashboardDirty = true;
                 }
@@ -1458,26 +1485,39 @@ const App = {
         }
 
         UI.elements.modalOverlays.forEach(ov => ov.addEventListener('click', (e) => {
-            if (e.target === ov) ov.classList.add('hidden');
+            if (e.target === ov) UI.closeModal(ov.id);
         }));
         document.querySelectorAll('.modal-close').forEach(btn => btn.addEventListener('click', (e) => {
-            e.target.closest('.modal-overlay').classList.add('hidden');
+            UI.closeModal(e.target.closest('.modal-overlay').id);
         }));
 
         document.getElementById('kebab-bulk-delete')?.addEventListener('click', () => {
             UI.openModal('modal-bulk-delete');
             this.loadBulkDeleteTree();
         });
-        document.getElementById('confirm-bulk-delete')?.addEventListener('click', async () => {
+        document.getElementById('confirm-bulk-delete')?.addEventListener('click', () => {
             const checked = document.querySelectorAll('#bulk-delete-tree input[data-month]:checked');
             const periods = Array.from(checked).map(c => ({
                 year: parseInt(c.dataset.year), month: parseInt(c.dataset.month)
             }));
 
-            if (confirm(`Eliminare ${periods.length} mesi? Azione irreversibile.`)) {
-                const res = await API.bulkDelete(periods);
-                if (res.ok) window.location.reload();
-            }
+            // Mostra il modal custom di conferma invece del confirm() nativo
+            const msg = document.getElementById('confirm-delete-msg');
+            if (msg) msg.textContent = `Stai per eliminare ${periods.length} ${periods.length === 1 ? 'mese' : 'mesi'}. L'operazione è irreversibile.`;
+            UI.openModal('modal-confirm-delete');
+
+            // Listener "Conferma" — usa { once: true } per evitare accumulo
+            document.getElementById('proceed-confirm-delete')?.addEventListener('click', async () => {
+                UI.closeModal('modal-confirm-delete');
+                setTimeout(async () => {
+                    const res = await API.bulkDelete(periods);
+                    if (res.ok) window.location.reload();
+                }, 200);
+            }, { once: true });
+        });
+
+        document.getElementById('cancel-confirm-delete')?.addEventListener('click', () => {
+            UI.closeModal('modal-confirm-delete');
         });
 
         document.getElementById('kebab-keywords')?.addEventListener('click', async () => {

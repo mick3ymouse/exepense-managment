@@ -1042,17 +1042,18 @@ body {
     border: 1px solid var(--focus-border);
 }
 
-.expense-row {
-    transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-    opacity: 1;
-    transform: translateX(0);
-    display: table-row;
+@keyframes cellSlideOut {
+    0%   { opacity: 1; transform: translateX(0);    background-color: transparent; }
+    20%  { background-color: rgba(231, 76, 60, 0.08); }
+    100% { opacity: 0; transform: translateX(80px); background-color: rgba(231, 76, 60, 0.05); }
 }
 
-.expense-row.fade-out {
-    opacity: 0 !important;
-    transform: translateX(100px) !important;
-    background-color: rgba(231, 76, 60, 0.1) !important;
+.expense-row td {
+    overflow: hidden;
+}
+
+.expense-row.fade-out td {
+    animation: cellSlideOut 0.4s cubic-bezier(0.4, 0, 0.6, 1) forwards;
     pointer-events: none;
 }
 
@@ -1427,6 +1428,24 @@ body {
     to   { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes modalFadeOut {
+    from { opacity: 1; }
+    to   { opacity: 0; }
+}
+
+@keyframes modalSlideOut {
+    from { opacity: 1; transform: translateY(0); }
+    to   { opacity: 0; transform: translateY(12px); }
+}
+
+.modal-overlay.modal-closing {
+    animation: modalFadeOut 0.18s ease forwards;
+    pointer-events: none;
+}
+
+.modal-overlay.modal-closing .modal-content {
+    animation: modalSlideOut 0.18s ease forwards;
+}
 .modal-header {
     display: flex;
     align-items: center;
@@ -1687,7 +1706,6 @@ tr.expense-row.neutral-row:hover,
     justify-content: flex-end;
     gap: 10px;
     padding: 14px 24px;
-    border-top: 1px solid var(--border-color);
 }
 
 /* ── Tooltip Error ── */
