@@ -685,13 +685,13 @@ async def delete_expense(expense_id: int):
 
 @app.get("/neutral-keywords")
 async def get_keywords():
-    """Return all neutral keywords, marking which one is linked to rimborso settings."""
+    """Return all neutral keywords, flagging those linked to a rimborso mittente."""
     conn = get_db_connection()
     rows = conn.execute("""
         SELECT nk.id, nk.keyword,
-               CASE WHEN rs.keyword_id IS NOT NULL THEN 1 ELSE 0 END as is_rimborso
+               CASE WHEN rm.keyword_id IS NOT NULL THEN 1 ELSE 0 END AS is_rimborso
         FROM neutral_keywords nk
-        LEFT JOIN rimborso_settings rs ON rs.keyword_id = nk.id
+        LEFT JOIN rimborso_mittenti rm ON rm.keyword_id = nk.id
         ORDER BY nk.keyword
     """).fetchall()
     conn.close()
@@ -726,7 +726,7 @@ async def add_keyword(request: Request):
 
 @app.delete("/neutral-keywords/{kw_id}")
 async def delete_keyword(kw_id: int):
-    """Remove a neutral keyword, un-flag matching expenses, and unlink rimborso settings if needed."""
+    """Remove a neutral keyword, un-flag expenses, sever rimborso link if present."""
     conn = get_db_connection()
     row = conn.execute("SELECT keyword FROM neutral_keywords WHERE id = ?", (kw_id,)).fetchone()
     if not row:
@@ -739,215 +739,187 @@ async def delete_keyword(kw_id: int):
         "UPDATE expenses SET is_neutral = 0 WHERE LOWER(TRIM(operazione)) = ?",
         (keyword.lower(),)
     )
-    # If this keyword was linked to rimborso settings, unlink it
-    conn.execute(
-        "UPDATE rimborso_settings SET keyword_id = NULL WHERE keyword_id = ?",
-        (kw_id,)
-    )
+    # Sever link from rimborso_mittenti without deleting the mittente
+    conn.execute("UPDATE rimborso_mittenti SET keyword_id = NULL WHERE keyword_id = ?", (kw_id,))
     conn.commit()
     conn.close()
     return {"deleted": kw_id}
 
 
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)
 
+# ── Rimborso Mittenti ────────────────────────────────────────────
 
-# ── Rimborso Settings ────────────────────────────────────────────
-
-@app.get("/rimborso-settings")
-async def get_rimborso_settings():
-    """Return current rimborso detection settings."""
+@app.get("/rimborso-mittenti")
+async def get_rimborso_mittenti():
     conn = get_db_connection()
-    row = conn.execute("""
-        SELECT rs.id, rs.keyword_id, rs.tolleranza, rs.attivo, nk.keyword
-        FROM rimborso_settings rs
-        LEFT JOIN neutral_keywords nk ON nk.id = rs.keyword_id
-        WHERE rs.id = 1
-    """).fetchone()
+    rows = conn.execute(
+        "SELECT id, operazione, keyword_id, tolleranza, attivo FROM rimborso_mittenti ORDER BY operazione"
+    ).fetchall()
     conn.close()
-    if not row:
-        return {"operazione_pattern": "", "keyword_id": None, "tolleranza": 5.0, "attivo": True}
-    return {
-        "operazione_pattern": row["keyword"] or "",
-        "keyword_id": row["keyword_id"],
-        "tolleranza": row["tolleranza"],
-        "attivo": bool(row["attivo"])
-    }
+    return [dict(r) for r in rows]
 
 
-@app.post("/rimborso-settings")
-async def save_rimborso_settings(request: Request):
-    """Save rimborso detection settings. Syncs operazione_pattern with neutral_keywords."""
+@app.post("/rimborso-mittenti")
+async def add_rimborso_mittente(request: Request):
+    """Add mittente and auto-create/link its neutral keyword."""
     body = await request.json()
-    pattern = body.get("operazione_pattern", "").strip()
+    operazione = body.get("operazione", "").strip()
     tolleranza = float(body.get("tolleranza", 5.0))
     attivo = 1 if body.get("attivo", True) else 0
 
+    if not operazione:
+        return JSONResponse(status_code=400, content={"error": "Operazione obbligatoria."})
+
     conn = get_db_connection()
-
-    # Get current linked keyword
-    current = conn.execute(
-        "SELECT keyword_id FROM rimborso_settings WHERE id = 1"
-    ).fetchone()
-    old_keyword_id = current["keyword_id"] if current else None
-
-    new_keyword_id = old_keyword_id
-
-    if pattern:
-        # Find or create keyword
+    try:
         existing_kw = conn.execute(
-            "SELECT id FROM neutral_keywords WHERE LOWER(keyword) = ?",
-            (pattern.lower(),)
+            "SELECT id FROM neutral_keywords WHERE LOWER(keyword) = ?", (operazione.lower(),)
         ).fetchone()
-
         if existing_kw:
-            new_keyword_id = existing_kw["id"]
+            keyword_id = existing_kw["id"]
         else:
-            # Remove old keyword if it was the rimborso one and pattern changed
-            if old_keyword_id:
-                old_kw = conn.execute(
-                    "SELECT keyword FROM neutral_keywords WHERE id = ?", (old_keyword_id,)
-                ).fetchone()
-                if old_kw and old_kw["keyword"].lower() != pattern.lower():
-                    conn.execute("DELETE FROM neutral_keywords WHERE id = ?", (old_keyword_id,))
-                    conn.execute(
-                        "UPDATE expenses SET is_neutral = 0 WHERE LOWER(TRIM(operazione)) = ?",
-                        (old_kw["keyword"].lower(),)
-                    )
-
-            conn.execute("INSERT INTO neutral_keywords (keyword) VALUES (?)", (pattern,))
+            conn.execute("INSERT INTO neutral_keywords (keyword) VALUES (?)", (operazione,))
             conn.execute(
                 "UPDATE expenses SET is_neutral = 1 WHERE LOWER(TRIM(operazione)) = ?",
-                (pattern.lower(),)
+                (operazione.lower(),)
             )
-            new_kw = conn.execute(
-                "SELECT id FROM neutral_keywords WHERE keyword = ?", (pattern,)
-            ).fetchone()
-            new_keyword_id = new_kw["id"]
-    else:
-        # Pattern cleared: remove old rimborso keyword if it was auto-created
-        new_keyword_id = None
+            keyword_id = conn.execute(
+                "SELECT id FROM neutral_keywords WHERE keyword = ?", (operazione,)
+            ).fetchone()["id"]
 
-    conn.execute("""
-        INSERT INTO rimborso_settings (id, keyword_id, tolleranza, attivo)
-        VALUES (1, ?, ?, ?)
-        ON CONFLICT(id) DO UPDATE SET keyword_id = ?, tolleranza = ?, attivo = ?
-    """, (new_keyword_id, tolleranza, attivo, new_keyword_id, tolleranza, attivo))
+        conn.execute(
+            "INSERT INTO rimborso_mittenti (operazione, keyword_id, tolleranza, attivo) VALUES (?, ?, ?, ?)",
+            (operazione, keyword_id, tolleranza, attivo)
+        )
+        conn.commit()
+        row = conn.execute(
+            "SELECT * FROM rimborso_mittenti WHERE operazione = ?", (operazione,)
+        ).fetchone()
+        conn.close()
+        return dict(row)
+    except Exception as e:
+        conn.close()
+        return JSONResponse(status_code=409, content={"error": f"Mittente già presente: {str(e)}"})
 
+
+@app.patch("/rimborso-mittenti/{mid}")
+async def update_rimborso_mittente(mid: int, request: Request):
+    body = await request.json()
+    conn = get_db_connection()
+    if not conn.execute("SELECT id FROM rimborso_mittenti WHERE id = ?", (mid,)).fetchone():
+        conn.close()
+        return JSONResponse(status_code=404, content={"error": "Mittente non trovato."})
+    if "tolleranza" in body:
+        conn.execute("UPDATE rimborso_mittenti SET tolleranza = ? WHERE id = ?", (float(body["tolleranza"]), mid))
+    if "attivo" in body:
+        conn.execute("UPDATE rimborso_mittenti SET attivo = ? WHERE id = ?", (1 if body["attivo"] else 0, mid))
+    conn.commit()
+    row = conn.execute("SELECT * FROM rimborso_mittenti WHERE id = ?", (mid,)).fetchone()
+    conn.close()
+    return dict(row)
+
+
+@app.delete("/rimborso-mittenti/{mid}")
+async def delete_rimborso_mittente(mid: int):
+    """Delete mittente and its linked neutral keyword."""
+    conn = get_db_connection()
+    row = conn.execute("SELECT operazione, keyword_id FROM rimborso_mittenti WHERE id = ?", (mid,)).fetchone()
+    if not row:
+        conn.close()
+        return JSONResponse(status_code=404, content={"error": "Mittente non trovato."})
+    keyword_id, operazione = row["keyword_id"], row["operazione"]
+    conn.execute("DELETE FROM rimborso_mittenti WHERE id = ?", (mid,))
+    if keyword_id:
+        conn.execute("DELETE FROM neutral_keywords WHERE id = ?", (keyword_id,))
+        conn.execute(
+            "UPDATE expenses SET is_neutral = 0 WHERE LOWER(TRIM(operazione)) = ?",
+            (operazione.lower(),)
+        )
     conn.commit()
     conn.close()
-    return {"operazione_pattern": pattern, "keyword_id": new_keyword_id, "tolleranza": tolleranza, "attivo": bool(attivo)}
+    return {"deleted": mid}
 
 
 @app.get("/detect-rimborso")
 async def detect_rimborso():
-    """Detect reimbursement transactions and match them with unpaid months."""
+    """Find reimbursement transactions matching active mittenti against unpaid months."""
     conn = get_db_connection()
 
-    # Get settings
-    settings = conn.execute("""
-        SELECT rs.tolleranza, rs.attivo, nk.keyword
-        FROM rimborso_settings rs
-        LEFT JOIN neutral_keywords nk ON nk.id = rs.keyword_id
-        WHERE rs.id = 1
-    """).fetchone()
-
-    if not settings or not settings["attivo"] or not settings["keyword"]:
+    mittenti = conn.execute(
+        "SELECT operazione, tolleranza FROM rimborso_mittenti WHERE attivo = 1"
+    ).fetchall()
+    if not mittenti:
         conn.close()
         return {"candidates": []}
 
-    pattern = settings["keyword"]
-    tolleranza = settings["tolleranza"]
+    paid_keys = {
+        (r["year"], r["month"])
+        for r in conn.execute("SELECT year, month FROM monthly_status WHERE is_paid = 1").fetchall()
+    }
 
-    # Get paid months
-    paid_rows = conn.execute(
-        "SELECT year, month FROM monthly_status WHERE is_paid = 1"
-    ).fetchall()
-    paid_keys = {(r["year"], r["month"]) for r in paid_rows}
-
-    # Get all months that have data
-    expense_months = conn.execute("""
+    expense_months_rows = conn.execute("""
         SELECT DISTINCT
-            CAST(strftime('%Y', data_valuta) AS INTEGER) as year,
-            CAST(strftime('%m', data_valuta) AS INTEGER) as month
-        FROM expenses
-        WHERE is_neutral = 0
-        ORDER BY year ASC, month ASC
+            CAST(strftime('%Y', data_valuta) AS INTEGER) AS year,
+            CAST(strftime('%m', data_valuta)  AS INTEGER) AS month
+        FROM expenses WHERE is_neutral = 0 ORDER BY year, month
     """).fetchall()
 
-    # Calculate reimbursable amount per unpaid month
-    unpaid_months = []
-    for row in expense_months:
-        y, m = row["year"], row["month"]
+    unpaid = []
+    for r in expense_months_rows:
+        y, m = r["year"], r["month"]
         if (y, m) in paid_keys:
             continue
-        start_date = f"{y}-{m:02d}-01"
-        end_date = f"{y}-{m + 1:02d}-01" if m < 12 else f"{y + 1}-01-01"
+        sd = f"{y}-{m:02d}-01"
+        ed = f"{y}-{m+1:02d}-01" if m < 12 else f"{y+1}-01-01"
         total = conn.execute("""
-            SELECT COALESCE(SUM(importo), 0) as total
-            FROM expenses
-            WHERE data_valuta >= ? AND data_valuta < ?
-              AND is_excluded = 0 AND is_neutral = 0
-        """, (start_date, end_date)).fetchone()["total"]
-
+            SELECT COALESCE(SUM(importo),0) AS t FROM expenses
+            WHERE data_valuta >= ? AND data_valuta < ? AND is_excluded=0 AND is_neutral=0
+        """, (sd, ed)).fetchone()["t"]
         if abs(total) > 0.01:
-            unpaid_months.append({
-                "year": y, "month": m,
-                "month_name": MONTH_NAMES_IT.get(m, str(m)),
-                "amount": round(total, 2)
-            })
+            unpaid.append({"year": y, "month": m,
+                           "month_name": MONTH_NAMES_IT.get(m, str(m)),
+                           "amount": round(total, 2)})
 
-    if not unpaid_months:
+    if not unpaid:
         conn.close()
         return {"candidates": []}
 
-    # Get transactions matching the pattern with positive importo (income = reimbursement)
-    transactions = conn.execute("""
-        SELECT id, data_valuta, operazione, importo
-        FROM expenses
-        WHERE LOWER(TRIM(operazione)) LIKE ?
-          AND importo > 0
-        ORDER BY data_valuta DESC
-    """, (f"%{pattern.lower()}%",)).fetchall()
+    candidates = []
+    seen_tx_ids = set()
+
+    for mit in mittenti:
+        pattern, tolleranza = mit["operazione"], mit["tolleranza"]
+        txs = conn.execute("""
+            SELECT id, data_valuta, operazione, importo FROM expenses
+            WHERE LOWER(TRIM(operazione)) LIKE ? AND importo > 0
+            ORDER BY data_valuta DESC
+        """, (f"%{pattern.lower()}%",)).fetchall()
+
+        for tx in txs:
+            if tx["id"] in seen_tx_ids:
+                continue
+            tx_amount, tx_date = tx["importo"], tx["data_valuta"]
+            eligible = [m for m in unpaid if f"{m['year']}-{m['month']:02d}-28" < tx_date]
+            if not eligible:
+                continue
+
+            best = None
+            for size in range(1, min(4, len(eligible) + 1)):
+                for combo in combinations(eligible, size):
+                    diff = abs(abs(sum(m["amount"] for m in combo)) - tx_amount)
+                    if diff <= tolleranza and (best is None or diff < best["diff"]):
+                        best = {"transaction": dict(tx), "months": list(combo),
+                                "months_total": round(sum(m["amount"] for m in combo), 2),
+                                "diff": round(diff, 2)}
+                if best:
+                    break
+
+            if best:
+                seen_tx_ids.add(tx["id"])
+                candidates.append(best)
 
     conn.close()
-
-    candidates = []
-    for tx in transactions:
-        tx_dict = dict(tx)
-        tx_amount = tx["importo"]
-        tx_date = tx["data_valuta"]
-
-        # Only consider months that ended before the transaction date
-        eligible = [
-            m for m in unpaid_months
-            if f"{m['year']}-{m['month']:02d}-28" < tx_date
-        ]
-        if not eligible:
-            continue
-
-        # Try combinations of 1, 2, 3 months (best match = smallest diff)
-        best = None
-        for size in range(1, min(4, len(eligible) + 1)):
-            for combo in combinations(eligible, size):
-                total = sum(m["amount"] for m in combo)
-                diff = abs(abs(total) - tx_amount)
-                if diff <= tolleranza:
-                    if best is None or diff < best["diff"]:
-                        best = {
-                            "transaction": tx_dict,
-                            "months": list(combo),
-                            "months_total": round(total, 2),
-                            "diff": round(diff, 2)
-                        }
-            if best:
-                break  # Found a match at this combo size, don't try larger
-
-        if best:
-            candidates.append(best)
-
     return {"candidates": candidates}
-
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)

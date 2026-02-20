@@ -238,18 +238,22 @@ const API = {
         return this.fetchJSON(`/neutral-keywords/${id}`, { method: 'DELETE' });
     },
 
-    async getRimborsoSettings() {
-        return this.fetchJSON('/rimborso-settings');
+    async getRimborsoMittenti() {
+        return this.fetchJSON('/rimborso-mittenti');
     },
-
-    async saveRimborsoSettings(data) {
-        return this.fetchJSON('/rimborso-settings', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
+    async addRimborsoMittente(data) {
+        return this.fetchJSON('/rimborso-mittenti', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
         });
     },
-
+    async updateRimborsoMittente(id, data) {
+        return this.fetchJSON(`/rimborso-mittenti/${id}`, {
+            method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
+        });
+    },
+    async deleteRimborsoMittente(id) {
+        return this.fetchJSON(`/rimborso-mittenti/${id}`, { method: 'DELETE' });
+    },
     async detectRimborso() {
         return this.fetchJSON('/detect-rimborso');
     }
@@ -311,8 +315,7 @@ const UI = {
 
             // Rimborso
             rimborsoPatternInput: document.getElementById('rimborso-pattern-input'),
-            rimborsoTolleranzaInput: document.getElementById('rimborso-tolleranza-input'),
-            rimborsoAttivoInput: document.getElementById('rimborso-attivo-input'),
+            rimborsoMittentiList: document.getElementById('rimborso-mittenti-list'),
             rimborsoConfirmDetails: document.getElementById('rimborso-confirm-details')
         };
     },
@@ -1316,8 +1319,6 @@ const App = {
             UI.elements.uploadBtn.disabled = false;
 
             await this.initDashboardData();
-
-            // Rimborso detection after upload
             if (result.totalNew > 0) await this.detectAndPromptRimborso();
         };
 
@@ -1410,8 +1411,6 @@ const App = {
             Utils.showToast(UI.elements.elencoToast, `✓ ${res.totalNew} nuovi, ${res.totalDup} duplicati`, 'success');
             await this.loadElenco();
             Bonifici.load();
-
-            // Rimborso detection after upload
             if (res.totalNew > 0) await this.detectAndPromptRimborso();
         });
 
@@ -1630,12 +1629,17 @@ const App = {
             UI.openModal('modal-keywords');
             this.loadKeywordsList();
         });
+
         document.getElementById('kebab-rimborso')?.addEventListener('click', async () => {
             UI.openModal('modal-rimborso-settings');
-            this.loadRimborsoSettings();
+            this.loadRimborsoMittenti();
         });
-        document.getElementById('save-rimborso-settings-btn')?.addEventListener('click', async () => {
-            await this.saveRimborsoSettings();
+
+        document.getElementById('add-rimborso-btn')?.addEventListener('click', () => {
+            this.addRimborsoMittente();
+        });
+        document.getElementById('rimborso-pattern-input')?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') this.addRimborsoMittente();
         });
         UI.elements.addKeywordBtn?.addEventListener('click', async () => {
             const kw = UI.elements.keywordInput.value.trim();
@@ -1754,51 +1758,97 @@ const App = {
                 const tag = document.createElement('span');
                 tag.className = 'keyword-tag';
                 const badge = k.is_rimborso
-                    ? '<span class="keyword-rimborso-badge"><i class="fa-solid fa-money-bill-transfer"></i></span>'
+                    ? '<span class="keyword-rimborso-badge" title="Collegato a Rilevamento Rimborsi"><i class="fa-solid fa-money-bill-transfer"></i></span>'
                     : '';
                 tag.innerHTML = `${badge}${Utils.escapeHtml(k.keyword)} <button class="keyword-remove"><i class="fa-solid fa-xmark"></i></button>`;
                 tag.querySelector('button').addEventListener('click', async () => {
                     await API.removeKeyword(k.id);
                     this.loadKeywordsList();
-                    // If it was the rimborso keyword, refresh rimborso settings modal if open
-                    if (k.is_rimborso && UI.elements.rimborsoPatternInput) {
-                        UI.elements.rimborsoPatternInput.value = '';
-                    }
+                    // Se era il keyword di un mittente, ricarica anche la lista mittenti
+                    if (k.is_rimborso) this.loadRimborsoMittenti();
                 });
                 list.appendChild(tag);
             });
         }
     },
 
-    async loadRimborsoSettings() {
-        const res = await API.getRimborsoSettings();
-        if (res.ok) {
-            if (UI.elements.rimborsoPatternInput)
-                UI.elements.rimborsoPatternInput.value = res.data.operazione_pattern || '';
-            if (UI.elements.rimborsoTolleranzaInput)
-                UI.elements.rimborsoTolleranzaInput.value = res.data.tolleranza ?? 5;
-            if (UI.elements.rimborsoAttivoInput)
-                UI.elements.rimborsoAttivoInput.checked = res.data.attivo !== false;
+    // ── Rimborso Mittenti ──────────────────────────────────────────
+
+    async loadRimborsoMittenti() {
+        const container = UI.elements.rimborsoMittentiList;
+        if (!container) return;
+        container.innerHTML = '';
+        const res = await API.getRimborsoMittenti();
+        if (!res.ok || !res.data.length) {
+            container.innerHTML = '<p class="rimborso-empty-hint">Nessun mittente ancora configurato.</p>';
+            return;
         }
+        res.data.forEach(m => container.appendChild(this._buildMittenteRow(m)));
     },
 
-    async saveRimborsoSettings() {
-        const pattern = UI.elements.rimborsoPatternInput?.value.trim() || '';
-        const tolleranza = parseFloat(UI.elements.rimborsoTolleranzaInput?.value) || 5.0;
-        const attivo = UI.elements.rimborsoAttivoInput?.checked !== false;
+    _buildMittenteRow(m) {
+        const row = document.createElement('div');
+        row.className = 'rimborso-mittente-row';
+        row.dataset.id = m.id;
+        row.innerHTML = `
+            <span class="rm-nome" title="${Utils.escapeHtml(m.operazione)}">${Utils.escapeHtml(m.operazione)}</span>
+            <div class="rm-controls">
+                <span class="rm-tol-label">±€</span>
+                <input type="number" class="rm-tolleranza" value="${m.tolleranza}" min="0" max="999" step="0.5" title="Tolleranza (€)">
+                <label class="toggle-switch" title="${m.attivo ? 'Attivo' : 'Disattivo'}">
+                    <input type="checkbox" class="rm-attivo" ${m.attivo ? 'checked' : ''}>
+                    <span class="toggle-slider"></span>
+                </label>
+                <button class="rm-delete" title="Rimuovi mittente"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+        `;
 
-        const res = await API.saveRimborsoSettings({ operazione_pattern: pattern, tolleranza, attivo });
+        let tolTimer;
+        row.querySelector('.rm-tolleranza').addEventListener('input', (e) => {
+            clearTimeout(tolTimer);
+            tolTimer = setTimeout(() => {
+                API.updateRimborsoMittente(m.id, { tolleranza: parseFloat(e.target.value) || 0 });
+            }, 700);
+        });
+
+        row.querySelector('.rm-attivo').addEventListener('change', (e) => {
+            API.updateRimborsoMittente(m.id, { attivo: e.target.checked });
+        });
+
+        row.querySelector('.rm-delete').addEventListener('click', async () => {
+            await API.deleteRimborsoMittente(m.id);
+            this.loadRimborsoMittenti();
+            // Aggiorna lista keyword neutre se aperta
+            if (!document.getElementById('modal-keywords')?.classList.contains('hidden')) {
+                this.loadKeywordsList();
+            }
+        });
+
+        return row;
+    },
+
+    async addRimborsoMittente() {
+        const input = UI.elements.rimborsoPatternInput;
+        const operazione = input?.value.trim();
+        if (!operazione) {
+            if (input) UI.showErrorTooltip(input, 'Inserisci un nome mittente');
+            return;
+        }
+        const res = await API.addRimborsoMittente({ operazione, tolleranza: 5.0, attivo: true });
         if (res.ok) {
-            Utils.showToast(UI.elements.elencoToast, '✓ Impostazioni rimborso salvate', 'success');
-            UI.closeModal('modal-rimborso-settings');
-            // Reload elenco to reflect possible is_neutral changes
-            if (document.getElementById('page-elenco').classList.contains('active')) {
-                await this.loadElenco();
+            input.value = '';    // svuota il campo
+            input.focus();       // rimane aperto per aggiungerne altri
+            this.loadRimborsoMittenti();
+            // Aggiorna badge nella lista keyword se il modal è aperto
+            if (!document.getElementById('modal-keywords')?.classList.contains('hidden')) {
+                this.loadKeywordsList();
             }
         } else {
-            Utils.showToast(UI.elements.elencoToast, 'Errore nel salvataggio', 'error');
+            UI.showErrorTooltip(input, API.extractError(res));
         }
     },
+
+    // ── Rimborso Detection & Popup ─────────────────────────────────
 
     async detectAndPromptRimborso() {
         const res = await API.detectRimborso();
@@ -1808,13 +1858,13 @@ const App = {
 
     async _processRimborsoCandidate(candidates, idx) {
         if (idx >= candidates.length) return;
-        const candidate = candidates[idx];
+        const c = candidates[idx];
 
         return new Promise((resolve) => {
             const details = UI.elements.rimborsoConfirmDetails;
             if (details) {
-                const tx = candidate.transaction;
-                const monthTags = candidate.months.map(m =>
+                const tx = c.transaction;
+                const monthTags = c.months.map(m =>
                     `<span class="rimborso-candidate-tag">${m.month_name} ${m.year} (${Utils.formatImporto(m.amount)})</span>`
                 ).join('');
                 const counter = candidates.length > 1
@@ -1822,30 +1872,29 @@ const App = {
                 details.innerHTML = `
                     ${counter}
                     <div class="rc-tx">
-                        <i class="fa-solid fa-arrow-down-to-line" style="color:var(--color-success)"></i>
+                        <i class="fa-solid fa-arrow-down-to-line" style="color:var(--color-success, #27ae60)"></i>
                         ${Utils.escapeHtml(tx.operazione)} — <strong>${Utils.formatImporto(tx.importo)}</strong>
-                        <span style="font-weight:400; font-size:0.82rem; color:var(--text-muted)"> del ${Utils.formatDateDisplay(tx.data_valuta)}</span>
+                        <span class="rc-date">del ${Utils.formatDateDisplay(tx.data_valuta)}</span>
                     </div>
                     <div class="rc-months">${monthTags}</div>
-                    ${candidate.diff > 0 ? `<div class="rimborso-diff">Differenza: ${Utils.formatImporto(candidate.diff)}</div>` : ''}
+                    ${c.diff > 0 ? `<div class="rimborso-diff">Differenza: ${Utils.formatImporto(c.diff)}</div>` : ''}
                 `;
             }
 
             UI.openModal('modal-rimborso-confirm');
 
-            const confirmBtn = document.getElementById('rimborso-confirm-btn');
-            const skipBtn = document.getElementById('rimborso-skip-btn');
-
-            const cleanup = () => {
-                confirmBtn.replaceWith(confirmBtn.cloneNode(true));
-                skipBtn.replaceWith(skipBtn.cloneNode(true));
+            const afterClose = () => {
+                // Sostituisce i bottoni per rimuovere listener precedenti
+                ['rimborso-confirm-btn', 'rimborso-skip-btn'].forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.replaceWith(el.cloneNode(true));
+                });
                 UI.closeModal('modal-rimborso-confirm');
             };
 
             document.getElementById('rimborso-confirm-btn').addEventListener('click', async () => {
-                cleanup();
-                // Mark all candidate months as paid and sync UI
-                for (const month of candidate.months) {
+                afterClose();
+                for (const month of c.months) {
                     await API.setMonthlyStatus(month.year, month.month, true);
                     Bonifici.updateRowState(String(month.year), month.month, true);
                     const section = document.querySelector(
@@ -1857,13 +1906,13 @@ const App = {
                     }
                 }
                 resolve();
-                setTimeout(() => this._processRimborsoCandidate(candidates, idx + 1), 300);
+                setTimeout(() => this._processRimborsoCandidate(candidates, idx + 1), 350);
             }, { once: true });
 
             document.getElementById('rimborso-skip-btn').addEventListener('click', () => {
-                cleanup();
+                afterClose();
                 resolve();
-                setTimeout(() => this._processRimborsoCandidate(candidates, idx + 1), 300);
+                setTimeout(() => this._processRimborsoCandidate(candidates, idx + 1), 350);
             }, { once: true });
         });
     }
