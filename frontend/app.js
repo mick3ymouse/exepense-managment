@@ -1718,9 +1718,22 @@ const App = {
             div.className = 'period-year';
             div.innerHTML = `<div class="period-year-header"><input type="checkbox" class="paid-checkbox" data-year="${y}"> <b>${y}</b></div><div class="period-months"></div>`;
             const mDiv = div.querySelector('.period-months');
-            byYear[y].sort((a, b) => a - b).forEach(m => {
-                mDiv.innerHTML += `<label class="period-month-label"><input type="checkbox" class="paid-checkbox" data-year="${y}" data-month="${m}"> ${Utils.MONTH_NAMES[m]}</label>`;
+
+            const months = byYear[y].sort((a, b) => a - b);
+
+            // Griglia 3 colonne, ordine colonna per colonna (top→bottom, poi colonna successiva)
+            const COLS = Math.min(3, months.length);
+            const rows = Math.ceil(months.length / COLS);
+            mDiv.style.gridTemplateRows = `repeat(${rows}, auto)`;
+            mDiv.style.gridTemplateColumns = `repeat(${COLS}, minmax(130px, auto))`;
+
+            months.forEach(m => {
+                const label = document.createElement('label');
+                label.className = 'period-month-label';
+                label.innerHTML = `<input type="checkbox" class="paid-checkbox" data-year="${y}" data-month="${m}"> ${Utils.MONTH_NAMES[m]}`;
+                mDiv.appendChild(label);
             });
+
             tree.appendChild(div);
         });
 
@@ -1787,44 +1800,48 @@ const App = {
     },
 
     _buildMittenteRow(m) {
-        const row = document.createElement('div');
-        row.className = 'rimborso-mittente-row';
-        row.dataset.id = m.id;
-        row.innerHTML = `
-            <span class="rm-nome" title="${Utils.escapeHtml(m.operazione)}">${Utils.escapeHtml(m.operazione)}</span>
+        const card = document.createElement('div');
+        card.className = 'rimborso-mittente-card';
+        card.dataset.id = m.id;
+        card.innerHTML = `
+            <span class="rm-nome">${Utils.escapeHtml(m.operazione)}</span>
             <div class="rm-controls">
                 <span class="rm-tol-label">±€</span>
                 <input type="number" class="rm-tolleranza" value="${m.tolleranza}" min="0" max="999" step="0.5" title="Tolleranza (€)">
-                <label class="toggle-switch" title="${m.attivo ? 'Attivo' : 'Disattivo'}">
+                <label class="rm-toggle-switch" title="${m.attivo ? 'Attivo' : 'Disattivo'}">
                     <input type="checkbox" class="rm-attivo" ${m.attivo ? 'checked' : ''}>
-                    <span class="toggle-slider"></span>
+                    <span class="rm-toggle-slider"></span>
                 </label>
                 <button class="rm-delete" title="Rimuovi mittente"><i class="fa-solid fa-xmark"></i></button>
             </div>
         `;
 
         let tolTimer;
-        row.querySelector('.rm-tolleranza').addEventListener('input', (e) => {
+        card.querySelector('.rm-tolleranza').addEventListener('input', (e) => {
             clearTimeout(tolTimer);
             tolTimer = setTimeout(() => {
                 API.updateRimborsoMittente(m.id, { tolleranza: parseFloat(e.target.value) || 0 });
             }, 700);
         });
 
-        row.querySelector('.rm-attivo').addEventListener('change', (e) => {
+        card.querySelector('.rm-attivo').addEventListener('change', (e) => {
             API.updateRimborsoMittente(m.id, { attivo: e.target.checked });
         });
 
-        row.querySelector('.rm-delete').addEventListener('click', async () => {
+        card.querySelector('.rm-delete').addEventListener('click', async () => {
             await API.deleteRimborsoMittente(m.id);
             this.loadRimborsoMittenti();
-            // Aggiorna lista keyword neutre se aperta
             if (!document.getElementById('modal-keywords')?.classList.contains('hidden')) {
                 this.loadKeywordsList();
             }
+            // Fix 1: ricarica elenco per aggiornare righe neutre
+            App.state.dashboardDirty = true;
+            if (document.getElementById('page-elenco')?.classList.contains('active')) {
+                App.loadElenco();
+            }
         });
 
-        return row;
+        return card;
     },
 
     async addRimborsoMittente() {
@@ -1836,12 +1853,16 @@ const App = {
         }
         const res = await API.addRimborsoMittente({ operazione, tolleranza: 5.0, attivo: true });
         if (res.ok) {
-            input.value = '';    // svuota il campo
-            input.focus();       // rimane aperto per aggiungerne altri
+            input.value = '';
+            input.focus();
             this.loadRimborsoMittenti();
-            // Aggiorna badge nella lista keyword se il modal è aperto
             if (!document.getElementById('modal-keywords')?.classList.contains('hidden')) {
                 this.loadKeywordsList();
+            }
+            // Fix 1: ricarica elenco per aggiornare righe neutre immediatamente
+            App.state.dashboardDirty = true;
+            if (document.getElementById('page-elenco')?.classList.contains('active')) {
+                App.loadElenco();
             }
         } else {
             UI.showErrorTooltip(input, API.extractError(res));
@@ -1853,47 +1874,46 @@ const App = {
     async detectAndPromptRimborso() {
         const res = await API.detectRimborso();
         if (!res.ok || !res.data.candidates?.length) return;
-        await this._processRimborsoCandidate(res.data.candidates, 0);
-    },
 
-    async _processRimborsoCandidate(candidates, idx) {
-        if (idx >= candidates.length) return;
-        const c = candidates[idx];
+        const candidates = res.data.candidates;
 
-        return new Promise((resolve) => {
-            const details = UI.elements.rimborsoConfirmDetails;
-            if (details) {
-                const tx = c.transaction;
-                const monthTags = c.months.map(m =>
-                    `<span class="rimborso-candidate-tag">${m.month_name} ${m.year} (${Utils.formatImporto(m.amount)})</span>`
-                ).join('');
-                const counter = candidates.length > 1
-                    ? `<div class="rimborso-counter">${idx + 1} di ${candidates.length}</div>` : '';
-                details.innerHTML = `
-                    ${counter}
-                    <div class="rc-tx">
-                        <i class="fa-solid fa-arrow-down-to-line" style="color:var(--color-success, #27ae60)"></i>
-                        ${Utils.escapeHtml(tx.operazione)} — <strong>${Utils.formatImporto(tx.importo)}</strong>
-                        <span class="rc-date">del ${Utils.formatDateDisplay(tx.data_valuta)}</span>
-                    </div>
-                    <div class="rc-months">${monthTags}</div>
-                    ${c.diff > 0 ? `<div class="rimborso-diff">Differenza: ${Utils.formatImporto(c.diff)}</div>` : ''}
-                `;
-            }
-
-            UI.openModal('modal-rimborso-confirm');
-
-            const afterClose = () => {
-                // Sostituisce i bottoni per rimuovere listener precedenti
-                ['rimborso-confirm-btn', 'rimborso-skip-btn'].forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el) el.replaceWith(el.cloneNode(true));
-                });
+        const showCandidate = (idx) => {
+            if (idx >= candidates.length) {
                 UI.closeModal('modal-rimborso-confirm');
-            };
+                return;
+            }
+            const c = candidates[idx];
+            const details = UI.elements.rimborsoConfirmDetails;
+            if (!details) return;
+
+            const tx = c.transaction;
+            const monthTags = c.months.map(m =>
+                `<span class="rimborso-candidate-tag">${m.month_name} ${m.year} (${Utils.formatImporto(m.amount)})</span>`
+            ).join('');
+            const counter = candidates.length > 1
+                ? `<div class="rimborso-counter">${idx + 1} di ${candidates.length}</div>` : '';
+
+            details.innerHTML = `
+                ${counter}
+                <div class="rc-header">
+                    <i class="fa-solid fa-arrow-down-to-line rc-icon"></i>
+                    <span class="rc-mittente">${Utils.escapeHtml(tx.operazione)}</span>
+                </div>
+                <div class="rc-amount-row">
+                    <strong class="rc-importo">${Utils.formatImporto(tx.importo)}</strong>
+                    <span class="rc-date">${Utils.formatDateDisplay(tx.data_valuta)}</span>
+                </div>
+                <div class="rc-months">${monthTags}</div>
+                ${c.diff > 0 ? `<div class="rimborso-diff">Differenza: ${Utils.formatImporto(c.diff)}</div>` : ''}
+            `;
+
+            // Sostituisce i bottoni per rimuovere listener precedenti
+            ['rimborso-confirm-btn', 'rimborso-skip-btn'].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.replaceWith(el.cloneNode(true));
+            });
 
             document.getElementById('rimborso-confirm-btn').addEventListener('click', async () => {
-                afterClose();
                 for (const month of c.months) {
                     await API.setMonthlyStatus(month.year, month.month, true);
                     Bonifici.updateRowState(String(month.year), month.month, true);
@@ -1905,15 +1925,15 @@ const App = {
                         if (cb) { cb.checked = true; UI.recalcMonthTotals(section); }
                     }
                 }
-                resolve();
-                setTimeout(() => this._processRimborsoCandidate(candidates, idx + 1), 350);
+                showCandidate(idx + 1);
             }, { once: true });
 
             document.getElementById('rimborso-skip-btn').addEventListener('click', () => {
-                afterClose();
-                resolve();
-                setTimeout(() => this._processRimborsoCandidate(candidates, idx + 1), 350);
+                showCandidate(idx + 1);
             }, { once: true });
-        });
+        };
+
+        UI.openModal('modal-rimborso-confirm');
+        showCandidate(0);
     }
 };

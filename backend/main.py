@@ -8,7 +8,6 @@ import re
 from collections import defaultdict
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
-from itertools import combinations
 
 import pandas as pd
 from fastapi import FastAPI, UploadFile, File, Query
@@ -902,20 +901,29 @@ async def detect_rimborso():
             if tx["id"] in seen_tx_ids:
                 continue
             tx_amount, tx_date = tx["importo"], tx["data_valuta"]
+            # Solo mesi PRECEDENTI alla data del bonifico
             eligible = [m for m in unpaid if f"{m['year']}-{m['month']:02d}-28" < tx_date]
             if not eligible:
                 continue
 
+            # Ordina cronologicamente per considerare solo finestre contigue
+            eligible_sorted = sorted(eligible, key=lambda m: (m["year"], m["month"]))
+
             best = None
-            for size in range(1, min(4, len(eligible) + 1)):
-                for combo in combinations(eligible, size):
-                    diff = abs(abs(sum(m["amount"] for m in combo)) - tx_amount)
+            # Itera su tutti i sottoinsiemi CONTIGUI (finestre consecutive) di lunghezza 1..4
+            for start_idx in range(len(eligible_sorted)):
+                cumulative = 0.0
+                for end_idx in range(start_idx, min(start_idx + 4, len(eligible_sorted))):
+                    combo = eligible_sorted[start_idx:end_idx + 1]
+                    cumulative = sum(m["amount"] for m in combo)
+                    diff = abs(abs(cumulative) - tx_amount)
                     if diff <= tolleranza and (best is None or diff < best["diff"]):
-                        best = {"transaction": dict(tx), "months": list(combo),
-                                "months_total": round(sum(m["amount"] for m in combo), 2),
-                                "diff": round(diff, 2)}
-                if best:
-                    break
+                        best = {
+                            "transaction": dict(tx),
+                            "months": list(combo),
+                            "months_total": round(cumulative, 2),
+                            "diff": round(diff, 2)
+                        }
 
             if best:
                 seen_tx_ids.add(tx["id"])
