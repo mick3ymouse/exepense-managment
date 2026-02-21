@@ -6,7 +6,7 @@
 
 :root {
     /* ── Palette Mint & Ice (Electric Pastels) ── */
-    --background-color:   #F0FDFF;
+    --background-color:   #f3fbfd;
     --sidebar-bg:         #7ae5f4;
     --sidebar-text:       #003B46;
     --body-bg:            #0F5257;
@@ -14,7 +14,7 @@
     /* ── Accents & Buttons ── */
     --primary-color:      #7ae5f4;
     --primary-text:       #003B46;
-    --primary-hover:      #5AC8FA;
+    --primary-hover:      #7ae5f4;
 
     /* ── Semantic Colors ── */
     --color-success:      #27ae60;
@@ -22,7 +22,7 @@
     --color-danger:       #e74c3c;
     --color-danger-light: #FF6B6B;
     --color-negative:     #c0392b;   /* importo negative / uscite */
-    --color-warning-bg:   #B3FFD9;   /* nav hover bg */
+    --color-warning-bg:   #fff07c;   /* nav hover bg */
 
     /* ── Neutral / Text ──  #133C55*/
     --color-white:        #FFFFFF;
@@ -31,7 +31,7 @@
 
     /* ── Cards & Surfaces ── */
     --card-bg:            #FFFFFF;
-    --border-color:       #B3FFD9;
+    --border-color:       #fff07c;
     --shadow-color:       rgba(99, 229, 255, 0.25);
 
     /* ── Table specifics ── */
@@ -46,13 +46,13 @@
     --color-input-bg:     #E3EBF2;
 
     /* ── Neutral Rows ── */
-    --color-neutral-bg:   #FFFBEB;
+    --color-neutral-bg:   #fff2c5;
     --color-neutral-hover:#FEF3C7;
 
     /* ── Misc Accents ── */
     --color-accent-blue:  #4a69bd;
     --color-checkbox-hover: #5DADE2;
-    --scrollbar-color:    #609cfb;
+    --scrollbar-color:    #b8b5b4;
 
     /* ── Layout ── */
     --sidebar-width: 250px;
@@ -127,7 +127,7 @@ body {
 .sidebar-header i {
     font-size: 1.8rem;
     color: var(--sidebar-text);
-    background: var(--color-white);
+    background: var(--border-color);
     padding: 8px;
     filter: drop-shadow(0 4px 6px rgba(130, 207, 255, 0.4));
     border-radius: 50%;
@@ -181,8 +181,9 @@ body {
 }
 
 .nav-item:hover:not(.active) {
-    background-color: var(--color-warning-bg);
+    background-color: rgba(255, 240, 124, 0.6);
     color: var(--sidebar-text) !important;
+    opacity: 1;
 }
 
 .nav-item:hover:not(.active) i {
@@ -323,12 +324,12 @@ body {
 }
 
 .file-drop-area:not(.has-files):hover > i {
-    color: var(--primary-hover);
+    color: var(--sidebar-text);
     transform: translateY(-3px);
 }
 
 .file-drop-area:not(.has-files):hover .file-msg {
-    color: var(--primary-hover);
+    color: var(--sidebar-text);
 }
 
 /* Drop area con file: fissa */
@@ -431,7 +432,7 @@ body {
 }
 
 .btn-primary:hover {
-    background: linear-gradient(135deg, var(--border-color), var(--header-bg));
+    background: var(--border-color);
     box-shadow: 0 6px 20px rgba(127, 200, 217, 0.45);
     transform: translateY(-1px);
     color: var(--primary-text);
