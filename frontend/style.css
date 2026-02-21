@@ -17,7 +17,7 @@
     --primary-hover:      #7ae5f4;
 
     /* ── Semantic Colors ── */
-    --color-success:      #27ae60;
+    --color-success:      #49d684;
     --color-success-dark: #219a52;
     --color-danger:       #e74c3c;
     --color-danger-light: #FF6B6B;
@@ -46,8 +46,8 @@
     --color-input-bg:     #E3EBF2;
 
     /* ── Neutral Rows ── */
-    --color-neutral-bg:   #fff2c5;
-    --color-neutral-hover:#FEF3C7;
+--color-neutral-bg:    #FFF5D6; 
+    --color-neutral-hover: #FFEDBA;
 
     /* ── Misc Accents ── */
     --color-accent-blue:  #4a69bd;
@@ -837,7 +837,6 @@ body {
     color: var(--color-white);
 }
 
-
 /* ===================================================
    ELENCO — Date Popover
    =================================================== */
@@ -1479,13 +1478,13 @@ body {
 .empty-state {
     text-align: center;
     padding: 80px 20px;
-    color: var(--primary-color);
+    color: var(--sidebar-text);
 }
 
 .empty-state i {
     font-size: 3rem;
     margin-bottom: 16px;
-    opacity: 0.6;
+    opacity: 1;
 }
 
 .empty-state p { font-size: 1.1rem; font-weight: 600; margin: 0 0 6px 0; }
@@ -1818,7 +1817,7 @@ body {
     border: none;
     cursor: pointer;
     font-size: 0.72rem;
-    color: var(--text-muted, #8a9ba8);
+    color: var(--sidebar-text, #8a9ba8);
     padding: 4px 5px;
     border-radius: 5px;
     line-height: 1;
@@ -2138,14 +2137,8 @@ tr.expense-row.neutral-row:hover,
     vertical-align: middle;
 }
 
-/* Row highlight when paid */
-.bonifici-row-paid td {
-    background-color: rgba(39, 174, 96, 0.04) !important;
-}
 
-.bonifici-row-paid:hover td {
-    background-color: rgba(39, 174, 96, 0.08) !important;
-}
+
 
 /* Empty row */
 .bonifici-empty-row td {
@@ -2183,12 +2176,12 @@ tr.expense-row.neutral-row:hover,
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 16px;
-    height: 16px;
-    background: var(--primary-color);
+    width: 18px;
+    height: 18px;
+    background: var(--sidebar-text);
     color: var(--color-white);
     border-radius: 4px;
-    font-size: 0.58rem;
+    font-size: 0.62rem;
     margin-right: 5px;
     vertical-align: middle;
     flex-shrink: 0;
@@ -2256,7 +2249,7 @@ tr.expense-row.neutral-row:hover,
 /* Label ±€ */
 .rm-tol-label {
     font-size: 0.72rem;
-    color: var(--text-muted, #8a9ba8);
+    color: var(--sidebar-text);
     font-weight: 500;
     white-space: nowrap;
 }
@@ -2300,7 +2293,7 @@ tr.expense-row.neutral-row:hover,
     position: absolute;
     cursor: pointer;
     inset: 0;
-    background: var(--border-color, #cde2e7);
+    background: var(--color-danger-light);
     border-radius: 20px;
     transition: background var(--transition-base, .2s);
 }
@@ -2319,7 +2312,7 @@ tr.expense-row.neutral-row:hover,
 }
 
 .rm-toggle-switch input:checked + .rm-toggle-slider {
-    background: var(--primary-color);
+    background: var(--color-success);
 }
 
 .rm-toggle-switch input:checked + .rm-toggle-slider::before {
@@ -2332,7 +2325,7 @@ tr.expense-row.neutral-row:hover,
     border: none;
     cursor: pointer;
     font-size: 0.72rem;
-    color: var(--text-muted, #8a9ba8);
+    color: var(--sidebar-text);
     padding: 4px 5px;
     border-radius: 5px;
     transition: color var(--transition-fast), background var(--transition-fast);
@@ -2391,6 +2384,10 @@ tr.expense-row.neutral-row:hover,
 }
 
 /* ── Modale conferma rimborso ── */
+#rimborso-confirm-btn i {
+    margin-right: 10px;
+}
+
 .rimborso-candidate-card {
     background: rgba(127, 200, 217, 0.07);
     border: 1.5px solid rgba(127, 200, 217, 0.3);
@@ -2398,6 +2395,24 @@ tr.expense-row.neutral-row:hover,
     padding: 14px 16px;
     margin-top: 12px;
     font-size: 0.88rem;
+}
+
+@keyframes cardSlideIn {
+    from { opacity: 0; transform: translateX(40px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes cardSlideOut {
+    from { opacity: 1; transform: translateX(0); }
+    to   { opacity: 0; transform: translateX(-40px); }
+}
+
+.rimborso-candidate-card.slide-in {
+    animation: cardSlideIn 0.25s ease forwards;
+}
+
+.rimborso-candidate-card.slide-out {
+    animation: cardSlideOut 0.2s ease forwards;
 }
 
 .rc-header {

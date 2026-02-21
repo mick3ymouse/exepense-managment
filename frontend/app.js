@@ -454,7 +454,7 @@ const UI = {
                 const expenses = months[month];
                 const monthNum = MONTH_ORDER[month] || 1;
                 const statusKey = `${year}-${String(monthNum).padStart(2, '0')}`;
-                const isPaid = !statusMap[statusKey];
+                const isPaid = statusMap[statusKey];
 
                 const section = this.createMonthSection(year, monthNum, month, expenses, isPaid);
                 container.appendChild(section);
@@ -621,7 +621,7 @@ const UI = {
         div.innerHTML = `
             <i class="fa-solid fa-inbox"></i>
             <p>Nessuna spesa trovata.</p>
-            <p class="empty-hint">Carica un file Excel dalla Dashboard per iniziare.</p>
+            <p class="empty-hint">Carica un file Excel, da qui oppure dalla Dashboard, per iniziare.</p>
         `;
         return div;
     },
@@ -630,7 +630,7 @@ const UI = {
     validateImportoField(importoInput) {
         const impVal = Utils.parseImportoInput(importoInput.value);
         if (impVal === null) {
-            this.showErrorTooltip(importoInput, 'Inserisci importo valido (es. -10,50)');
+            this.showErrorTooltip(importoInput, 'Inserisci importo valido!');
             return null;
         }
         return impVal;
@@ -1014,7 +1014,7 @@ const Bonifici = {
         tbody.innerHTML = '';
         let yearTotal = 0;
 
-        const allMonths = Object.keys(Utils.MONTH_NAMES).map(Number);
+        const allMonths = Object.keys(Utils.MONTH_NAMES).map(Number).sort((a, b) => b - a);
 
         allMonths.forEach(monthNum => {
             const key = `${this.currentYear}-${String(monthNum).padStart(2, '0')}`;
@@ -1067,10 +1067,10 @@ const Bonifici = {
      * Update a single row's visual state (paid/unpaid) without re-rendering the whole table.
      */
     updateRowState(year, month, isPaid) {
-        if (parseInt(year) !== this.currentYear) return;
-
         const key = `${year}-${String(month).padStart(2, '0')}`;
-        this.statusMap[key] = isPaid;
+        this.statusMap[key] = isPaid;  // ← spostato PRIMA del return
+
+        if (parseInt(year) !== this.currentYear) return;
 
         const tbody = UI.elements.bonificiTbody;
         if (!tbody) return;
@@ -1599,10 +1599,23 @@ const App = {
 
             document.getElementById('proceed-confirm-delete')?.addEventListener('click', async () => {
                 UI.closeModal('modal-confirm-delete');
+                UI.closeModal('modal-bulk-delete');
                 setTimeout(async () => {
                     const res = await API.bulkDelete(periods);
-                    if (res.ok) window.location.reload();
-                }, 200);
+                    if (res.ok) {
+                        // Fade-out delle sezioni eliminate prima del reload
+                        const sections = periods.map(p =>
+                            document.querySelector(`#page-elenco .month-section[data-year="${p.year}"][data-month="${p.month}"]`)
+                        ).filter(Boolean);
+
+                        if (sections.length > 0) {
+                            sections.forEach(sec => sec.classList.add('fade-out'));
+                            setTimeout(() => window.location.reload(), 500);
+                        } else {
+                            window.location.reload();
+                        }
+                    }
+                }, 300);
             }, { once: true });
         });
 
@@ -1756,24 +1769,22 @@ const App = {
                 const tag = document.createElement('span');
                 tag.className = 'keyword-tag';
                 const badge = k.is_rimborso
-                    ? `<span class="keyword-rimborso-badge" title="Keyword rimborso">R</span>`
+                    ? `<span class="keyword-rimborso-badge" title="Keyword rimborso"><i class="fa-solid fa-money-bill-transfer"></i></span>`
                     : '';
                 tag.innerHTML = `${badge}<span class="keyword-text">${Utils.escapeHtml(k.keyword)}</span>`;
-                if (!k.is_rimborso) {
-                    const removeBtn = document.createElement('button');
-                    removeBtn.className = 'keyword-remove';
-                    removeBtn.title = 'Rimuovi keyword';
-                    removeBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
-                    removeBtn.addEventListener('click', async () => {
-                        await API.removeKeyword(k.id);
-                        this.loadKeywordsList();
-                        this.state.dashboardDirty = true;
-                        if (document.getElementById('page-elenco').classList.contains('active')) {
-                            App.loadElenco();
-                        }
-                    });
-                    tag.appendChild(removeBtn);
-                }
+                const removeBtn = document.createElement('button');
+                removeBtn.className = 'keyword-remove';
+                removeBtn.title = 'Rimuovi keyword';
+                removeBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+                removeBtn.addEventListener('click', async () => {
+                    await API.removeKeyword(k.id);
+                    this.loadKeywordsList();
+                    this.state.dashboardDirty = true;
+                    if (document.getElementById('page-elenco').classList.contains('active')) {
+                        App.loadElenco();
+                    }
+                });
+                tag.appendChild(removeBtn);
                 list.appendChild(tag);
             });
         }
@@ -1869,15 +1880,16 @@ const App = {
 
         const candidates = res.data.candidates;
 
-        const showCandidate = (idx) => {
+        const showCandidate = (idx, withSlideIn = false) => {
             if (idx >= candidates.length) {
                 UI.closeModal('modal-rimborso-confirm');
                 return;
             }
-            const c = candidates[idx];
+
             const details = UI.elements.rimborsoConfirmDetails;
             if (!details) return;
 
+            const c = candidates[idx];
             const tx = c.transaction;
             const monthTags = c.months.map(m =>
                 `<span class="rimborso-candidate-tag">${m.month_name} ${m.year} (${Utils.formatImporto(m.amount)})</span>`
@@ -1899,10 +1911,30 @@ const App = {
                 ${c.diff > 0 ? `<div class="rimborso-diff">Differenza: ${Utils.formatImporto(c.diff)}</div>` : ''}
             `;
 
+            // Slide-in solo per le card successive alla prima
+            details.classList.remove('slide-out', 'slide-in');
+            if (withSlideIn) {
+                details.classList.add('slide-in');
+                details.addEventListener('animationend', () => details.classList.remove('slide-in'), { once: true });
+            }
+
             ['rimborso-confirm-btn', 'rimborso-skip-btn'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.replaceWith(el.cloneNode(true));
             });
+
+            const slideToNext = () => {
+                // Ultima card: chiudi con il normale fade-out del modal, senza slide
+                if (idx >= candidates.length - 1) {
+                    UI.closeModal('modal-rimborso-confirm');
+                    return;
+                }
+                // Card intermedia: slide-out, poi mostra la successiva con slide-in
+                details.classList.add('slide-out');
+                details.addEventListener('animationend', () => {
+                    showCandidate(idx + 1, true);
+                }, { once: true });
+            };
 
             document.getElementById('rimborso-confirm-btn').addEventListener('click', async () => {
                 for (const month of c.months) {
@@ -1916,15 +1948,13 @@ const App = {
                         if (cb) { cb.checked = true; UI.recalcMonthTotals(section); }
                     }
                 }
-                showCandidate(idx + 1);
+                slideToNext();
             }, { once: true });
 
-            document.getElementById('rimborso-skip-btn').addEventListener('click', () => {
-                showCandidate(idx + 1);
-            }, { once: true });
+            document.getElementById('rimborso-skip-btn').addEventListener('click', slideToNext, { once: true });
         };
 
         UI.openModal('modal-rimborso-confirm');
-        showCandidate(0);
+        showCandidate(0, false); // Prima card: nessuna animazione
     }
 };

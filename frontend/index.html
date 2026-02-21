@@ -328,7 +328,7 @@
                                 keyword verranno segnate come "neutre" e non conteranno nei totali.</p>
                             <div class="keyword-input-row">
                                 <div class="keyword-input-wrapper">
-                                    <input type="text" id="keyword-input" placeholder="Nuova keyword...">
+                                    <input type="text" id="keyword-input" placeholder="Nuova keyword (Operazione)...">
                                 </div>
                                 <button class="btn-add-keyword" id="add-keyword-btn">
                                     <i class="fa-solid fa-plus"></i> Aggiungi
@@ -361,25 +361,6 @@
                             <div id="rimborso-mittenti-list" class="rimborso-mittenti-list">
                                 <!-- JS populates -->
                             </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ── Modal: Conferma Rimborso Rilevato ── -->
-                <div class="modal-overlay hidden" id="modal-rimborso-confirm">
-                    <div class="modal-content modal-content-sm">
-                        <div class="modal-header">
-                            <h3><i class="fa-solid fa-magnifying-glass-dollar"></i> Rimborso Rilevato</h3>
-                        </div>
-                        <div class="modal-body">
-                            <p class="modal-hint">È stato rilevato un possibile bonifico di rimborso. Vuoi spuntare i mesi corrispondenti come rimborsati?</p>
-                            <div id="rimborso-confirm-details" class="rimborso-candidate-card"></div>
-                        </div>
-                        <div class="modal-footer-confirm">
-                            <button type="button" class="btn-small btn-apply" id="rimborso-skip-btn">Ignora</button>
-                            <button type="button" class="btn-primary" id="rimborso-confirm-btn">
-                                <i class="fa-solid fa-check"></i> Conferma
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -423,6 +404,25 @@
                     <p>Sezione in costruzione.</p>
                 </div>
             </section>
+
+            <!-- ── Modal: Conferma Rimborso Rilevato ── -->
+            <div class="modal-overlay hidden" id="modal-rimborso-confirm">
+                <div class="modal-content modal-content-sm">
+                    <div class="modal-header">
+                        <h3><i class="fa-solid fa-magnifying-glass-dollar"></i> Rimborso Rilevato</h3>
+                    </div>
+                    <div class="modal-body">
+                        <p class="modal-hint">È stato rilevato un possibile bonifico di rimborso. Vuoi spuntare i mesi corrispondenti come rimborsati?</p>
+                        <div id="rimborso-confirm-details" class="rimborso-candidate-card"></div>
+                    </div>
+                    <div class="modal-footer-confirm">
+                        <button type="button" class="btn-small btn-apply" id="rimborso-skip-btn">Ignora</button>
+                        <button type="button" class="btn-primary" id="rimborso-confirm-btn">
+                            <i class="fa-solid fa-check"></i> Conferma
+                        </button>
+                    </div>
+                </div>
+            </div>
 
         </main>
     </div>
