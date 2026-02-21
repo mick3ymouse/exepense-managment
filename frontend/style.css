@@ -7,11 +7,12 @@
 :root {
     /* ── Palette Mint & Ice (Electric Pastels) ── */
     --background-color:   #F0FDFF;
-    --sidebar-bg:         #63E5FF;
+    --sidebar-bg:         #7ae5f4;
     --sidebar-text:       #003B46;
+    --body-bg:            #0F5257;
 
     /* ── Accents & Buttons ── */
-    --primary-color:      #82CFFF;
+    --primary-color:      #7ae5f4;
     --primary-text:       #003B46;
     --primary-hover:      #5AC8FA;
 
@@ -23,7 +24,7 @@
     --color-negative:     #c0392b;   /* importo negative / uscite */
     --color-warning-bg:   #B3FFD9;   /* nav hover bg */
 
-    /* ── Neutral / Text ── */
+    /* ── Neutral / Text ──  #133C55*/
     --color-white:        #FFFFFF;
     --text-color:         #2C3E50;
     --text-muted:         #607D8B;
@@ -35,7 +36,7 @@
 
     /* ── Table specifics ── */
     --row-alt-bg:         #F5FFFF;
-    --header-bg:          #63E5FF;
+    --header-bg:          #7ae5f4;
     --header-text:        #003B46;
     --color-table-border: #B2EBF2;
     --color-tfoot-bg:     #F1F5F9;
@@ -51,6 +52,7 @@
     /* ── Misc Accents ── */
     --color-accent-blue:  #4a69bd;
     --color-checkbox-hover: #5DADE2;
+    --scrollbar-color:    #609cfb;
 
     /* ── Layout ── */
     --sidebar-width: 250px;
@@ -75,9 +77,12 @@
 body {
     margin: 0;
     font-family: 'Poppins', sans-serif;
-    background-color: var(--background-color);
+    background-color: var(--body-bg);
     color: var(--text-color);
     -webkit-font-smoothing: antialiased;
+    padding: 14px;
+    box-sizing: border-box;
+    min-height: 100vh;
 }
 
 .hidden {
@@ -86,7 +91,9 @@ body {
 
 .app-container {
     display: flex;
-    min-height: 100vh;
+    min-height: calc(100vh - 28px);
+    border-radius: 8px;
+    overflow: visible;
 }
 
 /* ===================================================
@@ -100,11 +107,13 @@ body {
     flex-direction: column;
     border-right: 1px solid rgba(0, 0, 0, 0.05);
     position: fixed;
-    top: 0;
-    left: 0;
-    bottom: 0;
+    top: 14px;
+    left: 14px;
+    bottom: 14px;
     z-index: 200;
     color: var(--sidebar-text);
+    border-radius: 8px;
+    overflow-y: auto;
 }
 
 .sidebar-header {
@@ -193,7 +202,10 @@ body {
     flex: 1;
     padding: 30px 50px;
     overflow-y: auto;
-    margin-left: var(--sidebar-width);
+    margin-left: calc(var(--sidebar-width) + 14px);
+    background-color: var(--background-color);
+    border-radius: 8px;
+    min-height: calc(100vh - 28px);
 }
 
 .top-header {
@@ -655,8 +667,19 @@ body {
    =================================================== */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background-color: var(--primary-color); border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background-color: var(--primary-hover); }
+
+/* Imposta il colore della scrollbar su --sidebar-text e aggiunge una leggera opacità per eleganza */
+::-webkit-scrollbar-thumb { 
+    background-color: var(--scrollbar-color); 
+    border-radius: 10px; 
+    opacity: 0.8;
+}
+
+/* Al passaggio del mouse, diventa blu scuro pieno */
+::-webkit-scrollbar-thumb:hover { 
+    background-color: var(--scrollbar-color); 
+    opacity: 1;
+}
 
 /* ===================================================
    SELECTION
@@ -682,9 +705,7 @@ body {
     display: flex;
     align-items: center;
     gap: 12px;
-    padding: 18px 0 22px 0;
-    background-color: transparent;
-    margin-bottom: 30px;
+    padding: 0px 0 20px 0;
 }
 
 .search-actions {
@@ -732,6 +753,43 @@ body {
     box-shadow: var(--focus-ring);
 }
 
+.search-input-wrapper input {
+    padding-right: 42px;
+}
+
+.search-clear-btn {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--sidebar-text);
+    font-size: 0.85rem;
+    opacity: 0.55;
+    padding: 4px 5px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: opacity var(--transition-fast), color var(--transition-fast), background-color var(--transition-fast);
+    line-height: 1;
+}
+
+/* Override: il bottone X non deve scalare col UNIFORM HOVER */
+.search-clear-btn:hover {
+    opacity: 1;
+    color: var(--color-danger) !important;
+    background-color: rgba(231, 76, 60, 0.08);
+    transform: translateY(-50%) !important;
+}
+
+.search-clear-btn:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring);
+}
+
 /* ===================================================
    ELENCO — Icon Buttons
    =================================================== */
@@ -740,7 +798,7 @@ body {
     height: 42px;
     border-radius: 12px;
     border: 2px solid var(--sidebar-text);
-    background-color: rgba(255, 255, 255, 0.7);
+    background-color: var(--card-bg);
     color: var(--sidebar-text);
     display: flex;
     align-items: center;
@@ -754,6 +812,13 @@ body {
 .icon-btn:hover {
     background-color: var(--color-warning-bg);
     color: var(--sidebar-text);
+}
+
+/* Counter-scale: il bottone cresce (via UNIFORM HOVER scale 1.05)
+   ma l'icona interna viene riportata alla dimensione originale */
+.icon-btn:hover > i {
+    display: inline-block;
+    transform: scale(0.952);
 }
 
 .icon-btn:focus { outline: none; box-shadow: none; }
@@ -770,6 +835,7 @@ body {
     background-color: var(--primary-hover);
     color: var(--color-white);
 }
+
 
 /* ===================================================
    ELENCO — Date Popover
@@ -967,8 +1033,8 @@ body {
     background: var(--card-bg);
     border-radius: 14px;
     overflow: hidden;
-    box-shadow: 0 4px 16px var(--shadow-color);
-    border: 1px solid var(--border-color);
+    box-shadow: 0 2px 10px rgba(99, 229, 255, 0.18);
+    border: 1px solid var(--primary-color);
 }
 
 .expense-table .col-data       { width: 14%; }
@@ -1368,7 +1434,7 @@ body {
 .upload-toast {
     position: fixed;
     top: 24px;
-    left: calc(var(--sidebar-width) + (100vw - var(--sidebar-width)) / 2);
+    left: calc(var(--sidebar-width) + 28px + (100vw - var(--sidebar-width) - 42px) / 2);
     transform: translateX(-50%);
     z-index: 9999;
     padding: 14px 24px;
@@ -1794,7 +1860,7 @@ tr.expense-row.neutral-row:hover,
 .modal-footer-confirm {
     display: flex;
     justify-content: flex-end;
-    align-items: stretch;
+    align-items: stretch; 
     gap: 10px;
     padding: 14px 24px;
 }
@@ -1803,7 +1869,13 @@ tr.expense-row.neutral-row:hover,
     display: flex;
     align-items: center;
     justify-content: center;
-    align-self: stretch;
+}
+
+.modal-footer-confirm .btn-primary {
+    margin-top: 0; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* ── Tooltip Error ── */
@@ -2081,6 +2153,8 @@ tr.expense-row.neutral-row:hover,
 
 /* ===================================================
    UNIFORM HOVER — Spring transform per bottoni interattivi.
+   NOTA: .icon-btn:hover è incluso — scala il contorno,
+   l'icona interna è neutralizzata dalla regola .icon-btn:hover > i
    =================================================== */
 .btn-danger:not(:disabled):hover,
 .btn-small:hover,

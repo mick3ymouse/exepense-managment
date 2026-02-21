@@ -286,6 +286,7 @@ const UI = {
             // Elenco
             expensesList: document.getElementById('expenses-list'),
             searchInput: document.getElementById('search-input'),
+            searchClearBtn: document.getElementById('search-clear-btn'),  // FIX 2
             elencoExportBtn: document.getElementById('elenco-import-btn'),
             elencoFileInput: document.getElementById('elenco-file-input'),
             elencoToast: document.getElementById('elenco-toast'),
@@ -453,7 +454,7 @@ const UI = {
                 const expenses = months[month];
                 const monthNum = MONTH_ORDER[month] || 1;
                 const statusKey = `${year}-${String(monthNum).padStart(2, '0')}`;
-                const isPaid = !!statusMap[statusKey];
+                const isPaid = !statusMap[statusKey];
 
                 const section = this.createMonthSection(year, monthNum, month, expenses, isPaid);
                 container.appendChild(section);
@@ -926,7 +927,6 @@ const Bonifici = {
         if (this.availableYears.includes(year)) {
             this.currentYear = year;
         } else {
-            // If year not in list, pick closest available or keep
             this.currentYear = this.availableYears[0] || year;
         }
         this.updateYearLabel();
@@ -942,15 +942,13 @@ const Bonifici = {
         const { bonificiYearPrev, bonificiYearNext } = UI.elements;
         if (!bonificiYearPrev || !bonificiYearNext) return;
         const idx = this.availableYears.indexOf(this.currentYear);
-        // Prev = older year = higher idx in descending array
         bonificiYearPrev.disabled = idx >= this.availableYears.length - 1;
-        // Next = newer year = lower idx
         bonificiYearNext.disabled = idx <= 0;
     },
 
     navigateYear(direction) {
         const idx = this.availableYears.indexOf(this.currentYear);
-        let newIdx = idx + direction; // direction: +1 = older, -1 = newer
+        let newIdx = idx + direction;
         if (newIdx < 0 || newIdx >= this.availableYears.length) return;
         this.currentYear = this.availableYears[newIdx];
         this.updateYearLabel();
@@ -959,8 +957,7 @@ const Bonifici = {
     },
 
     /**
-     * Compute monthly reimbursable amounts from the raw expenses data object
-     * (the same grouped structure returned by /expenses).
+     * Compute monthly reimbursable amounts from the raw expenses data object.
      * Only non-excluded, non-neutral expenses count.
      */
     computeAmountsFromData(expensesData) {
@@ -1008,7 +1005,6 @@ const Bonifici = {
 
     /**
      * Render the table rows for the currentYear.
-     * Shows all 12 months; greys out months with no data.
      */
     render() {
         const tbody = UI.elements.bonificiTbody;
@@ -1018,7 +1014,7 @@ const Bonifici = {
         tbody.innerHTML = '';
         let yearTotal = 0;
 
-        const allMonths = Object.keys(Utils.MONTH_NAMES).map(Number); // [1..12]
+        const allMonths = Object.keys(Utils.MONTH_NAMES).map(Number);
 
         allMonths.forEach(monthNum => {
             const key = `${this.currentYear}-${String(monthNum).padStart(2, '0')}`;
@@ -1026,7 +1022,7 @@ const Bonifici = {
             const isPaid = !!this.statusMap[key];
             const hasData = amount !== undefined;
 
-            if (!hasData) return; // Only show months that have data
+            if (!hasData) return;
 
             yearTotal += amount;
 
@@ -1069,7 +1065,6 @@ const Bonifici = {
 
     /**
      * Update a single row's visual state (paid/unpaid) without re-rendering the whole table.
-     * Called after a checkbox change.
      */
     updateRowState(year, month, isPaid) {
         if (parseInt(year) !== this.currentYear) return;
@@ -1083,24 +1078,20 @@ const Bonifici = {
         const row = tbody.querySelector(`tr[data-year="${year}"][data-month="${month}"]`);
         if (!row) return;
 
-        // Update checkbox
         const cb = row.querySelector('.bonifici-paid-cb');
         if (cb) cb.checked = isPaid;
 
-        // Update label class
         const label = row.querySelector('.paid-label');
         if (label) {
             label.classList.toggle('label-paid', isPaid);
             label.classList.toggle('label-unpaid', !isPaid);
         }
 
-        // Update row background
         row.classList.toggle('bonifici-row-paid', isPaid);
     },
 
     /**
      * Called when Elenco recalculates month totals (e.g. after toggle exclude).
-     * Updates the amount cache and refreshes the corresponding row if visible.
      */
     updateMonthAmount(year, month, newAmount) {
         const key = `${year}-${String(month).padStart(2, '0')}`;
@@ -1113,7 +1104,6 @@ const Bonifici = {
 
         const row = tbody.querySelector(`tr[data-year="${year}"][data-month="${month}"]`);
         if (!row) {
-            // Month might not be in table yet (e.g. was empty) — re-render
             this.render();
             return;
         }
@@ -1125,7 +1115,6 @@ const Bonifici = {
             amountCell.style.cssText = 'text-align:right; padding-right:18px;';
         }
 
-        // Update footer total
         let yearTotal = 0;
         Object.entries(this.monthlyAmounts).forEach(([k, v]) => {
             if (k.startsWith(`${this.currentYear}-`)) yearTotal += v;
@@ -1176,12 +1165,16 @@ const App = {
         });
 
         if (viewId === 'elenco') {
+            // FIX 2: Clear search when navigating to Elenco so filter resets
+            if (UI.elements.searchInput) {
+                UI.elements.searchInput.value = '';
+            }
+            UI.elements.searchClearBtn?.classList.add('hidden');
             this.loadElenco();
         } else if (viewId === 'dashboard' && this.state.dashboardDirty) {
+            // FIX 3: Use initDashboardData to re-fetch periods and avoid stale year/month
             this.state.dashboardDirty = false;
-            this.loadDashboard(this.state.currentYear, this.state.currentMonth);
-            // Refresh Bonifici amounts when returning to dashboard
-            Bonifici.load();
+            this.initDashboardData();
         } else if (viewId === 'dashboard' && !this.state.currentYear) {
             this.initDashboardData();
         }
@@ -1209,7 +1202,6 @@ const App = {
 
             this.loadDashboard(this.state.currentYear, this.state.currentMonth);
 
-            // Initialize Bonifici with available years
             Bonifici.init(years);
             Bonifici.load();
         }
@@ -1247,13 +1239,12 @@ const App = {
             this.loadDashboard(this.state.currentYear, this.state.currentMonth);
         });
 
-        let pendingFiles = [];  // ← NUOVO: file in attesa di upload
+        let pendingFiles = [];
 
         const updateDropAreaPreview = () => {
             const area = UI.elements.dropArea;
             if (!area) return;
 
-            // Rimuovi lista file precedente se esiste
             area.querySelector('.file-preview-list')?.remove();
 
             if (pendingFiles.length === 0) {
@@ -1262,13 +1253,11 @@ const App = {
                 area.classList.remove('has-files');
                 UI.elements.uploadBtn.textContent = 'Carica e Analizza';
             } else {
-                // Nasconde icona e messaggio di default
                 area.querySelector('i').style.display = 'none';
                 area.querySelector('.file-msg').style.display = 'none';
                 area.classList.add('has-files');
                 UI.elements.uploadBtn.textContent = `Carica ${pendingFiles.length} file`;
 
-                // Crea la lista di tag file
                 const list = document.createElement('div');
                 list.className = 'file-preview-list';
                 pendingFiles.forEach((f, index) => {
@@ -1285,7 +1274,7 @@ const App = {
                     tag.querySelector('.file-tag-remove').addEventListener('click', (e) => {
                         e.stopPropagation();
                         pendingFiles.splice(index, 1);
-                        UI.elements.fileInput.value = ''; // ← aggiunge questo
+                        UI.elements.fileInput.value = '';
                         updateDropAreaPreview();
                     });
                     list.appendChild(tag);
@@ -1323,7 +1312,6 @@ const App = {
         };
 
         if (UI.elements.dropArea) {
-            // Click sulla drop area: apre il file picker SOLO se non ci sono file pendenti
             UI.elements.dropArea.addEventListener('click', (e) => {
                 if (pendingFiles.length === 0) {
                     UI.elements.fileInput.click();
@@ -1340,17 +1328,13 @@ const App = {
             UI.elements.dropArea.addEventListener('drop', (e) => {
                 e.preventDefault();
                 UI.elements.dropArea.classList.remove('highlight');
-                // Salva i file ma NON fa l'upload → aspetta il bottone
                 setPendingFiles(Array.from(e.dataTransfer.files));
             });
 
-            // Selezione via file picker → salva in pending, non fa upload
             UI.elements.fileInput?.addEventListener('change', (e) => {
                 setPendingFiles(Array.from(e.target.files));
             });
 
-            // Il bottone: se non ci sono file pending → apre il file picker
-            //             se ci sono file pending → fa l'upload
             UI.elements.uploadBtn?.addEventListener('click', () => {
                 if (pendingFiles.length === 0) {
                     UI.elements.fileInput.click();
@@ -1363,13 +1347,11 @@ const App = {
 
     /**
      * Setup the Bonifici year navigator buttons.
-     * The card's checkbox changes are handled here and also sync to Elenco.
      */
     setupBonifici() {
         UI.elements.bonificiYearPrev?.addEventListener('click', () => Bonifici.navigateYear(+1));
         UI.elements.bonificiYearNext?.addEventListener('click', () => Bonifici.navigateYear(-1));
 
-        // Delegated click on Bonifici table checkboxes
         UI.elements.bonificiTbody?.addEventListener('change', async (e) => {
             const cb = e.target.closest('.bonifici-paid-cb');
             if (!cb) return;
@@ -1378,14 +1360,10 @@ const App = {
             const month = parseInt(cb.dataset.month);
             const isPaid = cb.checked;
 
-            // Persist to backend
             await API.setMonthlyStatus(year, month, isPaid);
-
-            // Update Bonifici state immediately
             Bonifici.updateRowState(year, month, isPaid);
 
-            // ── SYNC TO ELENCO ──────────────────────────────────
-            // Find the corresponding paid-checkbox in Elenco and update it
+            // Sync to Elenco if visible
             const elencoSection = document.querySelector(
                 `#page-elenco .month-section[data-year="${year}"][data-month="${month}"]`
             );
@@ -1397,15 +1375,16 @@ const App = {
                 }
             }
 
-            this.state.dashboardDirty = false; // We already refreshed inline
+            this.state.dashboardDirty = false;
         });
     },
 
     setupElenco() {
-        // Upload (+)
+        // FIX 4: Reset file input value after upload so same file can be re-selected
         UI.elements.elencoExportBtn?.addEventListener('click', () => UI.elements.elencoFileInput.click());
         UI.elements.elencoFileInput?.addEventListener('change', async (e) => {
             const files = Array.from(e.target.files).filter(f => f.name.endsWith('.xlsx'));
+            e.target.value = ''; // Reset immediately — allows same file to be imported again
             if (!files.length) return;
             const res = await API.uploadFiles(files);
             Utils.showToast(UI.elements.elencoToast, `✓ ${res.totalNew} nuovi, ${res.totalDup} duplicati`, 'success');
@@ -1414,11 +1393,23 @@ const App = {
             if (res.totalNew > 0) await this.detectAndPromptRimborso();
         });
 
-        // Real-time Search
+        // FIX 2: Real-time Search with clear button support
         let timer;
         UI.elements.searchInput?.addEventListener('input', (e) => {
+            const hasValue = e.target.value.length > 0;
+            UI.elements.searchClearBtn?.classList.toggle('hidden', !hasValue);
             clearTimeout(timer);
             timer = setTimeout(() => this.filterElencoLocally(e.target.value), 250);
+        });
+
+        // FIX 2: Clear button — clears input AND reloads all data (in case API was called with filter)
+        UI.elements.searchClearBtn?.addEventListener('click', () => {
+            if (UI.elements.searchInput) {
+                UI.elements.searchInput.value = '';
+                UI.elements.searchInput.focus();
+            }
+            UI.elements.searchClearBtn.classList.add('hidden');
+            this.filterElencoLocally(''); // Instantly show all rows already in DOM
         });
 
         // Date Filter
@@ -1503,7 +1494,6 @@ const App = {
                             }, 500);
                         } else {
                             UI.recalcMonthTotals(section);
-                            // Refresh Bonifici amount for this month
                             this._syncBonificiAmountFromSection(section);
                         }
                     }, 720);
@@ -1527,7 +1517,6 @@ const App = {
                     btnEye.title = res.data.is_excluded ? 'Includi' : 'Escludi';
                     const section = row.closest('.month-section');
                     UI.recalcMonthTotals(section);
-                    // ── SYNC Bonifici amount ──
                     this._syncBonificiAmountFromSection(section);
                     this.state.dashboardDirty = true;
                 }
@@ -1547,7 +1536,6 @@ const App = {
                     UI.recalcMonthTotals(section);
                     this.state.dashboardDirty = true;
 
-                    // ── SYNC TO BONIFICI DASHBOARD ──────────────────────
                     Bonifici.updateRowState(year, month, isPaid);
 
                 } catch (err) {
@@ -1568,7 +1556,6 @@ const App = {
         const year = section.dataset.year;
         const month = section.dataset.month;
 
-        // Recompute reimbursable (non-excluded, non-neutral) from DOM
         let total = 0;
         section.querySelectorAll('.expense-row').forEach(row => {
             if (!row.classList.contains('excluded') && !row.classList.contains('neutral-row')) {
@@ -1606,12 +1593,10 @@ const App = {
                 year: parseInt(c.dataset.year), month: parseInt(c.dataset.month)
             }));
 
-            // Mostra il modal custom di conferma invece del confirm() nativo
             const msg = document.getElementById('confirm-delete-msg');
             if (msg) msg.textContent = `Stai per eliminare ${periods.length} ${periods.length === 1 ? 'mese' : 'mesi'}. L'operazione è irreversibile.`;
             UI.openModal('modal-confirm-delete');
 
-            // Listener "Conferma" — usa { once: true } per evitare accumulo
             document.getElementById('proceed-confirm-delete')?.addEventListener('click', async () => {
                 UI.closeModal('modal-confirm-delete');
                 setTimeout(async () => {
@@ -1661,10 +1646,13 @@ const App = {
         UI.elements.keywordInput?.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') UI.elements.addKeywordBtn.click();
         });
+
+        document.getElementById('close-alert-btn')?.addEventListener('click', () => UI.closeModal('modal-alert'));
     },
 
     async loadElenco() {
         const params = {};
+        // Only pass search_text if the input has a value (after FIX 2 clears it on navigation, this won't filter)
         if (UI.elements.searchInput?.value) params.search_text = UI.elements.searchInput.value;
         if (UI.elements.dateStart?.value) params.start_date = UI.elements.dateStart.value;
         if (UI.elements.dateEnd?.value) params.end_date = UI.elements.dateEnd.value;
@@ -1678,8 +1666,6 @@ const App = {
             this.state.lastExpenseData = expRes.data;
             UI.renderExpenses(expRes.data, statsRes.data || {});
 
-            // Keep Bonifici amounts in sync with the full (unfiltered) data
-            // Only if no filters are active (to avoid partial data)
             if (!params.search_text && !params.start_date && !params.end_date) {
                 Bonifici.computeAmountsFromData(expRes.data);
                 if (statsRes.ok) Bonifici.statusMap = statsRes.data || {};
@@ -1721,7 +1707,6 @@ const App = {
 
             const months = byYear[y].sort((a, b) => a - b);
 
-            // Griglia 3 colonne, ordine colonna per colonna (top→bottom, poi colonna successiva)
             const COLS = Math.min(3, months.length);
             const rows = Math.ceil(months.length / COLS);
             mDiv.style.gridTemplateRows = `repeat(${rows}, auto)`;
@@ -1771,43 +1756,52 @@ const App = {
                 const tag = document.createElement('span');
                 tag.className = 'keyword-tag';
                 const badge = k.is_rimborso
-                    ? '<span class="keyword-rimborso-badge" title="Collegato a Rilevamento Rimborsi"><i class="fa-solid fa-money-bill-transfer"></i></span>'
+                    ? `<span class="keyword-rimborso-badge" title="Keyword rimborso">R</span>`
                     : '';
-                tag.innerHTML = `${badge}${Utils.escapeHtml(k.keyword)} <button class="keyword-remove"><i class="fa-solid fa-xmark"></i></button>`;
-                tag.querySelector('button').addEventListener('click', async () => {
-                    await API.removeKeyword(k.id);
-                    this.loadKeywordsList();
-                    // Se era il keyword di un mittente, ricarica anche la lista mittenti
-                    if (k.is_rimborso) this.loadRimborsoMittenti();
-                });
+                tag.innerHTML = `${badge}<span class="keyword-text">${Utils.escapeHtml(k.keyword)}</span>`;
+                if (!k.is_rimborso) {
+                    const removeBtn = document.createElement('button');
+                    removeBtn.className = 'keyword-remove';
+                    removeBtn.title = 'Rimuovi keyword';
+                    removeBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+                    removeBtn.addEventListener('click', async () => {
+                        await API.removeKeyword(k.id);
+                        this.loadKeywordsList();
+                        this.state.dashboardDirty = true;
+                        if (document.getElementById('page-elenco').classList.contains('active')) {
+                            App.loadElenco();
+                        }
+                    });
+                    tag.appendChild(removeBtn);
+                }
                 list.appendChild(tag);
             });
         }
     },
 
-    // ── Rimborso Mittenti ──────────────────────────────────────────
-
     async loadRimborsoMittenti() {
-        const container = UI.elements.rimborsoMittentiList;
-        if (!container) return;
-        container.innerHTML = '';
+        const list = UI.elements.rimborsoMittentiList;
+        if (!list) return;
+        list.innerHTML = 'Caricamento...';
         const res = await API.getRimborsoMittenti();
-        if (!res.ok || !res.data.length) {
-            container.innerHTML = '<p class="rimborso-empty-hint">Nessun mittente ancora configurato.</p>';
-            return;
+        if (res.ok) {
+            list.innerHTML = '';
+            if (!res.data.length) {
+                list.innerHTML = '<p style="color:var(--text-muted); text-align:center; padding:12px 0;">Nessun mittente configurato.</p>';
+                return;
+            }
+            res.data.forEach(m => list.appendChild(this.createRimborsoCard(m)));
         }
-        res.data.forEach(m => container.appendChild(this._buildMittenteRow(m)));
     },
 
-    _buildMittenteRow(m) {
+    createRimborsoCard(m) {
         const card = document.createElement('div');
         card.className = 'rimborso-mittente-card';
-        card.dataset.id = m.id;
         card.innerHTML = `
             <span class="rm-nome">${Utils.escapeHtml(m.operazione)}</span>
             <div class="rm-controls">
                 <span class="rm-tol-label">±€</span>
-                <input type="number" class="rm-tolleranza" value="${m.tolleranza}" min="0" max="999" step="0.5" title="Tolleranza (€)">
+                <input type="number" class="rm-tolleranza" value="${m.tolleranza}" min="0" step="0.5" title="Tolleranza">
                 <label class="rm-toggle-switch" title="${m.attivo ? 'Attivo' : 'Disattivo'}">
                     <input type="checkbox" class="rm-attivo" ${m.attivo ? 'checked' : ''}>
                     <span class="rm-toggle-slider"></span>
@@ -1834,7 +1828,6 @@ const App = {
             if (!document.getElementById('modal-keywords')?.classList.contains('hidden')) {
                 this.loadKeywordsList();
             }
-            // Fix 1: ricarica elenco per aggiornare righe neutre
             App.state.dashboardDirty = true;
             if (document.getElementById('page-elenco')?.classList.contains('active')) {
                 App.loadElenco();
@@ -1859,7 +1852,6 @@ const App = {
             if (!document.getElementById('modal-keywords')?.classList.contains('hidden')) {
                 this.loadKeywordsList();
             }
-            // Fix 1: ricarica elenco per aggiornare righe neutre immediatamente
             App.state.dashboardDirty = true;
             if (document.getElementById('page-elenco')?.classList.contains('active')) {
                 App.loadElenco();
@@ -1907,7 +1899,6 @@ const App = {
                 ${c.diff > 0 ? `<div class="rimborso-diff">Differenza: ${Utils.formatImporto(c.diff)}</div>` : ''}
             `;
 
-            // Sostituisce i bottoni per rimuovere listener precedenti
             ['rimborso-confirm-btn', 'rimborso-skip-btn'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.replaceWith(el.cloneNode(true));
