@@ -6,53 +6,55 @@
 
 :root {
     /* ── Palette Mint & Ice (Electric Pastels) ── */
-    --background-color:   #f3fbfd;
-    --sidebar-bg:         #7ae5f4;
-    --sidebar-text:       #003B46;
-    --body-bg:            #0F5257;
+    --background-color: #f3fbfd;
+    --sidebar-bg: #7ae5f4;
+    --sidebar-text: #003B46;
+    --body-bg: #0F5257;
 
     /* ── Accents & Buttons ── */
-    --primary-color:      #7ae5f4;
-    --primary-text:       #003B46;
-    --primary-hover:      #7ae5f4;
+    --primary-color: #7ae5f4;
+    --primary-text: #003B46;
+    --primary-hover: #7ae5f4;
 
     /* ── Semantic Colors ── */
-    --color-success:      #49d684;
+    --color-success: #49d684;
     --color-success-dark: #219a52;
-    --color-danger:       #e74c3c;
+    --color-danger: #e74c3c;
     --color-danger-light: #FF6B6B;
-    --color-negative:     #c0392b;   /* importo negative / uscite */
-    --color-warning-bg:   #fff07c;   /* nav hover bg */
+    --color-negative: #c0392b;
+    /* importo negative / uscite */
+    --color-warning-bg: #fff07c;
+    /* nav hover bg */
 
     /* ── Neutral / Text ──  #133C55*/
-    --color-white:        #FFFFFF;
-    --text-color:         #2C3E50;
-    --text-muted:         #607D8B;
+    --color-white: #FFFFFF;
+    --text-color: #2C3E50;
+    --text-muted: #607D8B;
 
     /* ── Cards & Surfaces ── */
-    --card-bg:            #FFFFFF;
-    --border-color:       #fff07c;
-    --shadow-color:       rgba(99, 229, 255, 0.25);
+    --card-bg: #FFFFFF;
+    --border-color: #fff07c;
+    --shadow-color: rgba(99, 229, 255, 0.25);
 
     /* ── Table specifics ── */
-    --row-alt-bg:         #F5FFFF;
-    --header-bg:          #7ae5f4;
-    --header-text:        #003B46;
+    --row-alt-bg: #F5FFFF;
+    --header-bg: #7ae5f4;
+    --header-text: #003B46;
     --color-table-border: #B2EBF2;
-    --color-tfoot-bg:     #F1F5F9;
+    --color-tfoot-bg: #F1F5F9;
 
     /* ── Form Inputs ── */
     --color-input-border: #AEC6CF;
-    --color-input-bg:     #E3EBF2;
+    --color-input-bg: #E3EBF2;
 
     /* ── Neutral Rows ── */
---color-neutral-bg:    #FFF5D6; 
+    --color-neutral-bg: #FFF5D6;
     --color-neutral-hover: #FFEDBA;
 
     /* ── Misc Accents ── */
-    --color-accent-blue:  #4a69bd;
+    --color-accent-blue: #4a69bd;
     --color-checkbox-hover: #5DADE2;
-    --scrollbar-color:    #b8b5b4;
+    --scrollbar-color: #b8b5b4;
 
     /* ── Layout ── */
     --sidebar-width: 250px;
@@ -62,8 +64,8 @@
     --focus-border: var(--primary-hover);
 
     /* ── Transition system ── */
-    --transition-fast:   0.15s ease;
-    --transition-base:   0.2s ease;
+    --transition-fast: 0.15s ease;
+    --transition-base: 0.2s ease;
     --transition-spring: 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
@@ -297,7 +299,7 @@ body {
     overflow: hidden;
 }
 
-.file-drop-area > i {
+.file-drop-area>i {
     font-size: 2rem;
     color: var(--sidebar-text);
     transition: color var(--transition-base), transform var(--transition-base);
@@ -323,7 +325,7 @@ body {
     box-shadow: 0 4px 20px rgba(74, 158, 175, 0.15);
 }
 
-.file-drop-area:not(.has-files):hover > i {
+.file-drop-area:not(.has-files):hover>i {
     color: var(--sidebar-text);
     transform: translateY(-3px);
 }
@@ -569,7 +571,8 @@ body {
     padding: 8px 12px;
     border-radius: 10px;
     background-color: rgba(184, 230, 240, 0.35);
-    width: 120px;          /* larghezza fissa uguale per tutti */
+    width: 120px;
+    /* larghezza fissa uguale per tutti */
     transition: background-color var(--transition-base);
     overflow: hidden;
 }
@@ -589,7 +592,8 @@ body {
     display: block;
     font-size: 1.1rem;
     font-weight: 700;
-    white-space: nowrap;   /* impedisce il capo del simbolo € */
+    white-space: nowrap;
+    /* impedisce il capo del simbolo € */
     overflow: hidden;
     text-overflow: ellipsis;
 }
@@ -641,8 +645,13 @@ body {
     letter-spacing: 0.04em;
 }
 
-.data-table th:first-child { border-radius: 10px 0 0 10px; }
-.data-table th:last-child  { border-radius: 0 10px 10px 0; }
+.data-table th:first-child {
+    border-radius: 10px 0 0 10px;
+}
+
+.data-table th:last-child {
+    border-radius: 0 10px 10px 0;
+}
 
 .data-table td {
     padding: 12px 16px;
@@ -654,31 +663,46 @@ body {
     transition: background-color var(--transition-base);
 }
 
-.data-table tbody tr:nth-child(even) { background-color: rgba(184, 230, 240, 0.2); }
-.data-table tbody tr:hover           { background-color: rgba(127, 200, 217, 0.15); }
-.data-table tbody tr:last-child td   { border-bottom: none; }
+.data-table tbody tr:nth-child(even) {
+    background-color: rgba(184, 230, 240, 0.2);
+}
+
+.data-table tbody tr:hover {
+    background-color: rgba(127, 200, 217, 0.15);
+}
+
+.data-table tbody tr:last-child td {
+    border-bottom: none;
+}
 
 /* ===================================================
    SPACER (utility)
    =================================================== */
-.spacer-vertical { flex: 0; }
+.spacer-vertical {
+    flex: 0;
+}
 
 /* ===================================================
    SCROLLBAR
    =================================================== */
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar {
+    width: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
 
 /* Imposta il colore della scrollbar su --sidebar-text e aggiunge una leggera opacità per eleganza */
-::-webkit-scrollbar-thumb { 
-    background-color: var(--scrollbar-color); 
-    border-radius: 10px; 
+::-webkit-scrollbar-thumb {
+    background-color: var(--scrollbar-color);
+    border-radius: 10px;
     opacity: 0.8;
 }
 
 /* Al passaggio del mouse, diventa blu scuro pieno */
-::-webkit-scrollbar-thumb:hover { 
-    background-color: var(--scrollbar-color); 
+::-webkit-scrollbar-thumb:hover {
+    background-color: var(--scrollbar-color);
     opacity: 1;
 }
 
@@ -693,8 +717,13 @@ body {
 /* ===================================================
    SPA — Page Visibility
    =================================================== */
-.page { display: none; }
-.page.active { display: block; }
+.page {
+    display: none;
+}
+
+.page.active {
+    display: block;
+}
 
 /* ===================================================
    ELENCO — Search Bar (Sticky)
@@ -817,12 +846,15 @@ body {
 
 /* Counter-scale: il bottone cresce (via UNIFORM HOVER scale 1.05)
    ma l'icona interna viene riportata alla dimensione originale */
-.icon-btn:hover > i {
+.icon-btn:hover>i {
     display: inline-block;
     transform: scale(0.952);
 }
 
-.icon-btn:focus { outline: none; box-shadow: none; }
+.icon-btn:focus {
+    outline: none;
+    box-shadow: none;
+}
 
 .icon-btn:focus-visible {
     outline: none;
@@ -854,7 +886,9 @@ body {
     animation: kebabFadeIn 0.15s ease;
 }
 
-.date-popover.hidden { display: none; }
+.date-popover.hidden {
+    display: none;
+}
 
 .date-popover-content {
     display: flex;
@@ -973,7 +1007,9 @@ body {
     font-weight: 800;
 }
 
-.year-header:first-child { margin-top: 0; }
+.year-header:first-child {
+    margin-top: 0;
+}
 
 .year-separator {
     height: 4px;
@@ -1037,12 +1073,29 @@ body {
     border: 1px solid var(--primary-color);
 }
 
-.expense-table .col-data       { width: 14%; }
-.expense-table .col-operazione { width: 25%; }
-.expense-table .col-categoria  { width: 18%; }
-.expense-table .col-conto      { width: 18%; }
-.expense-table .col-importo    { width: 15%; }
-.expense-table .col-azioni     { width: 10%; }
+.expense-table .col-data {
+    width: 14%;
+}
+
+.expense-table .col-operazione {
+    width: 25%;
+}
+
+.expense-table .col-categoria {
+    width: 18%;
+}
+
+.expense-table .col-conto {
+    width: 18%;
+}
+
+.expense-table .col-importo {
+    width: 15%;
+}
+
+.expense-table .col-azioni {
+    width: 10%;
+}
 
 /* Right-align importo column */
 .expense-table td:nth-child(5) {
@@ -1050,7 +1103,9 @@ body {
     padding-right: 18px;
 }
 
-.expense-table thead tr  { background-color: var(--header-bg); }
+.expense-table thead tr {
+    background-color: var(--header-bg);
+}
 
 .expense-table th {
     background-color: var(--header-bg);
@@ -1063,8 +1118,15 @@ body {
     letter-spacing: 0.04em;
 }
 
-.expense-table th:first-child { border-radius: 14px 0 0 0; }
-.expense-table th:last-child  { border-radius: 0 14px 0 0; text-align: center; width: 60px; }
+.expense-table th:first-child {
+    border-radius: 14px 0 0 0;
+}
+
+.expense-table th:last-child {
+    border-radius: 0 14px 0 0;
+    text-align: center;
+    width: 60px;
+}
 
 .expense-table td {
     padding: 11px 14px;
@@ -1080,7 +1142,10 @@ body {
     white-space: normal;
 }
 
-.expense-table td:last-child { border-right: none; text-align: center; }
+.expense-table td:last-child {
+    border-right: none;
+    text-align: center;
+}
 
 .expense-table tfoot td {
     padding: 12px 14px;
@@ -1093,13 +1158,28 @@ body {
     border-right: none !important;
 }
 
-.expense-table tbody tr:nth-child(even) { background-color: var(--row-alt-bg); }
-.expense-table tbody tr:hover           { background-color: rgba(127, 200, 217, 0.12); }
-.expense-table tbody tr:last-child td   { border-bottom: none; }
+.expense-table tbody tr:nth-child(even) {
+    background-color: var(--row-alt-bg);
+}
+
+.expense-table tbody tr:hover {
+    background-color: rgba(127, 200, 217, 0.12);
+}
+
+.expense-table tbody tr:last-child td {
+    border-bottom: none;
+}
 
 /* ── Importo styling ── */
-.importo-positive { color: var(--color-success); font-weight: 600; }
-.importo-negative { color: var(--color-negative); font-weight: 600; }
+.importo-positive {
+    color: var(--color-success);
+    font-weight: 600;
+}
+
+.importo-negative {
+    color: var(--color-negative);
+    font-weight: 600;
+}
 
 /* ===================================================
    ELENCO — Excluded Row
@@ -1109,8 +1189,11 @@ body {
     text-decoration: line-through;
     text-decoration-color: #ddd;
 }
+
 .expense-row.excluded .importo-positive,
-.expense-row.excluded .importo-negative { color: #c5c5c5 !important; }
+.expense-row.excluded .importo-negative {
+    color: #c5c5c5 !important;
+}
 
 /* ===================================================
    ELENCO — Month Badge
@@ -1139,7 +1222,9 @@ body {
     border: 1px solid rgba(231, 76, 60, 0.25);
 }
 
-.month-badge i { font-size: 0.75rem; }
+.month-badge i {
+    font-size: 0.75rem;
+}
 
 /* ===================================================
    ACTION BUTTONS (eye / edit / trash)
@@ -1189,9 +1274,21 @@ body {
 }
 
 @keyframes cellSlideOut {
-    0%   { opacity: 1; transform: translateX(0);    background-color: transparent; }
-    20%  { background-color: rgba(231, 76, 60, 0.08); }
-    100% { opacity: 0; transform: translateX(80px); background-color: rgba(231, 76, 60, 0.05); }
+    0% {
+        opacity: 1;
+        transform: translateX(0);
+        background-color: transparent;
+    }
+
+    20% {
+        background-color: rgba(231, 76, 60, 0.08);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translateX(80px);
+        background-color: rgba(231, 76, 60, 0.05);
+    }
 }
 
 .expense-row td {
@@ -1217,8 +1314,13 @@ body {
     transition: color var(--transition-base);
 }
 
-.paid-label.label-paid   { color: var(--color-success); }
-.paid-label.label-unpaid { color: var(--color-danger); }
+.paid-label.label-paid {
+    color: var(--color-success);
+}
+
+.paid-label.label-unpaid {
+    color: var(--color-danger);
+}
 
 .paid-checkbox {
     -webkit-appearance: none;
@@ -1268,7 +1370,10 @@ body {
 /* ===================================================
    ELENCO — Table Footer (tfoot totals)
    =================================================== */
-.tfoot-total-label { color: var(--sidebar-text); font-weight: 800; }
+.tfoot-total-label {
+    color: var(--sidebar-text);
+    font-weight: 800;
+}
 
 .tfoot-rimborso {
     text-align: right;
@@ -1277,9 +1382,14 @@ body {
 }
 
 .expense-table tfoot .paid-label.label-paid,
-.expense-table tfoot .paid-label.label-paid span  { color: var(--color-success) !important; }
+.expense-table tfoot .paid-label.label-paid span {
+    color: var(--color-success) !important;
+}
+
 .expense-table tfoot .paid-label.label-unpaid,
-.expense-table tfoot .paid-label.label-unpaid span { color: var(--color-danger) !important; }
+.expense-table tfoot .paid-label.label-unpaid span {
+    color: var(--color-danger) !important;
+}
 
 /* ===================================================
    ELENCO — Add Manual Expense Button & Inline Form
@@ -1318,7 +1428,9 @@ body {
     border-style: dashed !important;
 }
 
-.add-expense-btn i { font-size: 0.8rem; }
+.add-expense-btn i {
+    font-size: 0.8rem;
+}
 
 /* Inline form row */
 .inline-form-row td {
@@ -1375,10 +1487,25 @@ body {
     box-shadow: var(--focus-ring);
 }
 
-.btn-save-inline   { background-color: var(--color-success); color: var(--color-white); border: none !important; }
-.btn-save-inline:hover { background-color: var(--color-success); }
-.btn-cancel-inline { background-color: var(--color-danger-light); color: var(--color-white); border: none !important; }
-.btn-cancel-inline:hover { background-color: var(--color-danger-light); }
+.btn-save-inline {
+    background-color: var(--color-success);
+    color: var(--color-white);
+    border: none !important;
+}
+
+.btn-save-inline:hover {
+    background-color: var(--color-success);
+}
+
+.btn-cancel-inline {
+    background-color: var(--color-danger-light);
+    color: var(--color-white);
+    border: none !important;
+}
+
+.btn-cancel-inline:hover {
+    background-color: var(--color-danger-light);
+}
 
 /* ── Autocomplete Dropdown ── */
 .autocomplete-list {
@@ -1487,13 +1614,24 @@ body {
     opacity: 1;
 }
 
-.empty-state p { font-size: 1.1rem; font-weight: 600; margin: 0 0 6px 0; }
-.empty-hint { font-size: 0.9rem !important; font-weight: 400 !important; opacity: 0.7; }
+.empty-state p {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0 0 6px 0;
+}
+
+.empty-hint {
+    font-size: 0.9rem !important;
+    font-weight: 400 !important;
+    opacity: 0.7;
+}
 
 /* ===================================================
    KEBAB MENU
    =================================================== */
-.kebab-wrapper { position: relative; }
+.kebab-wrapper {
+    position: relative;
+}
 
 .kebab-dropdown {
     position: absolute;
@@ -1510,8 +1648,15 @@ body {
 }
 
 @keyframes kebabFadeIn {
-    from { opacity: 0; transform: translateY(-4px); }
-    to   { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .kebab-item {
@@ -1531,13 +1676,21 @@ body {
     text-align: left;
 }
 
-.kebab-item:hover { background: rgba(127, 200, 217, 0.12); }
+.kebab-item:hover {
+    background: rgba(127, 200, 217, 0.12);
+}
+
 .kebab-item:focus-visible {
     outline: none;
     background: rgba(127, 200, 217, 0.12);
     box-shadow: inset var(--focus-ring);
 }
-.kebab-item i { width: 18px; text-align: center; color: var(--sidebar-text); }
+
+.kebab-item i {
+    width: 18px;
+    text-align: center;
+    color: var(--sidebar-text);
+}
 
 /* ===================================================
    MODALS
@@ -1556,15 +1709,23 @@ body {
 
 .modal-body input::placeholder {
     /* Usa il colore neutro/grigiastro della tua palette */
-    color: var(--sidebar-text) !important; 
-    
+    color: var(--sidebar-text) !important;
+
     /* Abbassa leggermente l'opacità per distinguerlo dal testo vero e proprio */
-    opacity: 1 !important; 
-    
+    opacity: 1 !important;
+
     font-weight: 400;
 }
 
-@keyframes modalFadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes modalFadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
 
 .modal-content {
     background: var(--card-bg);
@@ -1580,18 +1741,37 @@ body {
 }
 
 @keyframes modalSlide {
-    from { opacity: 0; transform: translateY(20px); }
-    to   { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 @keyframes modalFadeOut {
-    from { opacity: 1; }
-    to   { opacity: 0; }
+    from {
+        opacity: 1;
+    }
+
+    to {
+        opacity: 0;
+    }
 }
 
 @keyframes modalSlideOut {
-    from { opacity: 1; transform: translateY(0); }
-    to   { opacity: 0; transform: translateY(12px); }
+    from {
+        opacity: 1;
+        transform: translateY(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateY(12px);
+    }
 }
 
 .modal-overlay.modal-closing {
@@ -1602,6 +1782,7 @@ body {
 .modal-overlay.modal-closing .modal-content {
     animation: modalSlideOut 0.18s ease forwards;
 }
+
 .modal-header {
     display: flex;
     align-items: center;
@@ -1621,7 +1802,9 @@ body {
     margin: 0;
 }
 
-.modal-header h3 i { color: var(--sidebar-text); }
+.modal-header h3 i {
+    color: var(--sidebar-text);
+}
 
 .modal-close {
     background: none;
@@ -1718,11 +1901,14 @@ body {
     user-select: none;
     padding: 5px 10px 5px 8px;
     border-radius: 6px;
-    min-width: 130px;       /* larghezza fissa: "Settembre" è il mese più lungo */
+    min-width: 130px;
+    /* larghezza fissa: "Settembre" è il mese più lungo */
     transition: background var(--transition-fast);
 }
 
-.period-month-label:hover { background: rgba(127, 200, 217, 0.12); }
+.period-month-label:hover {
+    background: rgba(127, 200, 217, 0.12);
+}
 
 .btn-danger {
     padding: 10px 22px;
@@ -1740,7 +1926,10 @@ body {
     transition: background-color var(--transition-base), transform var(--transition-spring);
 }
 
-.btn-danger:disabled { opacity: 0.5; cursor: not-allowed; }
+.btn-danger:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
 
 .btn-danger:focus-visible {
     outline: none;
@@ -1796,7 +1985,11 @@ body {
     box-shadow: var(--focus-ring);
 }
 
-.keyword-list { display: flex; flex-wrap: wrap; gap: 8px; }
+.keyword-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
 
 .keyword-tag {
     display: inline-flex;
@@ -1849,18 +2042,26 @@ tr.expense-row.neutral-row:hover,
     background-color: var(--color-neutral-hover) !important;
 }
 
-.expense-row.neutral-row .eye-toggle { visibility: hidden; }
-.importo-neutral { color: var(--text-color) !important; font-weight: 700; }
+.expense-row.neutral-row .eye-toggle {
+    visibility: hidden;
+}
+
+.importo-neutral {
+    color: var(--text-color) !important;
+    font-weight: 700;
+}
 
 /* ===================================================
    SMALL CONFIRM MODAL
    =================================================== */
-.modal-content-sm { max-width: 420px; }
+.modal-content-sm {
+    max-width: 420px;
+}
 
 .modal-footer-confirm {
     display: flex;
     justify-content: flex-end;
-    align-items: stretch; 
+    align-items: stretch;
     gap: 10px;
     padding: 14px 24px;
 }
@@ -1872,7 +2073,7 @@ tr.expense-row.neutral-row:hover,
 }
 
 .modal-footer-confirm .btn-primary {
-    margin-top: 0; 
+    margin-top: 0;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1884,7 +2085,9 @@ tr.expense-row.neutral-row:hover,
     flex: 1;
 }
 
-.keyword-input-wrapper input { width: 100%; }
+.keyword-input-wrapper input {
+    width: 100%;
+}
 
 .error-tooltip {
     position: absolute;
@@ -1908,7 +2111,10 @@ tr.expense-row.neutral-row:hover,
     pointer-events: none;
 }
 
-.form-data { width: 100%; min-width: 0; }
+.form-data {
+    width: 100%;
+    min-width: 0;
+}
 
 .error-tooltip::before {
     content: '';
@@ -1941,10 +2147,21 @@ tr.expense-row.neutral-row:hover,
 /* ===================================================
    METRIC COLORS
    =================================================== */
-.entrate-color   { color: var(--color-success) !important; }
-.uscite-color    { color: var(--color-danger-light) !important; }
-.saldo-positive  { color: var(--color-success) !important; }
-.saldo-negative  { color: var(--color-danger-light) !important; }
+.entrate-color {
+    color: var(--color-success) !important;
+}
+
+.uscite-color {
+    color: var(--color-danger-light) !important;
+}
+
+.saldo-positive {
+    color: var(--color-success) !important;
+}
+
+.saldo-negative {
+    color: var(--color-danger-light) !important;
+}
 
 /* ===================================================
    DASHBOARD — Top Categories Progress Bars
@@ -1958,7 +2175,11 @@ tr.expense-row.neutral-row:hover,
     gap: 14px;
 }
 
-.top-cat-item { display: flex; flex-direction: column; gap: 6px; }
+.top-cat-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
 
 .top-cat-info {
     display: flex;
@@ -1966,9 +2187,23 @@ tr.expense-row.neutral-row:hover,
     justify-content: space-between;
 }
 
-.top-cat-rank  { font-size: 0.85rem; margin-right: 8px; }
-.top-cat-name  { flex: 1; font-weight: 600; color: var(--sidebar-text); font-size: 0.95rem; }
-.top-cat-amount { font-weight: 700; color: var(--color-danger-light); font-size: 0.95rem; }
+.top-cat-rank {
+    font-size: 0.85rem;
+    margin-right: 8px;
+}
+
+.top-cat-name {
+    flex: 1;
+    font-weight: 600;
+    color: var(--sidebar-text);
+    font-size: 0.95rem;
+}
+
+.top-cat-amount {
+    font-weight: 700;
+    color: var(--color-danger-light);
+    font-size: 0.95rem;
+}
 
 .top-cat-bar-track {
     width: 100%;
@@ -2082,12 +2317,25 @@ tr.expense-row.neutral-row:hover,
     overflow: hidden;
 }
 
-.bonifici-table th:first-child { border-radius: 12px 0 0 0 !important; }
-.bonifici-table th:last-child  { border-radius: 0 12px 0 0 !important; }
+.bonifici-table th:first-child {
+    border-radius: 12px 0 0 0 !important;
+}
 
-.col-bonifici-mese    { width: 45%; }
-.col-bonifici-importo { width: 35%; }
-.col-bonifici-azioni  { width: 20%; }
+.bonifici-table th:last-child {
+    border-radius: 0 12px 0 0 !important;
+}
+
+.col-bonifici-mese {
+    width: 45%;
+}
+
+.col-bonifici-importo {
+    width: 35%;
+}
+
+.col-bonifici-azioni {
+    width: 20%;
+}
 
 /* Mese column: header bold, body rows normal */
 .bonifici-table th:nth-child(1) {
@@ -2096,6 +2344,7 @@ tr.expense-row.neutral-row:hover,
     font-weight: 700;
     color: var(--sidebar-text);
 }
+
 .bonifici-table tbody td:nth-child(1) {
     text-align: center !important;
     vertical-align: middle;
@@ -2110,6 +2359,7 @@ tr.expense-row.neutral-row:hover,
     vertical-align: middle;
     font-weight: 700;
 }
+
 .bonifici-table tbody td:nth-child(2) {
     text-align: center !important;
     padding-right: 14px !important;
@@ -2137,9 +2387,6 @@ tr.expense-row.neutral-row:hover,
     vertical-align: middle;
 }
 
-
-
-
 /* Empty row */
 .bonifici-empty-row td {
     border-right: none !important;
@@ -2162,9 +2409,9 @@ tr.expense-row.neutral-row:hover,
 .year-nav-btn:hover {
     transform: scale(1.05);
     transition: transform var(--transition-spring),
-                background-color var(--transition-base),
-                color var(--transition-base),
-                border-color var(--transition-base) !important;
+        background-color var(--transition-base),
+        color var(--transition-base),
+        border-color var(--transition-base) !important;
 }
 
 /* ===================================================
@@ -2197,13 +2444,7 @@ tr.expense-row.neutral-row:hover,
     overflow-y: auto;
 }
 
-.rimborso-empty-hint {
-    color: var(--text-muted, #8a9ba8);
-    font-size: 0.83rem;
-    text-align: center;
-    padding: 10px 0;
-    margin: 0;
-}
+
 
 /* Singola card mittente — stile identico a keyword-tag ma full-width */
 .rimborso-mittente-card {
@@ -2271,7 +2512,7 @@ tr.expense-row.neutral-row:hover,
 .rm-tolleranza:focus {
     outline: none;
     border-color: var(--focus-border, var(--primary-color));
-    box-shadow: var(--focus-ring, 0 0 0 3px rgba(127,200,217,.25));
+    box-shadow: var(--focus-ring, 0 0 0 3px rgba(127, 200, 217, .25));
 }
 
 /* Toggle attivo dedicato (non riusa .toggle-switch per isolamento) */
@@ -2308,14 +2549,14 @@ tr.expense-row.neutral-row:hover,
     background: var(--color-white);
     border-radius: 50%;
     transition: transform var(--transition-base, .2s);
-    box-shadow: 0 1px 3px rgba(0,0,0,.15);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .15);
 }
 
-.rm-toggle-switch input:checked + .rm-toggle-slider {
+.rm-toggle-switch input:checked+.rm-toggle-slider {
     background: var(--color-success);
 }
 
-.rm-toggle-switch input:checked + .rm-toggle-slider::before {
+.rm-toggle-switch input:checked+.rm-toggle-slider::before {
     transform: translateX(14px);
 }
 
@@ -2338,50 +2579,7 @@ tr.expense-row.neutral-row:hover,
     background: rgba(231, 76, 60, 0.08);
 }
 
-/* ── Toggle switch (riusato) ── */
-.toggle-switch {
-    position: relative;
-    display: inline-block;
-    width: 38px;
-    height: 22px;
-    flex-shrink: 0;
-}
 
-.toggle-switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-}
-
-.toggle-slider {
-    position: absolute;
-    cursor: pointer;
-    inset: 0;
-    background: var(--border-color, #cde2e7);
-    border-radius: 22px;
-    transition: background var(--transition-base, .2s);
-}
-
-.toggle-slider::before {
-    content: '';
-    position: absolute;
-    width: 16px;
-    height: 16px;
-    left: 3px;
-    top: 3px;
-    background: var(--color-white);
-    border-radius: 50%;
-    transition: transform var(--transition-base, .2s);
-    box-shadow: 0 1px 4px rgba(0,0,0,.15);
-}
-
-.toggle-switch input:checked + .toggle-slider {
-    background: var(--primary-color);
-}
-
-.toggle-switch input:checked + .toggle-slider::before {
-    transform: translateX(16px);
-}
 
 /* ── Modale conferma rimborso ── */
 #rimborso-confirm-btn i {
@@ -2398,13 +2596,27 @@ tr.expense-row.neutral-row:hover,
 }
 
 @keyframes cardSlideIn {
-    from { opacity: 0; transform: translateX(40px); }
-    to   { opacity: 1; transform: translateX(0); }
+    from {
+        opacity: 0;
+        transform: translateX(40px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
 }
 
 @keyframes cardSlideOut {
-    from { opacity: 1; transform: translateX(0); }
-    to   { opacity: 0; transform: translateX(-40px); }
+    from {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    to {
+        opacity: 0;
+        transform: translateX(-40px);
+    }
 }
 
 .rimborso-candidate-card.slide-in {

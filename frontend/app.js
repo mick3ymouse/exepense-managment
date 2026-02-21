@@ -24,6 +24,18 @@ const Utils = {
         9: 'Settembre', 10: 'Ottobre', 11: 'Novembre', 12: 'Dicembre'
     },
 
+    /** Reverse mapping: month name → month number */
+    MONTH_ORDER: {
+        'Gennaio': 1, 'Febbraio': 2, 'Marzo': 3, 'Aprile': 4,
+        'Maggio': 5, 'Giugno': 6, 'Luglio': 7, 'Agosto': 8,
+        'Settembre': 9, 'Ottobre': 10, 'Novembre': 11, 'Dicembre': 12
+    },
+
+    /** Format year+month as "YYYY-MM" key string */
+    monthKey(year, month) {
+        return `${year}-${String(month).padStart(2, '0')}`;
+    },
+
     /** Format Date: YYYY-MM-DD -> DD/MM/YYYY */
     formatDateDisplay(isoDate) {
         if (!isoDate) return '—';
@@ -434,9 +446,6 @@ const UI = {
             return;
         }
 
-        const MONTH_ORDER = {};
-        Object.entries(Utils.MONTH_NAMES).forEach(([num, name]) => MONTH_ORDER[name] = parseInt(num));
-
         years.forEach(year => {
             const yearHeader = document.createElement('h2');
             yearHeader.className = 'year-header';
@@ -448,12 +457,12 @@ const UI = {
             container.appendChild(yearSeparator);
 
             const months = data[year];
-            const sortedMonths = Object.keys(months).sort((a, b) => (MONTH_ORDER[b] || 0) - (MONTH_ORDER[a] || 0));
+            const sortedMonths = Object.keys(months).sort((a, b) => (Utils.MONTH_ORDER[b] || 0) - (Utils.MONTH_ORDER[a] || 0));
 
             sortedMonths.forEach(month => {
                 const expenses = months[month];
-                const monthNum = MONTH_ORDER[month] || 1;
-                const statusKey = `${year}-${String(monthNum).padStart(2, '0')}`;
+                const monthNum = Utils.MONTH_ORDER[month] || 1;
+                const statusKey = Utils.monthKey(year, monthNum);
                 const isPaid = statusMap[statusKey];
 
                 const section = this.createMonthSection(year, monthNum, month, expenses, isPaid);
@@ -538,7 +547,7 @@ const UI = {
         }
 
         element.parentNode.appendChild(tooltip);
-        element.style.borderColor = '#e74c3c';
+        element.style.borderColor = 'var(--color-danger)';
 
         requestAnimationFrame(() => tooltip.classList.add('show-error'));
 
@@ -964,14 +973,11 @@ const Bonifici = {
         this.monthlyAmounts = {};
         if (!expensesData) return;
 
-        const MONTH_ORDER = {};
-        Object.entries(Utils.MONTH_NAMES).forEach(([num, name]) => MONTH_ORDER[name] = parseInt(num));
-
         Object.entries(expensesData).forEach(([year, months]) => {
             Object.entries(months).forEach(([monthName, expenses]) => {
-                const monthNum = MONTH_ORDER[monthName];
+                const monthNum = Utils.MONTH_ORDER[monthName];
                 if (!monthNum) return;
-                const key = `${year}-${String(monthNum).padStart(2, '0')}`;
+                const key = Utils.monthKey(year, monthNum);
                 let total = 0;
                 expenses.forEach(exp => {
                     if (!exp.is_excluded && !exp.is_neutral) {
@@ -1017,7 +1023,7 @@ const Bonifici = {
         const allMonths = Object.keys(Utils.MONTH_NAMES).map(Number).sort((a, b) => b - a);
 
         allMonths.forEach(monthNum => {
-            const key = `${this.currentYear}-${String(monthNum).padStart(2, '0')}`;
+            const key = Utils.monthKey(this.currentYear, monthNum);
             const amount = this.monthlyAmounts[key];
             const isPaid = !!this.statusMap[key];
             const hasData = amount !== undefined;
@@ -1067,8 +1073,8 @@ const Bonifici = {
      * Update a single row's visual state (paid/unpaid) without re-rendering the whole table.
      */
     updateRowState(year, month, isPaid) {
-        const key = `${year}-${String(month).padStart(2, '0')}`;
-        this.statusMap[key] = isPaid;  // ← spostato PRIMA del return
+        const key = Utils.monthKey(year, month);
+        this.statusMap[key] = isPaid;
 
         if (parseInt(year) !== this.currentYear) return;
 
@@ -1094,7 +1100,7 @@ const Bonifici = {
      * Called when Elenco recalculates month totals (e.g. after toggle exclude).
      */
     updateMonthAmount(year, month, newAmount) {
-        const key = `${year}-${String(month).padStart(2, '0')}`;
+        const key = Utils.monthKey(year, month);
         this.monthlyAmounts[key] = newAmount;
 
         if (parseInt(year) !== this.currentYear) return;
@@ -1135,6 +1141,14 @@ const App = {
         availablePeriods: [],
         dashboardDirty: false,
         lastExpenseData: null
+    },
+
+    /** Mark dashboard as stale and reload Elenco if it's the active view */
+    _markDirtyAndReloadElenco() {
+        App.state.dashboardDirty = true;
+        if (document.getElementById('page-elenco')?.classList.contains('active')) {
+            App.loadElenco();
+        }
     },
 
     init() {
@@ -1624,11 +1638,13 @@ const App = {
         });
 
         document.getElementById('kebab-keywords')?.addEventListener('click', async () => {
+            if (UI.elements.keywordInput) UI.elements.keywordInput.value = '';
             UI.openModal('modal-keywords');
             this.loadKeywordsList();
         });
 
         document.getElementById('kebab-rimborso')?.addEventListener('click', async () => {
+            if (UI.elements.rimborsoPatternInput) UI.elements.rimborsoPatternInput.value = '';
             UI.openModal('modal-rimborso-settings');
             this.loadRimborsoMittenti();
         });
@@ -1649,8 +1665,7 @@ const App = {
             if (res.ok) {
                 UI.elements.keywordInput.value = '';
                 this.loadKeywordsList();
-                this.state.dashboardDirty = true;
-                if (document.getElementById('page-elenco').classList.contains('active')) this.loadElenco();
+                this._markDirtyAndReloadElenco();
             } else {
                 UI.showErrorTooltip(UI.elements.keywordInput, API.extractError(res));
             }
@@ -1779,10 +1794,7 @@ const App = {
                 removeBtn.addEventListener('click', async () => {
                     await API.removeKeyword(k.id);
                     this.loadKeywordsList();
-                    this.state.dashboardDirty = true;
-                    if (document.getElementById('page-elenco').classList.contains('active')) {
-                        App.loadElenco();
-                    }
+                    this._markDirtyAndReloadElenco();
                 });
                 tag.appendChild(removeBtn);
                 list.appendChild(tag);
@@ -1839,10 +1851,7 @@ const App = {
             if (!document.getElementById('modal-keywords')?.classList.contains('hidden')) {
                 this.loadKeywordsList();
             }
-            App.state.dashboardDirty = true;
-            if (document.getElementById('page-elenco')?.classList.contains('active')) {
-                App.loadElenco();
-            }
+            this._markDirtyAndReloadElenco();
         });
 
         return card;
@@ -1863,10 +1872,7 @@ const App = {
             if (!document.getElementById('modal-keywords')?.classList.contains('hidden')) {
                 this.loadKeywordsList();
             }
-            App.state.dashboardDirty = true;
-            if (document.getElementById('page-elenco')?.classList.contains('active')) {
-                App.loadElenco();
-            }
+            this._markDirtyAndReloadElenco();
         } else {
             UI.showErrorTooltip(input, API.extractError(res));
         }

@@ -111,6 +111,44 @@ def generate_hash(data_valuta: str, importo: float, operazione: str, conto_carta
     return hashlib.sha256(raw.encode('utf-8')).hexdigest()
 
 
+def month_date_range(year: int, month: int) -> tuple:
+    """Return (start_date, end_date) for a given year/month, suitable for SQL range queries."""
+    start = f"{year}-{month:02d}-01"
+    end = f"{year + 1}-01-01" if month == 12 else f"{year}-{month + 1:02d}-01"
+    return start, end
+
+
+def parse_expense_body(body: dict):
+    """
+    Parse and validate expense fields from a request body.
+    Returns (data_valuta, operazione, categoria, conto_carta, importo, error_response).
+    If error_response is not None, the caller should return it directly.
+    """
+    data_valuta = body.get("data_valuta", "").strip()
+    operazione = body.get("operazione", "").strip()
+    categoria = body.get("categoria", "").strip()
+    conto_carta = body.get("conto_carta", "").strip()
+    importo_raw = body.get("importo", 0)
+
+    if not data_valuta or not operazione:
+        return None, None, None, None, None, JSONResponse(
+            status_code=400,
+            content={"error": "Data e Operazione sono obbligatori."}
+        )
+
+    importo = parse_importo(importo_raw)
+
+    try:
+        datetime.strptime(data_valuta, '%Y-%m-%d')
+    except ValueError:
+        return None, None, None, None, None, JSONResponse(
+            status_code=400,
+            content={"error": "Formato data non valido. Usa YYYY-MM-DD."}
+        )
+
+    return data_valuta, operazione, categoria, conto_carta, importo, None
+
+
 def check_fuzzy_duplicate(conn, data_valuta: str, importo: float, operazione: str) -> bool:
     """
     Fuzzy duplicate check: same importo + operazione within ±2 days.
@@ -347,31 +385,9 @@ async def update_expense(expense_id: int, request: Request):
     Expects JSON: { data_valuta, operazione, categoria, conto_carta, importo }
     """
     body = await request.json()
-
-    data_valuta = body.get("data_valuta", "").strip()
-    operazione = body.get("operazione", "").strip()
-    categoria = body.get("categoria", "").strip()
-    conto_carta = body.get("conto_carta", "").strip()
-    importo_raw = body.get("importo", 0)
-
-    # Validate required fields
-    if not data_valuta or not operazione:
-        return JSONResponse(
-            status_code=400,
-            content={"error": "Data e Operazione sono obbligatori."}
-        )
-
-    # Parse importo
-    importo = parse_importo(importo_raw)
-
-    # Validate date format
-    try:
-        datetime.strptime(data_valuta, '%Y-%m-%d')
-    except ValueError:
-        return JSONResponse(
-            status_code=400,
-            content={"error": "Formato data non valido. Usa YYYY-MM-DD."}
-        )
+    data_valuta, operazione, categoria, conto_carta, importo, err = parse_expense_body(body)
+    if err:
+        return err
 
     conn = get_db_connection()
     try:
@@ -441,28 +457,9 @@ async def create_expense(request: Request):
     Expects JSON: { data_valuta, operazione, categoria, conto_carta, importo }
     """
     body = await request.json()
-
-    data_valuta = body.get("data_valuta", "").strip()
-    operazione = body.get("operazione", "").strip()
-    categoria = body.get("categoria", "").strip()
-    conto_carta = body.get("conto_carta", "").strip()
-    importo_raw = body.get("importo", 0)
-
-    if not data_valuta or not operazione:
-        return JSONResponse(
-            status_code=400,
-            content={"error": "Data e Operazione sono obbligatori."}
-        )
-
-    importo = parse_importo(importo_raw)
-
-    try:
-        datetime.strptime(data_valuta, '%Y-%m-%d')
-    except ValueError:
-        return JSONResponse(
-            status_code=400,
-            content={"error": "Formato data non valido. Usa YYYY-MM-DD."}
-        )
+    data_valuta, operazione, categoria, conto_carta, importo, err = parse_expense_body(body)
+    if err:
+        return err
 
     hash_id = generate_hash(data_valuta, importo, operazione, conto_carta)
 
@@ -545,11 +542,7 @@ async def get_dashboard_stats(
     """Dashboard statistics for a given month/year."""
     conn = get_db_connection()
 
-    start_date = f"{year}-{month:02d}-01"
-    if month == 12:
-        end_date = f"{year + 1}-01-01"
-    else:
-        end_date = f"{year}-{month + 1:02d}-01"
+    start_date, end_date = month_date_range(year, month)
 
     totals = conn.execute("""
         SELECT
@@ -642,11 +635,7 @@ async def bulk_delete_expenses(request: Request):
 
     for p in periods:
         m, y = int(p["month"]), int(p["year"])
-        start_date = f"{y}-{m:02d}-01"
-        if m == 12:
-            end_date = f"{y + 1}-01-01"
-        else:
-            end_date = f"{y}-{m + 1:02d}-01"
+        start_date, end_date = month_date_range(y, m)
 
         cur = conn.execute(
             "DELETE FROM expenses WHERE data_valuta >= ? AND data_valuta < ?",
@@ -871,8 +860,7 @@ async def detect_rimborso():
         y, m = r["year"], r["month"]
         if (y, m) in paid_keys:
             continue
-        sd = f"{y}-{m:02d}-01"
-        ed = f"{y}-{m+1:02d}-01" if m < 12 else f"{y+1}-01-01"
+        sd, ed = month_date_range(y, m)
         total = conn.execute("""
             SELECT COALESCE(SUM(importo),0) AS t FROM expenses
             WHERE data_valuta >= ? AND data_valuta < ? AND is_excluded=0 AND is_neutral=0
