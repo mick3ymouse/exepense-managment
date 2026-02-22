@@ -1158,7 +1158,15 @@ const App = {
         this.setupElenco();
         this.setupBonifici();
 
-        const savedTab = localStorage.getItem('activeTab') || 'dashboard';
+        const urlParams = new URLSearchParams(window.location.search);
+        let savedTab = localStorage.getItem('activeTab') || 'dashboard';
+
+        // Se avviato tramite launcher, forza la dashboard e pulisci l'URL
+        if (urlParams.get('fresh') === 'true') {
+            savedTab = 'dashboard';
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+
         this.navigateTo(savedTab);
     },
 

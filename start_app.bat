@@ -29,5 +29,6 @@ if defined PORT_PID (
     timeout /t 1 /nobreak >nul
 )
 
-REM Avviare il server FastAPI (questo processo resta attivo)
-python -m uvicorn backend.main:app --reload --host 0.0.0.0 --port 8000
+REM Avviare il server invocando il launcher python invisibile in background
+start "" pythonw backend\background_launcher.py
+exit
