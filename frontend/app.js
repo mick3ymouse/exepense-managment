@@ -594,13 +594,13 @@ const UI = {
             <td class="${importoClass}">${Utils.formatImporto(exp.importo)}</td>
             <td>
                 <div class="action-btns">
-                    <button class="eye-toggle" data-id="${exp.id}" title="${exp.is_excluded ? 'Includi' : 'Escludi'}">
+                    <button class="eye-toggle" data-id="${exp.id}"Includi' : 'Escludi'}">
                         <i class="fa-solid ${exp.is_excluded ? 'fa-eye-slash' : 'fa-eye'}"></i>
                     </button>
-                    <button class="edit-btn" data-id="${exp.id}" title="Modifica">
+                    <button class="edit-btn" data-id="${exp.id}">
                         <i class="fa-solid fa-pen"></i>
                     </button>
-                    <button class="delete-btn" data-id="${exp.id}" title="Elimina">
+                    <button class="delete-btn" data-id="${exp.id}">
                         <i class="fa-solid fa-trash-can"></i>
                     </button>
                 </div>
@@ -678,8 +678,8 @@ const UI = {
             <td><input type="text" class="form-importo" placeholder="Importo" value="${defaults.importo || ''}"></td>
             <td>
                 <div class="inline-form-actions">
-                    <button class="btn-save-inline" title="Salva"><i class="fa-solid fa-check"></i></button>
-                    <button class="btn-cancel-inline" title="Annulla"><i class="fa-solid fa-xmark"></i></button>
+                    <button class="btn-save-inline"><i class="fa-solid fa-check"></i></button>
+                    <button class="btn-cancel-inline"><i class="fa-solid fa-xmark"></i></button>
                 </div>
             </td>
         `;
@@ -1339,7 +1339,7 @@ const App = {
                             <polyline points="14 2 14 8 20 8"/>
                         </svg>
                         <span>${f.name}</span>
-                        <button class="file-tag-remove" title="Rimuovi"><i class="fa-solid fa-xmark"></i></button>
+                        <button class="file-tag-remove"><i class="fa-solid fa-xmark"></i></button>
                     `;
                     tag.querySelector('.file-tag-remove').addEventListener('click', (e) => {
                         e.stopPropagation();
@@ -1828,7 +1828,7 @@ const App = {
                 const tag = document.createElement('span');
                 tag.className = 'keyword-tag';
                 const badge = k.is_rimborso
-                    ? `<span class="keyword-rimborso-badge" title="Keyword rimborso"><i class="fa-solid fa-money-bill-transfer"></i></span>`
+                    ? `<span class="keyword-rimborso-badge"><i class="fa-solid fa-money-bill-transfer"></i></span>`
                     : '';
                 tag.innerHTML = `${badge}<span class="keyword-text">${Utils.escapeHtml(k.keyword)}</span>`;
                 const removeBtn = document.createElement('button');
@@ -1868,12 +1868,12 @@ const App = {
             <span class="rm-nome">${Utils.escapeHtml(m.operazione)}</span>
             <div class="rm-controls">
                 <span class="rm-tol-label">±€</span>
-                <input type="number" class="rm-tolleranza" value="${m.tolleranza}" min="0" step="0.5" title="Tolleranza">
-                <label class="rm-toggle-switch" title="${m.attivo ? 'Attivo' : 'Disattivo'}">
+                <input type="number" class="rm-tolleranza" value="${m.tolleranza}" min="0" step="0.5">
+                <label class="rm-toggle-switch"Attivo' : 'Disattivo'}">
                     <input type="checkbox" class="rm-attivo" ${m.attivo ? 'checked' : ''}>
                     <span class="rm-toggle-slider"></span>
                 </label>
-                <button class="rm-delete" title="Rimuovi mittente"><i class="fa-solid fa-xmark"></i></button>
+                <button class="rm-delete"><i class="fa-solid fa-xmark"></i></button>
             </div>
         `;
 
