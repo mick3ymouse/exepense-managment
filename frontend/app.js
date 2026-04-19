@@ -305,7 +305,7 @@ const UI = {
             // Elenco
             expensesList: document.getElementById('expenses-list'),
             searchInput: document.getElementById('search-input'),
-            searchClearBtn: document.getElementById('search-clear-btn'),  // FIX 2
+            searchClearBtn: document.getElementById('search-clear-btn'),
             elencoExportBtn: document.getElementById('elenco-import-btn'),
             elencoFileInput: document.getElementById('elenco-file-input'),
             elencoToast: document.getElementById('elenco-toast'),
@@ -486,7 +486,7 @@ const UI = {
         section.dataset.month = monthNum;
 
         const headerFlex = document.createElement('div');
-        headerFlex.style.cssText = 'display:flex; justify-content:flex-start; align-items:center; margin-bottom:1rem; gap:20px;';
+        headerFlex.style.cssText = 'display:flex; justify-content:flex-start; align-items:center; margin-bottom:1rem; gap:20px;'; // TODO: move to CSS class
 
         const title = document.createElement('h3');
         title.className = 'month-title-rounded';
@@ -665,20 +665,17 @@ const UI = {
         return impVal;
     },
 
-    showInlineForm(monthSection, tbody, year, monthNum) {
-        monthSection.querySelector('.add-expense-btn').style.display = 'none';
-        const existing = tbody.querySelector('.inline-form-row');
-        if (existing) existing.remove();
-
-        const defaultDate = `${year}-${String(monthNum).padStart(2, '0')}-01`;
+    /** Build an inline form row with given defaults and attach autocomplete. */
+    _buildInlineRow(defaults = {}) {
         const tr = document.createElement('tr');
-        tr.className = 'inline-form-row';
+        tr.className = 'inline-form-row' + (defaults.editingId ? ' inline-edit-row' : '');
+        if (defaults.editingId) tr.dataset.editingId = defaults.editingId;
         tr.innerHTML = `
-            <td><input type="date" class="form-data" value="${defaultDate}"></td>
-            <td><input type="text" class="form-operazione" placeholder="Operazione"></td>
-            <td><input type="text" class="form-categoria" placeholder="Categoria"></td>
-            <td><input type="text" class="form-conto" placeholder="Conto"></td>
-            <td><input type="text" class="form-importo" placeholder="Importo"></td>
+            <td><input type="date" class="form-data" value="${defaults.date || ''}"></td>
+            <td><input type="text" class="form-operazione" placeholder="Operazione" value="${defaults.operazione || ''}"></td>
+            <td><input type="text" class="form-categoria" placeholder="Categoria" value="${defaults.categoria || ''}"></td>
+            <td><input type="text" class="form-conto" placeholder="Conto" value="${defaults.conto || ''}"></td>
+            <td><input type="text" class="form-importo" placeholder="Importo" value="${defaults.importo || ''}"></td>
             <td>
                 <div class="inline-form-actions">
                     <button class="btn-save-inline" title="Salva"><i class="fa-solid fa-check"></i></button>
@@ -686,54 +683,128 @@ const UI = {
                 </div>
             </td>
         `;
-        tbody.appendChild(tr);
+        const inputs = {
+            data: tr.querySelector('.form-data'),
+            operazione: tr.querySelector('.form-operazione'),
+            categoria: tr.querySelector('.form-categoria'),
+            conto: tr.querySelector('.form-conto'),
+            importo: tr.querySelector('.form-importo'),
+        };
+        const cats = Utils.extractUniqueValues(App.state.lastExpenseData, 'categoria');
+        const accs = Utils.extractUniqueValues(App.state.lastExpenseData, 'conto_carta');
+        this.attachAutocomplete(inputs.categoria, cats);
+        this.attachAutocomplete(inputs.conto, accs);
+        return { tr, inputs };
+    },
 
-        const uniqueCats = Utils.extractUniqueValues(App.state.lastExpenseData, 'categoria');
-        const uniqueAccs = Utils.extractUniqueValues(App.state.lastExpenseData, 'conto_carta');
-        UI.attachAutocomplete(tr.querySelector('.form-categoria'), uniqueCats);
-        UI.attachAutocomplete(tr.querySelector('.form-conto'), uniqueAccs);
+    /** Wire Save/Cancel buttons and Enter/Escape key handlers to an inline form row. */
+    _setupInlineKeyHandlers(tr, onSave, onCancel) {
+        tr.querySelector('.btn-save-inline').addEventListener('click', onSave);
+        tr.querySelector('.btn-cancel-inline').addEventListener('click', onCancel);
+        tr.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); onSave(); }
+            if (e.key === 'Escape') onCancel();
+        });
+    },
 
-        tr.querySelector('.form-operazione').focus();
+    /**
+     * Animate a row removal: fade-out → height collapse → DOM removal.
+     * Returns a Promise that resolves after the row is removed (720ms).
+     * The animationend → collapse runs in parallel, preserving exact visual timing.
+     */
+    _animateRowRemoval(row) {
+        return new Promise(resolve => {
+            row.classList.add('fade-out');
 
-        const saveForm = async () => {
-            const dataInput = tr.querySelector('.form-data');
-            const operazioneInput = tr.querySelector('.form-operazione');
-            const categoriaInput = tr.querySelector('.form-categoria');
-            const contoInput = tr.querySelector('.form-conto');
-            const importoInput = tr.querySelector('.form-importo');
+            row.addEventListener('animationend', () => {
+                row.querySelectorAll('td').forEach(td => {
+                    const h = td.offsetHeight;
+                    const wrapper = document.createElement('div');
+                    wrapper.style.height = h + 'px';
+                    wrapper.style.overflow = 'hidden';
+                    wrapper.style.transition = 'height 0.28s ease';
+                    while (td.firstChild) wrapper.appendChild(td.firstChild);
+                    td.style.padding = '0';
+                    td.style.border = 'none';
+                    td.appendChild(wrapper);
+                });
+                requestAnimationFrame(() => requestAnimationFrame(() => {
+                    row.querySelectorAll('td > div').forEach(w => w.style.height = '0');
+                }));
+            }, { once: true });
 
-            if (!dataInput.value) {
-                UI.showErrorTooltip(dataInput, 'Inserisci una data!');
-                return;
+            setTimeout(() => { row.remove(); resolve(); }, 720);
+        });
+    },
+
+    /** Remove an empty month section and its orphaned year header/separator. */
+    _cleanupEmptySection(section) {
+        let yearHeader = section.previousElementSibling;
+        while (yearHeader && !yearHeader.classList.contains('year-header')) {
+            yearHeader = yearHeader.previousElementSibling;
+        }
+        section.classList.add('fade-out');
+        setTimeout(() => {
+            section.remove();
+            if (!yearHeader) return;
+            let next = yearHeader.nextElementSibling;
+            let separator = null;
+            if (next && next.classList.contains('year-separator')) {
+                separator = next;
+                next = next.nextElementSibling;
             }
-            const [y, m] = dataInput.value.split('-').map(Number);
+            if (!next || !next.classList.contains('month-section')) {
+                yearHeader.remove();
+                if (separator) separator.remove();
+            }
+        }, 500);
+    },
+
+    showInlineForm(monthSection, tbody, year, monthNum) {
+        monthSection.querySelector('.add-expense-btn').style.display = 'none';
+        const existing = tbody.querySelector('.inline-form-row');
+        if (existing) existing.remove();
+
+        const defaultDate = `${year}-${String(monthNum).padStart(2, '0')}-01`;
+        const { tr, inputs } = this._buildInlineRow({ date: defaultDate });
+        tbody.appendChild(tr);
+        inputs.operazione.focus();
+
+        const cancel = () => {
+            tr.remove();
+            monthSection.querySelector('.add-expense-btn').style.display = '';
+        };
+
+        const save = async () => {
+            if (!inputs.data.value) {
+                UI.showErrorTooltip(inputs.data, 'Inserisci una data!'); return;
+            }
+            const [y, m] = inputs.data.value.split('-').map(Number);
             if (y !== Number(year) || m !== Number(monthNum)) {
                 const monthName = Utils.MONTH_NAMES[Number(monthNum)] || monthNum;
-                UI.showErrorTooltip(dataInput, `La data deve essere in ${monthName} ${year}!`);
+                UI.showErrorTooltip(inputs.data, `La data deve essere in ${monthName} ${year}!`);
                 return;
             }
 
             let isValid = true;
-            if (!operazioneInput.value.trim()) {
-                UI.showErrorTooltip(operazioneInput, 'Campo obbligatorio!'); isValid = false;
+            if (!inputs.operazione.value.trim()) {
+                UI.showErrorTooltip(inputs.operazione, 'Campo obbligatorio!'); isValid = false;
             }
-            if (!categoriaInput.value.trim()) {
-                UI.showErrorTooltip(categoriaInput, 'Categoria obbligatoria!'); isValid = false;
+            if (!inputs.categoria.value.trim()) {
+                UI.showErrorTooltip(inputs.categoria, 'Categoria obbligatoria!'); isValid = false;
             }
-            if (!contoInput.value.trim()) {
-                UI.showErrorTooltip(contoInput, 'Conto obbligatorio!'); isValid = false;
+            if (!inputs.conto.value.trim()) {
+                UI.showErrorTooltip(inputs.conto, 'Conto obbligatorio!'); isValid = false;
             }
-
-            const impVal = UI.validateImportoField(importoInput);
+            const impVal = UI.validateImportoField(inputs.importo);
             if (impVal === null) isValid = false;
-
             if (!isValid) return;
 
             const res = await API.addExpense({
-                data_valuta: dataInput.value,
-                operazione: operazioneInput.value.trim(),
-                categoria: categoriaInput.value.trim(),
-                conto_carta: contoInput.value.trim(),
+                data_valuta: inputs.data.value,
+                operazione: inputs.operazione.value.trim(),
+                categoria: inputs.categoria.value.trim(),
+                conto_carta: inputs.conto.value.trim(),
                 importo: impVal
             });
 
@@ -744,89 +815,52 @@ const UI = {
                     await App.loadElenco();
                 }
             } else {
-                const errMsg = API.extractError(res);
-                Utils.showToast(UI.elements.elencoToast, `Errore: ${errMsg}`, 'error');
+                Utils.showToast(UI.elements.elencoToast, `Errore: ${API.extractError(res)}`, 'error');
             }
         };
 
-        const cancelForm = () => {
-            tr.remove();
-            monthSection.querySelector('.add-expense-btn').style.display = '';
-        };
-
-        tr.querySelector('.btn-save-inline').addEventListener('click', saveForm);
-        tr.querySelector('.btn-cancel-inline').addEventListener('click', cancelForm);
-        tr.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') { e.preventDefault(); saveForm(); }
-            if (e.key === 'Escape') cancelForm();
-        });
+        this._setupInlineKeyHandlers(tr, save, cancel);
     },
 
     showInlineEditForm(row) {
         if (row.nextElementSibling?.classList.contains('inline-edit-row')) return;
 
         const id = row.dataset.id;
-        const rawDate = row.dataset.date;
-        const rawImp = row.dataset.importo;
         const cells = row.querySelectorAll('td');
+        const cellText = (idx) => { const t = cells[idx].textContent.trim(); return t === '—' ? '' : t; };
 
         row.style.display = 'none';
 
-        const tr = document.createElement('tr');
-        tr.className = 'inline-form-row inline-edit-row';
-        tr.dataset.editingId = id;
-        tr.innerHTML = `
-            <td><input type="date" class="form-data" value="${rawDate}"></td>
-            <td><input type="text" class="form-operazione" value="${Utils.escapeHtml(cells[1].textContent.trim() === '—' ? '' : cells[1].textContent.trim())}"></td>
-            <td><input type="text" class="form-categoria" value="${Utils.escapeHtml(cells[2].textContent.trim() === '—' ? '' : cells[2].textContent.trim())}"></td>
-            <td><input type="text" class="form-conto" value="${Utils.escapeHtml(cells[3].textContent.trim() === '—' ? '' : cells[3].textContent.trim())}"></td>
-            <td><input type="text" class="form-importo" value="${Utils.formatImportoForInput(rawImp)}"></td>
-            <td>
-                <div class="inline-form-actions">
-                    <button class="btn-save-inline" title="Salva"><i class="fa-solid fa-check"></i></button>
-                    <button class="btn-cancel-inline" title="Annulla"><i class="fa-solid fa-xmark"></i></button>
-                </div>
-            </td>
-        `;
+        const { tr, inputs } = this._buildInlineRow({
+            editingId: id,
+            date: row.dataset.date,
+            operazione: Utils.escapeHtml(cellText(1)),
+            categoria: Utils.escapeHtml(cellText(2)),
+            conto: Utils.escapeHtml(cellText(3)),
+            importo: Utils.formatImportoForInput(row.dataset.importo),
+        });
         row.insertAdjacentElement('afterend', tr);
+        inputs.operazione.focus();
 
-        const uniqueCats = Utils.extractUniqueValues(App.state.lastExpenseData, 'categoria');
-        const uniqueAccs = Utils.extractUniqueValues(App.state.lastExpenseData, 'conto_carta');
-        UI.attachAutocomplete(tr.querySelector('.form-categoria'), uniqueCats);
-        UI.attachAutocomplete(tr.querySelector('.form-conto'), uniqueAccs);
+        const cancel = () => { tr.remove(); row.style.display = ''; };
 
-        tr.querySelector('.form-operazione').focus();
-
-        const cancelEdit = () => {
-            tr.remove();
-            row.style.display = '';
-        };
-
-        const saveEdit = async () => {
-            const dataInput = tr.querySelector('.form-data');
-            const operazioneInput = tr.querySelector('.form-operazione');
-            const categoriaInput = tr.querySelector('.form-categoria');
-            const contoInput = tr.querySelector('.form-conto');
-            const importoInput = tr.querySelector('.form-importo');
-
+        const save = async () => {
             let isValid = true;
-            if (!dataInput.value) {
-                UI.showErrorTooltip(dataInput, 'Inserisci una data!'); isValid = false;
+            if (!inputs.data.value) {
+                UI.showErrorTooltip(inputs.data, 'Inserisci una data!'); isValid = false;
             }
-            if (!operazioneInput.value.trim()) {
-                UI.showErrorTooltip(operazioneInput, 'Campo obbligatorio!'); isValid = false;
+            if (!inputs.operazione.value.trim()) {
+                UI.showErrorTooltip(inputs.operazione, 'Campo obbligatorio!'); isValid = false;
             }
-
-            const impVal = UI.validateImportoField(importoInput);
+            const impVal = UI.validateImportoField(inputs.importo);
             if (impVal === null) isValid = false;
-
             if (!isValid) return;
 
             const res = await API.updateExpense(id, {
-                data_valuta: dataInput.value,
-                operazione: operazioneInput.value.trim(),
-                categoria: categoriaInput.value.trim(),
-                conto_carta: contoInput.value.trim(),
+                data_valuta: inputs.data.value,
+                operazione: inputs.operazione.value.trim(),
+                categoria: inputs.categoria.value.trim(),
+                conto_carta: inputs.conto.value.trim(),
                 importo: impVal
             });
 
@@ -835,18 +869,12 @@ const UI = {
                 Utils.showToast(UI.elements.elencoToast, '✓ Spesa aggiornata!', 'success');
                 await App.loadElenco();
             } else {
-                const errMsg = API.extractError(res);
-                Utils.showToast(UI.elements.elencoToast, `Errore: ${errMsg}`, 'error');
-                cancelEdit();
+                Utils.showToast(UI.elements.elencoToast, `Errore: ${API.extractError(res)}`, 'error');
+                cancel();
             }
         };
 
-        tr.querySelector('.btn-save-inline').addEventListener('click', saveEdit);
-        tr.querySelector('.btn-cancel-inline').addEventListener('click', cancelEdit);
-        tr.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') { e.preventDefault(); saveEdit(); }
-            if (e.key === 'Escape') cancelEdit();
-        });
+        this._setupInlineKeyHandlers(tr, save, cancel);
     },
 
     attachAutocomplete(input, items) {
@@ -1207,14 +1235,10 @@ const App = {
         });
 
         if (viewId === 'elenco') {
-            // FIX 2: Clear search when navigating to Elenco so filter resets
-            if (UI.elements.searchInput) {
-                UI.elements.searchInput.value = '';
-            }
+            if (UI.elements.searchInput) UI.elements.searchInput.value = '';
             UI.elements.searchClearBtn?.classList.add('hidden');
             this.loadElenco();
         } else if (viewId === 'dashboard' && this.state.dashboardDirty) {
-            // FIX 3: Use initDashboardData to re-fetch periods and avoid stale year/month
             this.state.dashboardDirty = false;
             this.initDashboardData();
         } else if (viewId === 'dashboard' && !this.state.currentYear) {
@@ -1281,6 +1305,10 @@ const App = {
             this.loadDashboard(this.state.currentYear, this.state.currentMonth);
         });
 
+        this._setupFileUpload();
+    },
+
+    _setupFileUpload() {
         let pendingFiles = [];
 
         const updateDropAreaPreview = () => {
@@ -1423,7 +1451,6 @@ const App = {
     },
 
     setupElenco() {
-        // FIX 4: Reset file input value after upload so same file can be re-selected
         UI.elements.elencoExportBtn?.addEventListener('click', () => UI.elements.elencoFileInput.click());
         UI.elements.elencoFileInput?.addEventListener('change', async (e) => {
             const files = Array.from(e.target.files).filter(f => f.name.endsWith('.xlsx'));
@@ -1438,7 +1465,6 @@ const App = {
             if (res.totalNew > 0) await this.detectAndPromptRimborso();
         });
 
-        // FIX 2: Real-time Search with clear button support
         let timer;
         UI.elements.searchInput?.addEventListener('input', (e) => {
             const hasValue = e.target.value.length > 0;
@@ -1447,7 +1473,6 @@ const App = {
             timer = setTimeout(() => this.filterElencoLocally(e.target.value), 250);
         });
 
-        // FIX 2: Clear button — clears input AND reloads all data (in case API was called with filter)
         UI.elements.searchClearBtn?.addEventListener('click', () => {
             if (UI.elements.searchInput) {
                 UI.elements.searchInput.value = '';
@@ -1494,54 +1519,14 @@ const App = {
                     const row = btnDelete.closest('.expense-row');
                     const section = row.closest('.month-section');
 
-                    row.classList.add('fade-out');
+                    await UI._animateRowRemoval(row);
 
-                    row.addEventListener('animationend', () => {
-                        row.querySelectorAll('td').forEach(td => {
-                            const h = td.offsetHeight;
-                            const wrapper = document.createElement('div');
-                            wrapper.style.height = h + 'px';
-                            wrapper.style.overflow = 'hidden';
-                            wrapper.style.transition = 'height 0.28s ease';
-                            while (td.firstChild) wrapper.appendChild(td.firstChild);
-                            td.style.padding = '0';
-                            td.style.border = 'none';
-                            td.appendChild(wrapper);
-                        });
-                        requestAnimationFrame(() => requestAnimationFrame(() => {
-                            row.querySelectorAll('td > div').forEach(w => w.style.height = '0');
-                        }));
-                    }, { once: true });
-
-                    setTimeout(() => {
-                        row.remove();
-
-                        if (section.querySelectorAll('.expense-row').length === 0) {
-                            let yearHeader = section.previousElementSibling;
-                            while (yearHeader && !yearHeader.classList.contains('year-header')) {
-                                yearHeader = yearHeader.previousElementSibling;
-                            }
-                            section.classList.add('fade-out');
-                            setTimeout(() => {
-                                section.remove();
-                                if (yearHeader) {
-                                    let next = yearHeader.nextElementSibling;
-                                    let separator = null;
-                                    if (next && next.classList.contains('year-separator')) {
-                                        separator = next;
-                                        next = next.nextElementSibling;
-                                    }
-                                    if (!next || !next.classList.contains('month-section')) {
-                                        yearHeader.remove();
-                                        if (separator) separator.remove();
-                                    }
-                                }
-                            }, 500);
-                        } else {
-                            UI.recalcMonthTotals(section);
-                            this._syncBonificiAmountFromSection(section);
-                        }
-                    }, 720);
+                    if (section.querySelectorAll('.expense-row').length === 0) {
+                        UI._cleanupEmptySection(section);
+                    } else {
+                        UI.recalcMonthTotals(section);
+                        this._syncBonificiAmountFromSection(section);
+                    }
 
                     this.state.dashboardDirty = true;
                 }
@@ -1603,7 +1588,7 @@ const App = {
 
         let total = 0;
         section.querySelectorAll('.expense-row').forEach(row => {
-            if (!row.classList.contains('excluded') && !row.classList.contains('neutral-row')) {
+            if (!row.classList.contains('excluded') && !row.classList.contains('neutral-row') && !row.classList.contains('ignored-rimborso-row')) {
                 total += parseFloat(row.dataset.importo) || 0;
             }
         });
@@ -1612,6 +1597,15 @@ const App = {
     },
 
     setupModals() {
+        this._setupOverlays();
+        this._setupBulkDelete();
+        this._setupKeywordModal();
+        this._setupRimborsoModal();
+        document.getElementById('close-alert-btn')?.addEventListener('click', () => UI.closeModal('modal-alert'));
+    },
+
+    /** Kebab menu toggle + global modal overlay/close-button handling. */
+    _setupOverlays() {
         if (UI.elements.kebabBtn) {
             UI.elements.kebabBtn.addEventListener('click', (e) => {
                 e.preventDefault(); e.stopPropagation();
@@ -1627,11 +1621,15 @@ const App = {
         document.querySelectorAll('.modal-close').forEach(btn => btn.addEventListener('click', (e) => {
             UI.closeModal(e.target.closest('.modal-overlay').id);
         }));
+    },
 
+    /** Bulk-delete modal: open → tree → confirm → delete → reload. */
+    _setupBulkDelete() {
         document.getElementById('kebab-bulk-delete')?.addEventListener('click', () => {
             UI.openModal('modal-bulk-delete');
             this.loadBulkDeleteTree();
         });
+
         document.getElementById('confirm-bulk-delete')?.addEventListener('click', () => {
             const checked = document.querySelectorAll('#bulk-delete-tree input[data-month]:checked');
             const periods = Array.from(checked).map(c => ({
@@ -1642,55 +1640,46 @@ const App = {
             if (msg) msg.textContent = `Stai per eliminare ${periods.length} ${periods.length === 1 ? 'mese' : 'mesi'}. L'operazione è irreversibile.`;
             UI.openModal('modal-confirm-delete');
 
-            document.getElementById('proceed-confirm-delete')?.addEventListener('click', async () => {
-                UI.closeModal('modal-confirm-delete');
-                UI.closeModal('modal-bulk-delete');
-                setTimeout(async () => {
-                    const res = await API.bulkDelete(periods);
-                    if (res.ok) {
-                        // Fade-out delle sezioni eliminate prima del reload
-                        const sections = periods.map(p =>
-                            document.querySelector(`#page-elenco .month-section[data-year="${p.year}"][data-month="${p.month}"]`)
-                        ).filter(Boolean);
+            // Clear any stale listener on the proceed button
+            const oldBtn = document.getElementById('proceed-confirm-delete');
+            if (oldBtn) {
+                const freshBtn = oldBtn.cloneNode(true);
+                oldBtn.replaceWith(freshBtn);
+                freshBtn.addEventListener('click', async () => {
+                    UI.closeModal('modal-confirm-delete');
+                    UI.closeModal('modal-bulk-delete');
+                    setTimeout(async () => {
+                        const res = await API.bulkDelete(periods);
+                        if (res.ok) {
+                            const sections = periods.map(p =>
+                                document.querySelector(`#page-elenco .month-section[data-year="${p.year}"][data-month="${p.month}"]`)
+                            ).filter(Boolean);
 
-                        if (sections.length > 0) {
-                            sections.forEach(sec => sec.classList.add('fade-out'));
-                            setTimeout(() => window.location.reload(), 500);
-                        } else {
-                            window.location.reload();
+                            if (sections.length > 0) {
+                                sections.forEach(sec => sec.classList.add('fade-out'));
+                                setTimeout(() => window.location.reload(), 500);
+                            } else {
+                                window.location.reload();
+                            }
                         }
-                    }
-                }, 300);
-            }, { once: true });
+                    }, 300);
+                }, { once: true });
+            }
         });
 
         document.getElementById('cancel-confirm-delete')?.addEventListener('click', () => {
             UI.closeModal('modal-confirm-delete');
         });
+    },
 
+    /** Neutral keywords modal: add, remove, reload. */
+    _setupKeywordModal() {
         document.getElementById('kebab-keywords')?.addEventListener('click', async () => {
             if (UI.elements.keywordInput) UI.elements.keywordInput.value = '';
             UI.openModal('modal-keywords');
             this.loadKeywordsList();
         });
 
-        document.getElementById('kebab-rimborso')?.addEventListener('click', async () => {
-            if (UI.elements.rimborsoPatternInput) UI.elements.rimborsoPatternInput.value = '';
-            UI.openModal('modal-rimborso-settings');
-            this.loadRimborsoMittenti();
-        });
-
-        document.getElementById('add-rimborso-btn')?.addEventListener('click', () => {
-            this.addRimborsoMittente();
-        });
-
-        document.getElementById('btn-manual-rimborso-scan')?.addEventListener('click', async () => {
-            UI.closeModal('modal-rimborso-settings');
-            await this.detectAndPromptRimborso();
-        });
-        document.getElementById('rimborso-pattern-input')?.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') this.addRimborsoMittente();
-        });
         UI.elements.addKeywordBtn?.addEventListener('click', async () => {
             const kw = UI.elements.keywordInput.value.trim();
             if (!kw) {
@@ -1710,13 +1699,32 @@ const App = {
         UI.elements.keywordInput?.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') UI.elements.addKeywordBtn.click();
         });
+    },
 
-        document.getElementById('close-alert-btn')?.addEventListener('click', () => UI.closeModal('modal-alert'));
+    /** Rimborso mittenti modal: add, configure, manual scan. */
+    _setupRimborsoModal() {
+        document.getElementById('kebab-rimborso')?.addEventListener('click', async () => {
+            if (UI.elements.rimborsoPatternInput) UI.elements.rimborsoPatternInput.value = '';
+            UI.openModal('modal-rimborso-settings');
+            this.loadRimborsoMittenti();
+        });
+
+        document.getElementById('add-rimborso-btn')?.addEventListener('click', () => {
+            this.addRimborsoMittente();
+        });
+
+        document.getElementById('btn-manual-rimborso-scan')?.addEventListener('click', async () => {
+            UI.closeModal('modal-rimborso-settings');
+            await this.detectAndPromptRimborso();
+        });
+
+        document.getElementById('rimborso-pattern-input')?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') this.addRimborsoMittente();
+        });
     },
 
     async loadElenco() {
         const params = {};
-        // Only pass search_text if the input has a value (after FIX 2 clears it on navigation, this won't filter)
         if (UI.elements.searchInput?.value) params.search_text = UI.elements.searchInput.value;
         if (UI.elements.dateStart?.value) params.start_date = UI.elements.dateStart.value;
         if (UI.elements.dateEnd?.value) params.end_date = UI.elements.dateEnd.value;
@@ -2001,15 +2009,10 @@ const App = {
 
             document.getElementById('rimborso-skip-btn').addEventListener('click', slideToNext, { once: true });
 
-            // "Non è un rimborso" — flag this transaction so it never pops up again
-            const ignoreBtn = document.getElementById('rimborso-ignore-btn');
-            if (ignoreBtn) {
-                ignoreBtn.replaceWith(ignoreBtn.cloneNode(true));
-                document.getElementById('rimborso-ignore-btn').addEventListener('click', async () => {
-                    await API.ignoreRimborso(tx.id);
-                    slideToNext();
-                }, { once: true });
-            }
+            document.getElementById('rimborso-ignore-btn')?.addEventListener('click', async () => {
+                await API.ignoreRimborso(tx.id);
+                slideToNext();
+            }, { once: true });
         };
 
         UI.openModal('modal-rimborso-confirm');
