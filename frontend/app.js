@@ -486,7 +486,7 @@ const UI = {
         section.dataset.month = monthNum;
 
         const headerFlex = document.createElement('div');
-        headerFlex.style.cssText = 'display:flex; justify-content:flex-start; align-items:center; margin-bottom:1rem; gap:20px;'; // TODO: move to CSS class
+        headerFlex.className = 'month-header-flex';
 
         const title = document.createElement('h3');
         title.className = 'month-title-rounded';

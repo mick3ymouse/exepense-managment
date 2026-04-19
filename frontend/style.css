@@ -1,80 +1,93 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
 
-/* ===================================================
-   EXPENSE MANAGEMENT DASHBOARD — Pastel Cyan Theme
-   =================================================== */
+/* === EXPENSE MANAGEMENT DASHBOARD — PASTEL CYAN THEME === */
 
 :root {
-    /* ── Palette Mint & Ice (Electric Pastels) ── */
-    --background-color: #f3fbfd;
-    --sidebar-bg: #7ae5f4;
-    --sidebar-text: #003B46;
-    --body-bg: #0F5257;
+    /* === PALETTE — PRIMITIVES === */
+    --p-dark-teal: #003B46;
+    --p-body-teal: #0F5257;
+    --p-cyan: #7ae5f4;
+    --p-cyan-border: #B2EBF2;
+    --p-cyan-muted: #AEC6CF;
+    --p-white: #FFFFFF;
+    --p-ice: #f3fbfd;
+    --p-surface: #F1F5F9;
+    --p-yellow: #fff07c;
+    --p-green: #49d684;
+    --p-green-dark: #219a52;
+    --p-mint: #cbf5db;
+    --p-mint-hover: #bcedcb;
+    --p-red: #e74c3c;
+    --p-coral: #FF6B6B;
+    --p-text: #2C3E50;
+    --p-text-muted: #607D8B;
+    --p-cream: #FFF5D6;
+    --p-cream-hover: #FFEDBA;
+    --p-excluded: #c5c5c5;
+    --p-scrollbar: #b8b5b4;
 
-    /* ── Accents & Buttons ── */
-    --primary-color: #7ae5f4;
-    --primary-text: #003B46;
-    --primary-hover: #7ae5f4;
+    /* === SEMANTIC ROLES === */
+    /* --- Surfaces --- */
+    --background-color: var(--p-ice);
+    --body-bg: var(--p-body-teal);
+    --card-bg: var(--p-white);
+    --sidebar-bg: var(--p-cyan);
 
-    /* ── Semantic Colors ── */
-    --color-success: #49d684;
-    --color-success-dark: #219a52;
-    --color-danger: #e74c3c;
-    --color-danger-light: #FF6B6B;
-    --color-negative: #c0392b;
-    /* importo negative / uscite */
-    --color-warning-bg: #fff07c;
-    /* nav hover bg */
+    /* --- Text --- */
+    --sidebar-text: var(--p-dark-teal);
+    --primary-text: var(--p-dark-teal);
+    --text-color: var(--p-text);
+    --text-muted: var(--p-text-muted);
+    --color-white: var(--p-white);
 
-    /* ── Neutral / Text ──  #133C55*/
-    --color-white: #FFFFFF;
-    --text-color: #2C3E50;
-    --text-muted: #607D8B;
-
-    /* ── Cards & Surfaces ── */
-    --card-bg: #FFFFFF;
-    --border-color: #fff07c;
+    /* --- Accents & interactions --- */
+    --primary-color: var(--p-cyan);
+    --primary-hover: var(--p-cyan);
+    --border-color: var(--p-yellow);
     --shadow-color: rgba(99, 229, 255, 0.25);
+    --color-warning-bg: var(--p-yellow);
 
-    /* ── Table specifics ── */
-    --row-alt-bg: #F5FFFF;
-    --header-bg: #7ae5f4;
-    --header-text: #003B46;
-    --color-table-border: #B2EBF2;
-    --color-tfoot-bg: #F1F5F9;
+    /* --- State --- */
+    --color-success: var(--p-green);
+    --color-success-dark: var(--p-green-dark);
+    --color-danger: var(--p-red);
+    --color-danger-light: var(--p-coral);
 
-    /* ── Form Inputs ── */
-    --color-input-border: #AEC6CF;
-    --color-input-bg: #E3EBF2;
+    /* --- Tables --- */
+    --header-bg: var(--p-cyan);
+    --header-text: var(--p-dark-teal);
+    --row-alt-bg: var(--p-ice);
+    --color-table-border: var(--p-cyan-border);
+    --color-tfoot-bg: var(--p-surface);
 
-    /* ── Neutral Rows ── */
-    --color-neutral-bg: #FFF5D6;
-    --color-neutral-hover: #FFEDBA;
+    /* --- Form --- */
+    --color-input-border: var(--p-cyan-muted);
+    --color-input-bg: var(--p-surface);
 
-    /* ── Ignored Rimborso Rows ── */
-    --color-ignored-rimborso-bg: #cbf5db;
-    /* Verde menta chiaro (simile a success) */
-    --color-ignored-rimborso-hover: #bcedcb;
+    /* --- Special rows --- */
+    --color-neutral-bg: var(--p-cream);
+    --color-neutral-hover: var(--p-cream-hover);
+    --color-ignored-rimborso-bg: var(--p-mint);
+    --color-ignored-rimborso-hover: var(--p-mint-hover);
+    --color-excluded: var(--p-excluded);
 
-    /* ── Misc Accents ── */
-    --color-accent-blue: #4a69bd;
-    --color-checkbox-hover: #5DADE2;
-    --scrollbar-color: #b8b5b4;
+    /* --- Misc --- */
+    --scrollbar-color: var(--p-scrollbar);
 
-    /* ── Layout ── */
+    /* --- Layout --- */
     --sidebar-width: 250px;
 
-    /* ── Focus-visible standard ── */
+    /* --- Focus --- */
     --focus-ring: 0 0 0 3px rgba(74, 158, 175, 0.15);
     --focus-border: var(--primary-hover);
 
-    /* ── Transition system ── */
+    /* --- Transitions --- */
     --transition-fast: 0.15s ease;
     --transition-base: 0.2s ease;
     --transition-spring: 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-/* ---- Reset & Base ---- */
+/* --- Reset & Base --- */
 *,
 *::before,
 *::after {
@@ -103,9 +116,7 @@ body {
     overflow: visible;
 }
 
-/* ===================================================
-   SIDEBAR
-   =================================================== */
+/* === SIDEBAR === */
 .sidebar {
     width: var(--sidebar-width);
     background-color: var(--sidebar-bg);
@@ -203,9 +214,7 @@ body {
     box-shadow: var(--focus-ring) !important;
 }
 
-/* ===================================================
-   MAIN CONTENT
-   =================================================== */
+/* === MAIN CONTENT === */
 .main-content {
     flex: 1;
     padding: 30px 50px;
@@ -230,9 +239,7 @@ body {
     color: var(--sidebar-text);
 }
 
-/* ===================================================
-   FILTERS — Pill Selects
-   =================================================== */
+/* === FILTERS — PILL SELECTS === */
 .minimal-select {
     padding: 8px 36px 8px 16px;
     border-radius: 20px;
@@ -266,15 +273,9 @@ body {
     outline: none;
 }
 
-.section-divider {
-    border: 0;
-    border-top: 1px solid var(--border-color);
-    margin: 30px 0;
-}
 
-/* ===================================================
-   UPLOAD SECTION
-   =================================================== */
+
+/* === UPLOAD SECTION === */
 .upload-section {
     display: flex;
     flex-direction: column;
@@ -464,10 +465,8 @@ body {
     width: 100%;
 }
 
-/* ===================================================
-   FILTERS BAR
-   =================================================== */
-/* ── Card header row: titolo a sinistra, filtri a destra ── */
+/* === FILTERS BAR === */
+/* --- Card header row: titolo a sinistra, filtri a destra --- */
 .card-header-row {
     display: flex;
     align-items: center;
@@ -487,9 +486,7 @@ body {
     gap: 8px;
 }
 
-/* ===================================================
-   DASHBOARD GRID — adjusted column ratio
-   =================================================== */
+/* === DASHBOARD GRID — ADJUSTED COLUMN RATIO === */
 .dashboard-grid {
     display: grid;
     grid-template-columns: 1.4fr 1fr;
@@ -508,9 +505,7 @@ body {
     flex-direction: column;
 }
 
-/* ===================================================
-   CARD STYLING — white background only, no green header fill
-   =================================================== */
+/* === CARD STYLING — WHITE BACKGROUND ONLY, NO GREEN HEADER FILL === */
 .card {
     background-color: var(--card-bg);
     border-radius: 16px;
@@ -544,15 +539,9 @@ body {
     letter-spacing: -0.01em;
 }
 
-.card-divider {
-    border: 0;
-    border-top: 1px solid var(--border-color);
-    margin: 0 0 22px 0;
-}
 
-/* ===================================================
-   PANORAMICA — Chart + Metrics
-   =================================================== */
+
+/* === OVERVIEW — CHART & METRICS === */
 .panoramica-content {
     display: flex;
     align-items: center;
@@ -577,7 +566,7 @@ body {
     border-radius: 10px;
     background-color: rgba(184, 230, 240, 0.35);
     width: 120px;
-    /* larghezza fissa uguale per tutti */
+    /* Larghezza fissa uguale per tutti */
     transition: background-color var(--transition-base);
     overflow: hidden;
 }
@@ -598,17 +587,14 @@ body {
     font-size: 1.1rem;
     font-weight: 700;
     white-space: nowrap;
-    /* impedisce il capo del simbolo € */
+    /* Impedisce il capo del simbolo € */
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-/* ── Card panoramica + top-categories unificata ── */
-.card-panoramica-combined {
-    /* eredita .card — nessuna override strutturale */
-}
 
-/* Divisore interno cyan chiaro stile year-separator */
+
+/* Light cyan inner divider (year-separator style) */
 .card-inner-divider {
     height: 1px;
     background-color: var(--sidebar-text);
@@ -618,7 +604,7 @@ body {
     width: 100%;
 }
 
-/* Sottotitolo sezione inside card */
+/* Section subtitle inside card */
 .card-subtitle {
     font-size: 1.15rem;
     font-weight: 700;
@@ -627,69 +613,8 @@ body {
     letter-spacing: -0.01em;
 }
 
-/* ===================================================
-   TABLES
-   =================================================== */
-.data-table {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-}
 
-.data-table thead tr {
-    background-color: var(--primary-color);
-}
-
-.data-table th {
-    padding: 12px 16px;
-    text-align: left;
-    font-weight: 600;
-    color: var(--sidebar-text);
-    font-size: 0.9rem;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-}
-
-.data-table th:first-child {
-    border-radius: 10px 0 0 10px;
-}
-
-.data-table th:last-child {
-    border-radius: 0 10px 10px 0;
-}
-
-.data-table td {
-    padding: 12px 16px;
-    text-align: left;
-    color: var(--sidebar-text);
-    font-weight: 500;
-    font-size: 0.95rem;
-    border-bottom: 1px solid rgba(184, 230, 240, 0.5);
-    transition: background-color var(--transition-base);
-}
-
-.data-table tbody tr:nth-child(even) {
-    background-color: rgba(184, 230, 240, 0.2);
-}
-
-.data-table tbody tr:hover {
-    background-color: rgba(127, 200, 217, 0.15);
-}
-
-.data-table tbody tr:last-child td {
-    border-bottom: none;
-}
-
-/* ===================================================
-   SPACER (utility)
-   =================================================== */
-.spacer-vertical {
-    flex: 0;
-}
-
-/* ===================================================
-   SCROLLBAR
-   =================================================== */
+/* === SCROLLBAR === */
 ::-webkit-scrollbar {
     width: 6px;
 }
@@ -698,30 +623,26 @@ body {
     background: transparent;
 }
 
-/* Imposta il colore della scrollbar su --sidebar-text e aggiunge una leggera opacità per eleganza */
+/* Set scrollbar color to --sidebar-text with slight opacity for elegance */
 ::-webkit-scrollbar-thumb {
     background-color: var(--scrollbar-color);
     border-radius: 10px;
     opacity: 0.8;
 }
 
-/* Al passaggio del mouse, diventa blu scuro pieno */
+/* On hover, becomes solid dark blue */
 ::-webkit-scrollbar-thumb:hover {
     background-color: var(--scrollbar-color);
     opacity: 1;
 }
 
-/* ===================================================
-   SELECTION
-   =================================================== */
+/* === SELECTION === */
 ::selection {
     background-color: rgba(127, 200, 217, 0.3);
     color: var(--sidebar-text);
 }
 
-/* ===================================================
-   SPA — Page Visibility
-   =================================================== */
+/* === SPA — PAGE VISIBILITY === */
 .page {
     display: none;
 }
@@ -730,9 +651,7 @@ body {
     display: block;
 }
 
-/* ===================================================
-   ELENCO — Search Bar (Sticky)
-   =================================================== */
+/* === LIST — SEARCH BAR \(STICKY\) === */
 .elenco-search-bar {
     position: sticky;
     top: 0;
@@ -812,7 +731,7 @@ body {
     line-height: 1;
 }
 
-/* Override: il bottone X non deve scalare col UNIFORM HOVER */
+/* Override: close button must not scale with uniform hover */
 .search-clear-btn:hover {
     opacity: 1;
     color: var(--color-danger) !important;
@@ -825,9 +744,7 @@ body {
     box-shadow: var(--focus-ring);
 }
 
-/* ===================================================
-   ELENCO — Icon Buttons
-   =================================================== */
+/* === LIST — ICON BUTTONS === */
 .icon-btn {
     width: 42px;
     height: 42px;
@@ -849,8 +766,7 @@ body {
     color: var(--sidebar-text);
 }
 
-/* Counter-scale: il bottone cresce (via UNIFORM HOVER scale 1.05)
-   ma l'icona interna viene riportata alla dimensione originale */
+/* Counter-scale: button scales up (via UNIFORM HOVER scale 1.05) while inner icon is scaled back to original size */
 .icon-btn:hover>i {
     display: inline-block;
     transform: scale(0.952);
@@ -874,9 +790,7 @@ body {
     color: var(--color-white);
 }
 
-/* ===================================================
-   ELENCO — Date Popover
-   =================================================== */
+/* === LIST — DATE POPOVER === */
 .date-popover {
     position: absolute;
     right: 0;
@@ -1001,9 +915,7 @@ body {
     border: none;
 }
 
-/* ===================================================
-   ELENCO — Year Header
-   =================================================== */
+/* === LIST — YEAR HEADER === */
 .year-header {
     font-size: 2rem;
     color: var(--sidebar-text);
@@ -1025,9 +937,7 @@ body {
     opacity: 0.8;
 }
 
-/* ===================================================
-   ELENCO — Month Section
-   =================================================== */
+/* === LIST — MONTH SECTION === */
 .month-section {
     margin-bottom: 3rem;
     transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1053,6 +963,15 @@ body {
     align-items: center;
 }
 
+/* Utility class extracted from JS inline styles */
+.month-header-flex {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    margin-bottom: 1rem;
+    gap: 20px;
+}
+
 .month-title-rounded::before {
     content: '';
     display: inline-block;
@@ -1063,9 +982,7 @@ body {
     border-radius: 4px;
 }
 
-/* ===================================================
-   ELENCO — Expense Table
-   =================================================== */
+/* === LIST — EXPENSE TABLE === */
 .expense-table {
     width: 100%;
     table-layout: fixed;
@@ -1102,7 +1019,7 @@ body {
     width: 10%;
 }
 
-/* Right-align importo column */
+/* Right-align amount column */
 .expense-table td:nth-child(5) {
     text-align: right;
     padding-right: 18px;
@@ -1175,34 +1092,30 @@ body {
     border-bottom: none;
 }
 
-/* ── Importo styling ── */
+/* --- Amount styling --- */
 .importo-positive {
     color: var(--color-success);
     font-weight: 600;
 }
 
 .importo-negative {
-    color: var(--color-negative);
+    color: var(--color-danger);
     font-weight: 600;
 }
 
-/* ===================================================
-   ELENCO — Excluded Row
-   =================================================== */
+/* === LIST — EXCLUDED ROW === */
 .expense-row.excluded td {
-    color: #c5c5c5 !important;
+    color: var(--color-excluded) !important;
     text-decoration: line-through;
-    text-decoration-color: #ddd;
+    text-decoration-color: var(--color-excluded);
 }
 
 .expense-row.excluded .importo-positive,
 .expense-row.excluded .importo-negative {
-    color: #c5c5c5 !important;
+    color: var(--color-excluded) !important;
 }
 
-/* ===================================================
-   ELENCO — Month Badge
-   =================================================== */
+/* === LIST — MONTH BADGE === */
 .month-badge {
     display: inline-flex;
     align-items: center;
@@ -1231,9 +1144,7 @@ body {
     font-size: 0.75rem;
 }
 
-/* ===================================================
-   ACTION BUTTONS (eye / edit / trash)
-   =================================================== */
+/* === ACTION BUTTONS === */
 .action-btns {
     display: flex;
     align-items: center;
@@ -1305,9 +1216,7 @@ body {
     pointer-events: none;
 }
 
-/* ===================================================
-   PAID LABEL & CHECKBOX
-   =================================================== */
+/* === PAID LABEL & CHECKBOX === */
 .paid-label {
     display: inline-flex;
     align-items: center;
@@ -1343,8 +1252,8 @@ body {
 }
 
 .paid-checkbox:hover {
-    border-color: var(--color-checkbox-hover);
-    box-shadow: 0 0 0 3px rgba(93, 173, 226, 0.15);
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 3px rgba(122, 229, 244, 0.25);
 }
 
 .paid-checkbox:checked {
@@ -1372,9 +1281,7 @@ body {
     position: relative;
 }
 
-/* ===================================================
-   ELENCO — Table Footer (tfoot totals)
-   =================================================== */
+/* === LIST — TABLE FOOTER \(TOTALS\) === */
 .tfoot-total-label {
     color: var(--sidebar-text);
     font-weight: 800;
@@ -1396,9 +1303,7 @@ body {
     color: var(--color-danger) !important;
 }
 
-/* ===================================================
-   ELENCO — Add Manual Expense Button & Inline Form
-   =================================================== */
+/* === LIST — ADD MANUAL EXPENSE & INLINE FORM === */
 .add-expense-btn {
     display: flex;
     align-items: center;
@@ -1512,7 +1417,7 @@ body {
     background-color: var(--color-danger-light);
 }
 
-/* ── Autocomplete Dropdown ── */
+/* --- Autocomplete dropdown --- */
 .autocomplete-list {
     position: fixed;
     z-index: 10000;
@@ -1560,9 +1465,7 @@ body {
     padding: 0 1px;
 }
 
-/* ===================================================
-   UPLOAD TOAST
-   =================================================== */
+/* === UPLOAD TOAST === */
 .upload-toast {
     position: fixed;
     top: 24px;
@@ -1599,14 +1502,12 @@ body {
 
 .upload-toast.error {
     background-color: var(--color-white);
-    color: var(--color-negative);
-    border: 2px solid var(--color-negative);
+    color: var(--color-danger);
+    border: 2px solid var(--color-danger);
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
-/* ===================================================
-   EMPTY STATE
-   =================================================== */
+/* === EMPTY STATE === */
 .empty-state {
     text-align: center;
     padding: 80px 20px;
@@ -1631,9 +1532,7 @@ body {
     opacity: 0.7;
 }
 
-/* ===================================================
-   KEBAB MENU
-   =================================================== */
+/* === KEBAB MENU === */
 .kebab-wrapper {
     position: relative;
 }
@@ -1697,9 +1596,7 @@ body {
     color: var(--sidebar-text);
 }
 
-/* ===================================================
-   MODALS
-   =================================================== */
+/* === MODALS === */
 .modal-overlay {
     position: fixed;
     inset: 0;
@@ -1713,10 +1610,10 @@ body {
 }
 
 .modal-body input::placeholder {
-    /* Usa il colore neutro/grigiastro della tua palette */
+    /* Use neutral/gray color from palette */
     color: var(--sidebar-text) !important;
 
-    /* Abbassa leggermente l'opacità per distinguerlo dal testo vero e proprio */
+    /* Slightly reduce opacity to distinguish from actual text */
     opacity: 1 !important;
 
     font-weight: 400;
@@ -1853,7 +1750,7 @@ body {
     justify-content: flex-end;
 }
 
-/* ── Bulk Delete: Period Tree ── */
+/* --- Bulk delete: period tree --- */
 .period-tree {
     display: flex;
     flex-direction: column;
@@ -1907,7 +1804,7 @@ body {
     padding: 5px 10px 5px 8px;
     border-radius: 6px;
     min-width: 130px;
-    /* larghezza fissa: "Settembre" è il mese più lungo */
+    /* Fixed width: "Settembre" is the longest month */
     transition: background var(--transition-fast);
 }
 
@@ -1941,7 +1838,7 @@ body {
     box-shadow: var(--focus-ring);
 }
 
-/* ── Keyword Management ── */
+/* --- Keyword management --- */
 .keyword-input-row {
     display: flex;
     gap: 8px;
@@ -2015,7 +1912,7 @@ body {
     border: none;
     cursor: pointer;
     font-size: 0.72rem;
-    color: var(--sidebar-text, #8a9ba8);
+    color: var(--text-muted);
     padding: 4px 5px;
     border-radius: 5px;
     line-height: 1;
@@ -2023,7 +1920,7 @@ body {
 }
 
 .keyword-remove:hover {
-    color: var(--color-danger, #e74c3c);
+    color: var(--color-danger);
     background: rgba(231, 76, 60, 0.08);
 }
 
@@ -2033,9 +1930,7 @@ body {
     border-radius: 5px;
 }
 
-/* ===================================================
-   NEUTRAL ROWS
-   =================================================== */
+/* === NEUTRAL ROWS === */
 tr.expense-row.neutral-row,
 .expense-table tbody tr.expense-row.neutral-row {
     background-color: var(--color-neutral-bg) !important;
@@ -2047,9 +1942,7 @@ tr.expense-row.neutral-row:hover,
     background-color: var(--color-neutral-hover) !important;
 }
 
-/* ===================================================
-   IGNORED RIMBORSO ROWS
-   =================================================== */
+/* === IGNORED RIMBORSO ROWS === */
 tr.expense-row.ignored-rimborso-row,
 .expense-table tbody tr.expense-row.ignored-rimborso-row {
     background-color: var(--color-ignored-rimborso-bg) !important;
@@ -2071,9 +1964,7 @@ tr.expense-row.ignored-rimborso-row:hover,
     font-weight: 700;
 }
 
-/* ===================================================
-   SMALL CONFIRM MODAL
-   =================================================== */
+/* === SMALL CONFIRM MODAL === */
 .modal-content-sm {
     max-width: 420px;
 }
@@ -2107,7 +1998,7 @@ tr.expense-row.ignored-rimborso-row:hover,
     box-sizing: border-box;
 }
 
-/* ── Tooltip Error ── */
+/* --- Tooltip error --- */
 .keyword-input-wrapper {
     position: relative;
     flex: 1;
@@ -2172,9 +2063,7 @@ tr.expense-row.ignored-rimborso-row:hover,
     transform: translateY(0);
 }
 
-/* ===================================================
-   METRIC COLORS
-   =================================================== */
+/* === METRIC COLORS === */
 .entrate-color {
     color: var(--color-success) !important;
 }
@@ -2191,9 +2080,7 @@ tr.expense-row.ignored-rimborso-row:hover,
     color: var(--color-danger-light) !important;
 }
 
-/* ===================================================
-   DASHBOARD — Top Categories Progress Bars
-   =================================================== */
+/* === DASHBOARD — TOP CATEGORIES PROGRESS BARS === */
 .top-cat-list {
     list-style: none;
     padding: 0;
@@ -2248,9 +2135,7 @@ tr.expense-row.ignored-rimborso-row:hover,
     transition: width 0.6s ease;
 }
 
-/* ===================================================
-   GESTIONE BONIFICI — Card Header
-   =================================================== */
+/* === TRANSFERS MANAGEMENT — CARD HEADER === */
 .card-bonifici {
     padding: 0;
     overflow: hidden;
@@ -2274,7 +2159,7 @@ tr.expense-row.ignored-rimborso-row:hover,
     color: var(--sidebar-text) !important;
 }
 
-/* ── Year Navigator ── */
+/* --- Year navigator --- */
 .year-navigator {
     display: flex;
     align-items: center;
@@ -2330,14 +2215,14 @@ tr.expense-row.ignored-rimborso-row:hover,
     line-height: 28px;
 }
 
-/* ── Bonifici Table Wrapper — rounded sub-block ── */
+/* --- Transfers table wrapper --- */
 .bonifici-table-wrapper {
     padding: 16px 20px 20px 20px;
     overflow-y: auto;
     max-height: 480px;
 }
 
-/* ── Bonifici Table (inherits .expense-table, overrides specific cols) ── */
+/* --- Transfers table (inherits .expense-table, overrides specific cols) --- */
 .bonifici-table {
     border-radius: 12px !important;
     box-shadow: 0 2px 10px rgba(99, 229, 255, 0.18) !important;
@@ -2365,7 +2250,7 @@ tr.expense-row.ignored-rimborso-row:hover,
     width: 20%;
 }
 
-/* Mese column: header bold, body rows normal */
+/* Month column: bold header, normal body rows */
 .bonifici-table th:nth-child(1) {
     text-align: center !important;
     vertical-align: middle;
@@ -2380,7 +2265,7 @@ tr.expense-row.ignored-rimborso-row:hover,
     color: var(--sidebar-text);
 }
 
-/* Importo column: header bold, body rows normal */
+/* Amount column: bold header, normal body rows */
 .bonifici-table th:nth-child(2) {
     text-align: center !important;
     padding-right: 14px !important;
@@ -2395,7 +2280,7 @@ tr.expense-row.ignored-rimborso-row:hover,
     font-weight: 500;
 }
 
-/* Bonifici tfoot total value */
+/* Transfers tfoot total value */
 .bonifici-tfoot-total {
     text-align: center !important;
     padding-right: 14px !important;
@@ -2403,13 +2288,13 @@ tr.expense-row.ignored-rimborso-row:hover,
     font-weight: 800;
 }
 
-/* Paid label in bonifici: centered */
+/* Paid label in transfers: centered */
 .bonifici-table td:nth-child(3) {
     text-align: center;
     vertical-align: middle;
 }
 
-/* All bonifici cells: middle vertical align */
+/* All transfers cells: middle vertical alignment */
 .bonifici-table td,
 .bonifici-table th {
     vertical-align: middle;
@@ -2420,11 +2305,8 @@ tr.expense-row.ignored-rimborso-row:hover,
     border-right: none !important;
 }
 
-/* ===================================================
-   UNIFORM HOVER — Spring transform per bottoni interattivi.
-   NOTA: .icon-btn:hover è incluso — scala il contorno,
-   l'icona interna è neutralizzata dalla regola .icon-btn:hover > i
-   =================================================== */
+/* === UNIFORM HOVER === */
+/* Spring transform for interactive buttons. Note: .icon-btn:hover scales the outline, inner icon is neutralized by .icon-btn:hover > i rule */
 .btn-danger:not(:disabled):hover,
 .btn-small:hover,
 .icon-btn:hover,
@@ -2442,11 +2324,9 @@ tr.expense-row.ignored-rimborso-row:hover,
         border-color var(--transition-base) !important;
 }
 
-/* ===================================================
-   RIMBORSO DETECTION — MITTENTI & CONFIRM
-   =================================================== */
+/* === REIMBURSEMENT DETECTION — SENDERS & CONFIRM === */
 
-/* Badge nella lista keyword neutre */
+/* Badge in neutral keyword list */
 .keyword-rimborso-badge {
     display: inline-flex;
     align-items: center;
@@ -2462,7 +2342,7 @@ tr.expense-row.ignored-rimborso-row:hover,
     flex-shrink: 0;
 }
 
-/* ── Lista mittenti rimborso ── */
+/* --- Reimbursement senders list --- */
 .rimborso-mittenti-list {
     display: flex;
     flex-direction: column;
@@ -2474,7 +2354,7 @@ tr.expense-row.ignored-rimborso-row:hover,
 
 
 
-/* Singola card mittente — stile identico a keyword-tag ma full-width */
+/* Single sender card (identical style to keyword-tag but full-width) */
 .rimborso-mittente-card {
     display: flex;
     align-items: center;
@@ -2496,7 +2376,7 @@ tr.expense-row.ignored-rimborso-row:hover,
     filter: brightness(0.97);
 }
 
-/* Nome — a sinistra, va a capo se lungo */
+/* Name on left, wraps if long */
 .rm-nome {
     flex: 1;
     font-size: 0.83rem;
@@ -2507,7 +2387,7 @@ tr.expense-row.ignored-rimborso-row:hover,
     min-width: 0;
 }
 
-/* Gruppo controlli — destra, non si restringe */
+/* Controls group on right, does not shrink */
 .rm-controls {
     display: flex;
     align-items: center;
@@ -2523,7 +2403,7 @@ tr.expense-row.ignored-rimborso-row:hover,
     white-space: nowrap;
 }
 
-/* Input tolleranza */
+/* Tolerance input */
 .rm-tolleranza {
     width: 48px;
     padding: 3px 6px;
@@ -2539,11 +2419,11 @@ tr.expense-row.ignored-rimborso-row:hover,
 
 .rm-tolleranza:focus {
     outline: none;
-    border-color: var(--focus-border, var(--primary-color));
-    box-shadow: var(--focus-ring, 0 0 0 3px rgba(127, 200, 217, .25));
+    border-color: var(--focus-border);
+    box-shadow: var(--focus-ring);
 }
 
-/* Toggle attivo dedicato (non riusa .toggle-switch per isolamento) */
+/* Dedicated active toggle (bypasses .toggle-switch for isolation) */
 .rm-toggle-switch {
     position: relative;
     display: inline-block;
@@ -2564,7 +2444,7 @@ tr.expense-row.ignored-rimborso-row:hover,
     inset: 0;
     background: var(--color-danger-light);
     border-radius: 20px;
-    transition: background var(--transition-base, .2s);
+    transition: background var(--transition-base);
 }
 
 .rm-toggle-slider::before {
@@ -2588,7 +2468,7 @@ tr.expense-row.ignored-rimborso-row:hover,
     transform: translateX(14px);
 }
 
-/* Pulsante elimina */
+/* Delete button */
 .rm-delete {
     background: none;
     border: none;
@@ -2603,11 +2483,11 @@ tr.expense-row.ignored-rimborso-row:hover,
 }
 
 .rm-delete:hover {
-    color: var(--color-danger, #e74c3c);
+    color: var(--color-danger);
     background: rgba(231, 76, 60, 0.08);
 }
 
-/* ── Bottone ricerca manuale ── */
+/* --- Manual search button --- */
 #btn-manual-rimborso-scan {
     background: var(--primary-text) !important;
     color: var(--color-white) !important;
@@ -2619,12 +2499,12 @@ tr.expense-row.ignored-rimborso-row:hover,
 
 
 
-/* ── Modale conferma rimborso ── */
+/* --- Reimbursement confirm modal --- */
 .btn-ignore-rimborso {
     margin-right: auto;
     /* Puts this button to the far left */
     background: var(--primary-text) !important;
-    /* BLU */
+    /* Blue */
     color: var(--color-white) !important;
     border: none !important;
     font-weight: 600;
@@ -2650,7 +2530,7 @@ tr.expense-row.ignored-rimborso-row:hover,
 
 #rimborso-skip-btn {
     background: var(--color-danger-light) !important;
-    /* ROSSO */
+    /* Red */
     color: var(--color-white) !important;
     border: none;
     font-weight: 600;
@@ -2662,7 +2542,7 @@ tr.expense-row.ignored-rimborso-row:hover,
 
 #rimborso-confirm-btn {
     background: var(--color-success) !important;
-    /* VERDE */
+    /* Green */
     color: var(--color-white) !important;
     border: none;
     font-weight: 600;
@@ -2739,7 +2619,7 @@ tr.expense-row.ignored-rimborso-row:hover,
     word-break: break-word;
 }
 
-/* Riga 2: importo + data */
+/* Row 2: amount + date */
 .rc-amount-row {
     display: flex;
     align-items: baseline;
@@ -2757,7 +2637,7 @@ tr.expense-row.ignored-rimborso-row:hover,
 .rc-date {
     font-weight: 400;
     font-size: 0.8rem;
-    color: var(--text-muted, #8a9ba8);
+    color: var(--text-muted);
 }
 
 .rc-months {
@@ -2779,13 +2659,13 @@ tr.expense-row.ignored-rimborso-row:hover,
 
 .rimborso-diff {
     font-size: 0.76rem;
-    color: var(--text-muted, #8a9ba8);
+    color: var(--text-muted);
     margin-top: 8px;
 }
 
 .rimborso-counter {
     font-size: 0.76rem;
-    color: var(--text-muted, #8a9ba8);
+    color: var(--text-muted);
     text-align: right;
     margin-bottom: 6px;
 }
