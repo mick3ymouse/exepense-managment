@@ -1,126 +1,162 @@
 """
-Database models and initialization for the Expense Management App.
-Uses SQLite for lightweight, file-based persistence.
+Database schema and versioned migrations for the Expense Management App.
+Uses SQLite with WAL mode for lightweight, file-based persistence.
 """
-import sqlite3
 import os
+import sqlite3
 
-DB_PATH = os.path.join(os.path.dirname(__file__), '..', 'data', 'expenses.db')
+DB_PATH = os.environ.get(
+    "EXPENSES_DB_PATH",
+    os.path.join(os.path.dirname(__file__), "..", "data", "expenses.db"),
+)
 
 
-def get_db_connection():
-    """Get a connection to the SQLite database."""
+# ── Connection ────────────────────────────────────────────────────
+
+def get_db_connection() -> sqlite3.Connection:
+    """Return a connection to the SQLite database with dict-like rows."""
     conn = sqlite3.connect(DB_PATH)
-    conn.row_factory = sqlite3.Row  # Return rows as dicts
-    conn.execute("PRAGMA journal_mode=WAL")  # Better concurrent read performance
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA journal_mode=WAL")
     return conn
 
 
-def init_db():
-    """Initialize the database schema. Creates tables if they don't exist."""
-    # Ensure the data directory exists
+# ── Schema ────────────────────────────────────────────────────────
+
+_TABLES = [
+    """
+    CREATE TABLE IF NOT EXISTS expenses (
+        id                  INTEGER PRIMARY KEY AUTOINCREMENT,
+        data_valuta         TEXT    NOT NULL,
+        operazione          TEXT    NOT NULL,
+        conto_carta         TEXT    DEFAULT '',
+        categoria           TEXT    DEFAULT '',
+        valuta              TEXT    DEFAULT 'EUR',
+        importo             REAL    NOT NULL,
+        is_excluded         INTEGER DEFAULT 0,
+        is_neutral          INTEGER DEFAULT 0,
+        is_pending          INTEGER DEFAULT 0,
+        is_ignored_rimborso INTEGER DEFAULT 0,
+        hash_id             TEXT    UNIQUE NOT NULL
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS monthly_status (
+        month   INTEGER NOT NULL,
+        year    INTEGER NOT NULL,
+        is_paid INTEGER DEFAULT 0,
+        PRIMARY KEY (month, year)
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS neutral_keywords (
+        id      INTEGER PRIMARY KEY AUTOINCREMENT,
+        keyword TEXT    UNIQUE NOT NULL
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS rimborso_mittenti (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        operazione TEXT    NOT NULL UNIQUE,
+        keyword_id INTEGER,
+        tolleranza REAL   DEFAULT 5.0,
+        attivo     INTEGER DEFAULT 1
+    )
+    """,
+    """
+    CREATE TABLE IF NOT EXISTS schema_version (
+        version INTEGER PRIMARY KEY
+    )
+    """,
+]
+
+_INDEXES = [
+    "CREATE INDEX IF NOT EXISTS idx_expenses_data ON expenses(data_valuta DESC)",
+    "CREATE INDEX IF NOT EXISTS idx_expenses_hash ON expenses(hash_id)",
+]
+
+
+# ── Versioned Migrations ─────────────────────────────────────────
+# Each entry is (version_number, description, list_of_SQL_statements).
+# Migrations run exactly ONCE, in order, and are tracked in schema_version.
+
+_MIGRATIONS: list[tuple[int, str, list[str]]] = [
+    # v1 — add columns that may be missing on older databases
+    (1, "add is_neutral, is_pending, is_ignored_rimborso columns", [
+        "ALTER TABLE expenses ADD COLUMN is_neutral          INTEGER DEFAULT 0",
+        "ALTER TABLE expenses ADD COLUMN is_pending          INTEGER DEFAULT 0",
+        "ALTER TABLE expenses ADD COLUMN is_ignored_rimborso INTEGER DEFAULT 0",
+    ]),
+
+    # v2 — backfill: flag old "Pagamento Pos" entries as pending
+    (2, "backfill is_pending for pagamento pos entries", [
+        """
+        UPDATE expenses
+        SET is_pending = 1
+        WHERE LOWER(TRIM(operazione)) LIKE 'pagamento pos%'
+          AND is_pending = 0
+        """,
+    ]),
+
+    # v3 — one-time fix: reset is_neutral for rimborso mittenti entries
+    #       that were previously auto-neutralized by the old keyword-link logic
+    (3, "reset is_neutral for rimborso mittenti entries", [
+        """
+        UPDATE expenses
+        SET is_neutral = 0
+        WHERE is_ignored_rimborso = 0
+          AND is_neutral = 1
+          AND id IN (
+              SELECT e.id
+              FROM expenses e, rimborso_mittenti rm
+              WHERE rm.attivo = 1
+                AND LOWER(TRIM(e.operazione)) LIKE '%' || LOWER(rm.operazione) || '%'
+          )
+        """,
+    ]),
+]
+
+
+# ── Initialisation ────────────────────────────────────────────────
+
+def _get_schema_version(cursor: sqlite3.Cursor) -> int:
+    """Return the current schema version, or 0 if the table doesn't exist yet."""
+    try:
+        row = cursor.execute("SELECT MAX(version) FROM schema_version").fetchone()
+        return row[0] or 0
+    except sqlite3.OperationalError:
+        return 0
+
+
+def _run_migrations(cursor: sqlite3.Cursor, current_version: int) -> None:
+    """Apply all pending migrations in order."""
+    for version, description, statements in _MIGRATIONS:
+        if version <= current_version:
+            continue
+        for sql in statements:
+            try:
+                cursor.execute(sql)
+            except sqlite3.OperationalError:
+                # Tolerate "duplicate column" or similar idempotent failures
+                pass
+        cursor.execute("INSERT INTO schema_version (version) VALUES (?)", (version,))
+
+
+def init_db() -> None:
+    """Initialise database: create tables, indexes, and run pending migrations."""
     os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 
     conn = get_db_connection()
     cursor = conn.cursor()
 
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS expenses (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            data_valuta TEXT NOT NULL,
-            operazione TEXT NOT NULL,
-            conto_carta TEXT DEFAULT '',
-            categoria TEXT DEFAULT '',
-            valuta TEXT DEFAULT 'EUR',
-            importo REAL NOT NULL,
-            is_excluded INTEGER DEFAULT 0,
-            is_neutral INTEGER DEFAULT 0,
-            is_pending INTEGER DEFAULT 0,
-            is_ignored_rimborso INTEGER DEFAULT 0,
-            hash_id TEXT UNIQUE NOT NULL
-        )
-    """)
+    current_version = _get_schema_version(cursor)
 
-    # Migration: add is_neutral column if it doesn't exist (existing DBs)
-    try:
-        cursor.execute("ALTER TABLE expenses ADD COLUMN is_neutral INTEGER DEFAULT 0")
-    except sqlite3.OperationalError:
-        pass  # Column already exists
+    for ddl in _TABLES:
+        cursor.execute(ddl)
+    for ddl in _INDEXES:
+        cursor.execute(ddl)
 
-    # Migration: add is_pending column if it doesn't exist
-    try:
-        cursor.execute("ALTER TABLE expenses ADD COLUMN is_pending INTEGER DEFAULT 0")
-    except sqlite3.OperationalError:
-        pass  # Column already exists
-
-    # One-time backfill: flag old "Pagamento Pos" entries as pending
-    # (only touches rows that need it; no-op once all are fixed)
-    cursor.execute("""
-        UPDATE expenses
-        SET is_pending = 1
-        WHERE LOWER(TRIM(operazione)) LIKE 'pagamento pos%'
-          AND is_pending = 0
-    """)
-
-    # Migration: add is_ignored_rimborso column if it doesn't exist
-    try:
-        cursor.execute("ALTER TABLE expenses ADD COLUMN is_ignored_rimborso INTEGER DEFAULT 0")
-    except sqlite3.OperationalError:
-        pass  # Column already exists
-
-    # Index for faster date-range queries and search
-    cursor.execute("""
-        CREATE INDEX IF NOT EXISTS idx_expenses_data
-        ON expenses(data_valuta DESC)
-    """)
-    cursor.execute("""
-        CREATE INDEX IF NOT EXISTS idx_expenses_hash
-        ON expenses(hash_id)
-    """)
-
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS monthly_status (
-            month INTEGER NOT NULL,
-            year  INTEGER NOT NULL,
-            is_paid INTEGER DEFAULT 0,
-            PRIMARY KEY (month, year)
-        )
-    """)
-
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS neutral_keywords (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            keyword TEXT UNIQUE NOT NULL
-        )
-    """)
-
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS rimborso_mittenti (
-            id          INTEGER PRIMARY KEY AUTOINCREMENT,
-            operazione  TEXT    NOT NULL UNIQUE,
-            keyword_id  INTEGER,
-            tolleranza  REAL    DEFAULT 5.0,
-            attivo      INTEGER DEFAULT 1
-        )
-    """)
-
-    # Migration: reset is_neutral=0 for any expense that matches an active rimborso
-    # mittente pattern but was previously auto-neutralized by the old keyword-link logic.
-    # Only reset entries that the user has NOT explicitly confirmed (they don't have
-    # is_ignored_rimborso=1). Confirmed entries stay neutral; non-confirmed entries
-    # become visible again in the popup flow.
-    mittenti = cursor.execute(
-        "SELECT operazione FROM rimborso_mittenti WHERE attivo = 1"
-    ).fetchall()
-    for m in mittenti:
-        pattern = f"%{m[0].lower()}%"
-        cursor.execute("""
-            UPDATE expenses
-            SET is_neutral = 0
-            WHERE is_ignored_rimborso = 0
-              AND is_neutral = 1
-              AND LOWER(TRIM(operazione)) LIKE ?
-        """, (pattern,))
+    _run_migrations(cursor, current_version)
 
     conn.commit()
     conn.close()
