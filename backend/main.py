@@ -187,9 +187,21 @@ def process_excel(file_bytes: bytes) -> dict:
     df.columns = df.columns.str.strip()
     df = df.dropna(how='all')
 
-    stats = {"new": 0, "duplicates": 0, "fuzzy_matches": [], "errors": 0}
+    stats = {"new": 0, "duplicates": 0, "replaced": 0, "fuzzy_matches": [], "errors": 0}
     conn = get_db_connection()
     neutral_kws = get_neutral_keywords(conn)
+
+    # Load active rimborso mittenti patterns so we don't mark them as neutral at import time
+    rimborso_patterns = [
+        r["operazione"].lower()
+        for r in conn.execute(
+            "SELECT operazione FROM rimborso_mittenti WHERE attivo = 1"
+        ).fetchall()
+    ]
+
+    def is_rimborso_mittente(op: str) -> bool:
+        op_l = op.strip().lower()
+        return any(pattern in op_l for pattern in rimborso_patterns)
 
     try:
         for _, row in df.iterrows():
@@ -227,8 +239,14 @@ def process_excel(file_bytes: bytes) -> dict:
                 if categoria == 'nan': categoria = ''
                 if valuta == 'nan': valuta = 'EUR'
 
+                # Detect pending POS transactions (case-insensitive)
+                op_lower = operazione.lower().strip()
+                cat_lower = categoria.lower().strip()
+                is_pending = 1 if op_lower.startswith('pagamento pos') else 0
+
                 hash_id = generate_hash(data_valuta, importo, operazione, conto_carta)
 
+                # 1) Exact hash duplicate → skip
                 existing = conn.execute(
                     "SELECT id FROM expenses WHERE hash_id = ?", (hash_id,)
                 ).fetchone()
@@ -237,6 +255,50 @@ def process_excel(file_bytes: bytes) -> dict:
                     stats["duplicates"] += 1
                     continue
 
+                # If operazione matches a rimborso mittente, never assign is_neutral=1 here.
+                # The user will decide via the popup (Conferma/Ignora/Non è un rimborso).
+                if is_rimborso_mittente(operazione):
+                    is_neutral = 0
+                else:
+                    is_neutral = 1 if check_neutral(operazione, neutral_kws) else 0
+
+                # 2) If this is a finalized (non-pending) entry, try to find
+                #    and replace a matching pending entry (FIFO by oldest date)
+                if is_pending == 0:
+                    target_date = datetime.strptime(data_valuta, '%Y-%m-%d')
+                    date_minus = (target_date - timedelta(days=7)).strftime('%Y-%m-%d')
+                    date_plus  = (target_date + timedelta(days=7)).strftime('%Y-%m-%d')
+
+                    pending_match = conn.execute("""
+                        SELECT id FROM expenses
+                        WHERE is_pending = 1
+                          AND importo = ?
+                          AND data_valuta BETWEEN ? AND ?
+                        ORDER BY data_valuta ASC
+                        LIMIT 1
+                    """, (importo, date_minus, date_plus)).fetchone()
+
+                    if pending_match:
+                        # Replace every column of the old pending row
+                        conn.execute("""
+                            UPDATE expenses
+                            SET data_valuta  = ?,
+                                operazione   = ?,
+                                conto_carta  = ?,
+                                categoria    = ?,
+                                valuta       = ?,
+                                importo      = ?,
+                                hash_id      = ?,
+                                is_neutral   = ?,
+                                is_pending   = 0
+                            WHERE id = ?
+                        """, (data_valuta, operazione, conto_carta, categoria,
+                              valuta, importo, hash_id, is_neutral,
+                              pending_match['id']))
+                        stats["replaced"] += 1
+                        continue
+
+                # 3) Fuzzy duplicate check (only reached if no pending match)
                 if check_fuzzy_duplicate(conn, data_valuta, importo, operazione):
                     stats["fuzzy_matches"].append({
                         "data": data_valuta,
@@ -246,13 +308,14 @@ def process_excel(file_bytes: bytes) -> dict:
                     stats["duplicates"] += 1
                     continue
 
-                is_neutral = 1 if check_neutral(operazione, neutral_kws) else 0
-
+                # 4) Insert as new expense
                 conn.execute("""
                     INSERT INTO expenses
-                        (data_valuta, operazione, conto_carta, categoria, valuta, importo, hash_id, is_neutral)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-                """, (data_valuta, operazione, conto_carta, categoria, valuta, importo, hash_id, is_neutral))
+                        (data_valuta, operazione, conto_carta, categoria,
+                         valuta, importo, hash_id, is_neutral, is_pending)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (data_valuta, operazione, conto_carta, categoria,
+                      valuta, importo, hash_id, is_neutral, is_pending))
 
                 stats["new"] += 1
 
@@ -553,7 +616,7 @@ async def get_dashboard_stats(
         FROM expenses
         WHERE data_valuta >= ? AND data_valuta < ?
           AND is_excluded = 0
-          AND is_neutral = 0
+          AND (is_neutral = 0 OR is_ignored_rimborso = 1)
     """, (start_date, end_date)).fetchone()
 
     top_categories = conn.execute("""
@@ -752,7 +815,7 @@ async def get_rimborso_mittenti():
 
 @app.post("/rimborso-mittenti")
 async def add_rimborso_mittente(request: Request):
-    """Add mittente and auto-create/link its neutral keyword."""
+    """Add mittente for reimbursement detection."""
     body = await request.json()
     operazione = body.get("operazione", "").strip()
     tolleranza = float(body.get("tolleranza", 5.0))
@@ -763,24 +826,9 @@ async def add_rimborso_mittente(request: Request):
 
     conn = get_db_connection()
     try:
-        existing_kw = conn.execute(
-            "SELECT id FROM neutral_keywords WHERE LOWER(keyword) = ?", (operazione.lower(),)
-        ).fetchone()
-        if existing_kw:
-            keyword_id = existing_kw["id"]
-        else:
-            conn.execute("INSERT INTO neutral_keywords (keyword) VALUES (?)", (operazione,))
-            conn.execute(
-                "UPDATE expenses SET is_neutral = 1 WHERE LOWER(TRIM(operazione)) = ?",
-                (operazione.lower(),)
-            )
-            keyword_id = conn.execute(
-                "SELECT id FROM neutral_keywords WHERE keyword = ?", (operazione,)
-            ).fetchone()["id"]
-
         conn.execute(
-            "INSERT INTO rimborso_mittenti (operazione, keyword_id, tolleranza, attivo) VALUES (?, ?, ?, ?)",
-            (operazione, keyword_id, tolleranza, attivo)
+            "INSERT INTO rimborso_mittenti (operazione, tolleranza, attivo) VALUES (?, ?, ?)",
+            (operazione, tolleranza, attivo)
         )
         conn.commit()
         row = conn.execute(
@@ -812,20 +860,14 @@ async def update_rimborso_mittente(mid: int, request: Request):
 
 @app.delete("/rimborso-mittenti/{mid}")
 async def delete_rimborso_mittente(mid: int):
-    """Delete mittente and its linked neutral keyword."""
+    """Delete mittente from reimbursement detection."""
     conn = get_db_connection()
-    row = conn.execute("SELECT operazione, keyword_id FROM rimborso_mittenti WHERE id = ?", (mid,)).fetchone()
+    row = conn.execute("SELECT operazione FROM rimborso_mittenti WHERE id = ?", (mid,)).fetchone()
     if not row:
         conn.close()
         return JSONResponse(status_code=404, content={"error": "Mittente non trovato."})
-    keyword_id, operazione = row["keyword_id"], row["operazione"]
+    
     conn.execute("DELETE FROM rimborso_mittenti WHERE id = ?", (mid,))
-    if keyword_id:
-        conn.execute("DELETE FROM neutral_keywords WHERE id = ?", (keyword_id,))
-        conn.execute(
-            "UPDATE expenses SET is_neutral = 0 WHERE LOWER(TRIM(operazione)) = ?",
-            (operazione.lower(),)
-        )
     conn.commit()
     conn.close()
     return {"deleted": mid}
@@ -863,7 +905,7 @@ async def detect_rimborso():
         sd, ed = month_date_range(y, m)
         total = conn.execute("""
             SELECT COALESCE(SUM(importo),0) AS t FROM expenses
-            WHERE data_valuta >= ? AND data_valuta < ? AND is_excluded=0 AND is_neutral=0
+            WHERE data_valuta >= ? AND data_valuta < ? AND is_excluded=0 AND is_neutral=0 AND is_ignored_rimborso=0
         """, (sd, ed)).fetchone()["t"]
         if abs(total) > 0.01:
             unpaid.append({"year": y, "month": m,
@@ -882,6 +924,7 @@ async def detect_rimborso():
         txs = conn.execute("""
             SELECT id, data_valuta, operazione, importo FROM expenses
             WHERE LOWER(TRIM(operazione)) LIKE ? AND importo > 0
+              AND is_ignored_rimborso = 0 AND is_neutral = 0
             ORDER BY data_valuta DESC
         """, (f"%{pattern.lower()}%",)).fetchall()
 
@@ -913,9 +956,45 @@ async def detect_rimborso():
                             "diff": round(diff, 2)
                         }
 
-            if best:
-                seen_tx_ids.add(tx["id"])
-                candidates.append(best)
+            if not best:
+                best = {
+                    "transaction": dict(tx),
+                    "months": [],
+                    "months_total": 0.0,
+                    "diff": 0.0
+                }
+
+            seen_tx_ids.add(tx["id"])
+            candidates.append(best)
 
     conn.close()
     return {"candidates": candidates}
+
+
+@app.put("/expenses/{expense_id}/ignore-rimborso")
+async def toggle_ignore_rimborso(expense_id: int):
+    """Mark a transaction as 'not a reimbursement' so it won't trigger the popup."""
+    conn = get_db_connection()
+    row = conn.execute("SELECT is_ignored_rimborso FROM expenses WHERE id = ?", (expense_id,)).fetchone()
+    if not row:
+        conn.close()
+        return {"error": "Not found"}
+    new_val = 0 if row["is_ignored_rimborso"] else 1
+    conn.execute("UPDATE expenses SET is_ignored_rimborso = ? WHERE id = ?", (new_val, expense_id))
+    conn.commit()
+    conn.close()
+    return {"ok": True, "is_ignored_rimborso": new_val}
+
+
+@app.put("/expenses/{expense_id}/confirm-rimborso")
+async def confirm_rimborso(expense_id: int):
+    """Mark a transaction as a confirmed reimbursement (is_neutral = 1)."""
+    conn = get_db_connection()
+    row = conn.execute("SELECT is_neutral FROM expenses WHERE id = ?", (expense_id,)).fetchone()
+    if not row:
+        conn.close()
+        return {"error": "Not found"}
+    conn.execute("UPDATE expenses SET is_neutral = 1 WHERE id = ?", (expense_id,))
+    conn.commit()
+    conn.close()
+    return {"ok": True, "is_neutral": 1}

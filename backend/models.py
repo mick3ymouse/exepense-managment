@@ -35,6 +35,8 @@ def init_db():
             importo REAL NOT NULL,
             is_excluded INTEGER DEFAULT 0,
             is_neutral INTEGER DEFAULT 0,
+            is_pending INTEGER DEFAULT 0,
+            is_ignored_rimborso INTEGER DEFAULT 0,
             hash_id TEXT UNIQUE NOT NULL
         )
     """)
@@ -42,6 +44,27 @@ def init_db():
     # Migration: add is_neutral column if it doesn't exist (existing DBs)
     try:
         cursor.execute("ALTER TABLE expenses ADD COLUMN is_neutral INTEGER DEFAULT 0")
+    except sqlite3.OperationalError:
+        pass  # Column already exists
+
+    # Migration: add is_pending column if it doesn't exist
+    try:
+        cursor.execute("ALTER TABLE expenses ADD COLUMN is_pending INTEGER DEFAULT 0")
+    except sqlite3.OperationalError:
+        pass  # Column already exists
+
+    # One-time backfill: flag old "Pagamento Pos" entries as pending
+    # (only touches rows that need it; no-op once all are fixed)
+    cursor.execute("""
+        UPDATE expenses
+        SET is_pending = 1
+        WHERE LOWER(TRIM(operazione)) LIKE 'pagamento pos%'
+          AND is_pending = 0
+    """)
+
+    # Migration: add is_ignored_rimborso column if it doesn't exist
+    try:
+        cursor.execute("ALTER TABLE expenses ADD COLUMN is_ignored_rimborso INTEGER DEFAULT 0")
     except sqlite3.OperationalError:
         pass  # Column already exists
 
@@ -80,6 +103,24 @@ def init_db():
             attivo      INTEGER DEFAULT 1
         )
     """)
+
+    # Migration: reset is_neutral=0 for any expense that matches an active rimborso
+    # mittente pattern but was previously auto-neutralized by the old keyword-link logic.
+    # Only reset entries that the user has NOT explicitly confirmed (they don't have
+    # is_ignored_rimborso=1). Confirmed entries stay neutral; non-confirmed entries
+    # become visible again in the popup flow.
+    mittenti = cursor.execute(
+        "SELECT operazione FROM rimborso_mittenti WHERE attivo = 1"
+    ).fetchall()
+    for m in mittenti:
+        pattern = f"%{m[0].lower()}%"
+        cursor.execute("""
+            UPDATE expenses
+            SET is_neutral = 0
+            WHERE is_ignored_rimborso = 0
+              AND is_neutral = 1
+              AND LOWER(TRIM(operazione)) LIKE ?
+        """, (pattern,))
 
     conn.commit()
     conn.close()

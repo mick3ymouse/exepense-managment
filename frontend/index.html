@@ -174,14 +174,17 @@
                                     <tbody id="bonifici-tbody">
                                         <!-- JS populates rows -->
                                         <tr class="bonifici-empty-row">
-                                            <td colspan="3" style="text-align:center; color: var(--text-muted); padding: 32px 0; font-weight:500;">
+                                            <td colspan="3"
+                                                style="text-align:center; color: var(--text-muted); padding: 32px 0; font-weight:500;">
                                                 Nessun dato disponibile
                                             </td>
                                         </tr>
                                     </tbody>
                                     <tfoot>
                                         <tr>
-                                            <td colspan="3" class="tfoot-total-label">Totale Anno: <span id="bonifici-tfoot-total" class="bonifici-tfoot-total-val">— €</span></td>
+                                            <td colspan="3" class="tfoot-total-label">Totale Anno: <span
+                                                    id="bonifici-tfoot-total" class="bonifici-tfoot-total-val">—
+                                                    €</span></td>
                                         </tr>
                                     </tfoot>
                                 </table>
@@ -257,7 +260,7 @@
                                 <button class="btn-small btn-apply" id="apply-date-filter">Applica</button>
                                 <button class="btn-small btn-clear" id="clear-date-filter">Cancella</button>
                             </div>
-                        </div> 
+                        </div>
                     </div>
                 </div>
 
@@ -349,10 +352,13 @@
                             <button class="modal-close" id="close-rimborso-settings">&times;</button>
                         </div>
                         <div class="modal-body">
-                            <p class="modal-hint">Dopo ogni caricamento il sistema cercherà automaticamente bonifici di rimborso e proporrà di spuntare i mesi corrispondenti. Il nome mittente viene aggiunto automaticamente alle keyword neutre.</p>
+                            <p class="modal-hint">Dopo ogni caricamento il sistema cercherà automaticamente bonifici di
+                                rimborso e proporrà di spuntare i mesi corrispondenti. Il nome mittente viene aggiunto
+                                automaticamente alle keyword neutre.</p>
                             <div class="keyword-input-row" style="margin-top:14px;">
                                 <div class="keyword-input-wrapper">
-                                    <input type="text" id="rimborso-pattern-input" placeholder="Nome mittente (Operazione)...">
+                                    <input type="text" id="rimborso-pattern-input"
+                                        placeholder="Nome mittente (Operazione)...">
                                 </div>
                                 <button class="btn-add-keyword" id="add-rimborso-btn">
                                     <i class="fa-solid fa-plus"></i> Aggiungi
@@ -360,6 +366,11 @@
                             </div>
                             <div id="rimborso-mittenti-list" class="rimborso-mittenti-list">
                                 <!-- JS populates -->
+                            </div>
+                            <div style="margin-top: 20px; text-align: center;">
+                                <button type="button" class="btn-primary" id="btn-manual-rimborso-scan">
+                                    <i class="fa-solid fa-magnifying-glass"></i> Cerca rimborsi
+                                </button>
                             </div>
                         </div>
                     </div>
@@ -412,14 +423,16 @@
                         <h3><i class="fa-solid fa-magnifying-glass-dollar"></i> Rimborso Rilevato</h3>
                     </div>
                     <div class="modal-body">
-                        <p class="modal-hint">È stato rilevato un possibile bonifico di rimborso. Vuoi spuntare i mesi corrispondenti come rimborsati?</p>
+                        <p class="modal-hint">È stato rilevato un possibile bonifico di rimborso. Vuoi spuntare i mesi
+                            corrispondenti come rimborsati?</p>
                         <div id="rimborso-confirm-details" class="rimborso-candidate-card"></div>
                     </div>
                     <div class="modal-footer-confirm">
-                        <button type="button" class="btn-small btn-apply" id="rimborso-skip-btn">Ignora</button>
-                        <button type="button" class="btn-primary" id="rimborso-confirm-btn">
-                            <i class="fa-solid fa-check"></i> Conferma
+                        <button type="button" class="btn-small btn-ignore-rimborso" id="rimborso-ignore-btn">
+                            <i class="fa-solid fa-ban"></i> Non è un rimborso
                         </button>
+                        <button type="button" class="btn-small btn-apply" id="rimborso-skip-btn">Ignora</button>
+                        <button type="button" class="btn-primary" id="rimborso-confirm-btn">Conferma</button>
                     </div>
                 </div>
             </div>

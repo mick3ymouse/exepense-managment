@@ -51,6 +51,11 @@
     --color-neutral-bg: #FFF5D6;
     --color-neutral-hover: #FFEDBA;
 
+    /* ── Ignored Rimborso Rows ── */
+    --color-ignored-rimborso-bg: #cbf5db;
+    /* Verde menta chiaro (simile a success) */
+    --color-ignored-rimborso-hover: #bcedcb;
+
     /* ── Misc Accents ── */
     --color-accent-blue: #4a69bd;
     --color-checkbox-hover: #5DADE2;
@@ -2042,7 +2047,22 @@ tr.expense-row.neutral-row:hover,
     background-color: var(--color-neutral-hover) !important;
 }
 
-.expense-row.neutral-row .eye-toggle {
+/* ===================================================
+   IGNORED RIMBORSO ROWS
+   =================================================== */
+tr.expense-row.ignored-rimborso-row,
+.expense-table tbody tr.expense-row.ignored-rimborso-row {
+    background-color: var(--color-ignored-rimborso-bg) !important;
+    color: var(--text-color) !important;
+}
+
+tr.expense-row.ignored-rimborso-row:hover,
+.expense-table tbody tr.expense-row.ignored-rimborso-row:hover {
+    background-color: var(--color-ignored-rimborso-hover) !important;
+}
+
+.expense-row.neutral-row .eye-toggle,
+.expense-row.ignored-rimborso-row .eye-toggle {
     visibility: hidden;
 }
 
@@ -2061,7 +2081,7 @@ tr.expense-row.neutral-row:hover,
 .modal-footer-confirm {
     display: flex;
     justify-content: flex-end;
-    align-items: stretch;
+    align-items: center;
     gap: 10px;
     padding: 14px 24px;
 }
@@ -2070,6 +2090,10 @@ tr.expense-row.neutral-row:hover,
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 8px 14px;
+    font-size: 0.85rem;
+    height: 36px;
+    box-sizing: border-box;
 }
 
 .modal-footer-confirm .btn-primary {
@@ -2077,6 +2101,10 @@ tr.expense-row.neutral-row:hover,
     display: flex;
     align-items: center;
     justify-content: center;
+    padding: 8px 14px;
+    font-size: 0.85rem;
+    height: 36px;
+    box-sizing: border-box;
 }
 
 /* ── Tooltip Error ── */
@@ -2579,9 +2607,71 @@ tr.expense-row.neutral-row:hover,
     background: rgba(231, 76, 60, 0.08);
 }
 
+/* ── Bottone ricerca manuale ── */
+#btn-manual-rimborso-scan {
+    background: var(--primary-text) !important;
+    color: var(--color-white) !important;
+}
+
+#btn-manual-rimborso-scan:hover {
+    opacity: 0.9;
+}
+
 
 
 /* ── Modale conferma rimborso ── */
+.btn-ignore-rimborso {
+    margin-right: auto;
+    /* Puts this button to the far left */
+    background: var(--primary-text) !important;
+    /* BLU */
+    color: var(--color-white) !important;
+    border: none !important;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'Poppins', sans-serif;
+    font-size: 0.85rem;
+    height: 36px;
+    box-sizing: border-box;
+    white-space: nowrap;
+    transition: background-color var(--transition-base), transform var(--transition-spring);
+}
+
+.btn-ignore-rimborso:hover {
+    opacity: 0.9;
+    transform: scale(1.05);
+}
+
+#rimborso-skip-btn {
+    background: var(--color-danger-light) !important;
+    /* ROSSO */
+    color: var(--color-white) !important;
+    border: none;
+    font-weight: 600;
+}
+
+#rimborso-skip-btn:hover {
+    opacity: 0.9;
+}
+
+#rimborso-confirm-btn {
+    background: var(--color-success) !important;
+    /* VERDE */
+    color: var(--color-white) !important;
+    border: none;
+    font-weight: 600;
+}
+
+#rimborso-confirm-btn:hover {
+    opacity: 0.9;
+}
+
 #rimborso-confirm-btn i {
     margin-right: 10px;
 }

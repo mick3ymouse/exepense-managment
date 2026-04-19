@@ -167,7 +167,7 @@ const API = {
     },
 
     async uploadFiles(files) {
-        let totalNew = 0, totalDup = 0, totalErr = 0;
+        let totalNew = 0, totalDup = 0, totalErr = 0, totalReplaced = 0;
         let lastError = '';
 
         for (const file of files) {
@@ -178,11 +178,12 @@ const API = {
                 totalNew += res.data.new || 0;
                 totalDup += res.data.duplicates || 0;
                 totalErr += res.data.errors || 0;
+                totalReplaced += res.data.replaced || 0;
             } else {
                 lastError = res.data?.error || res.error;
             }
         }
-        return { totalNew, totalDup, totalErr, lastError };
+        return { totalNew, totalDup, totalErr, totalReplaced, lastError };
     },
 
     async getExpenses(params) {
@@ -268,6 +269,12 @@ const API = {
     },
     async detectRimborso() {
         return this.fetchJSON('/detect-rimborso');
+    },
+    async confirmRimborso(id) {
+        return this.fetchJSON(`/expenses/${id}/confirm-rimborso`, { method: 'PUT' });
+    },
+    async ignoreRimborso(id) {
+        return this.fetchJSON(`/expenses/${id}/ignore-rimborso`, { method: 'PUT' });
     }
 };
 
@@ -568,9 +575,16 @@ const UI = {
         tr.dataset.date = exp.data_valuta;
         tr.dataset.importo = parseFloat(exp.importo);
         if (exp.is_excluded) tr.classList.add('excluded');
-        if (exp.is_neutral) tr.classList.add('neutral-row');
 
-        const importoClass = exp.is_neutral ? 'importo-neutral' : (exp.importo >= 0 ? 'importo-positive' : 'importo-negative');
+        let effectiveNeutral = exp.is_neutral;
+        if (exp.is_ignored_rimborso) {
+            tr.classList.add('ignored-rimborso-row');
+            effectiveNeutral = false; // It's not a standard neutral row, it's a special ignored rimborso
+        } else if (exp.is_neutral) {
+            tr.classList.add('neutral-row');
+        }
+
+        const importoClass = effectiveNeutral ? 'importo-neutral' : (exp.importo >= 0 ? 'importo-positive' : 'importo-negative');
 
         tr.innerHTML = `
             <td>${Utils.formatDateDisplay(exp.data_valuta)}</td>
@@ -601,8 +615,14 @@ const UI = {
 
         rows.forEach(row => {
             const val = parseFloat(row.dataset.importo) || 0;
+            // Ignored rimborso are entries, they alter totalAll (Totale Spese/Entrate)
             if (!row.classList.contains('neutral-row')) totalAll += val;
-            if (!row.classList.contains('excluded') && !row.classList.contains('neutral-row')) totalReimbursable += val;
+
+            // Reimbursable: exclude excluded, standard neutral, AND ignored-rimborso 
+            // ("non devono alterare il totale da rimborsare")
+            if (!row.classList.contains('excluded') && !row.classList.contains('neutral-row') && !row.classList.contains('ignored-rimborso-row')) {
+                totalReimbursable += val;
+            }
         });
 
         const isPaid = monthSection.querySelector('.paid-checkbox')?.checked || false;
@@ -980,7 +1000,7 @@ const Bonifici = {
                 const key = Utils.monthKey(year, monthNum);
                 let total = 0;
                 expenses.forEach(exp => {
-                    if (!exp.is_excluded && !exp.is_neutral) {
+                    if (!exp.is_excluded && !exp.is_neutral && !exp.is_ignored_rimborso) {
                         total += parseFloat(exp.importo) || 0;
                     }
                 });
@@ -1317,10 +1337,11 @@ const App = {
 
             const result = await API.uploadFiles(pendingFiles);
 
-            Utils.showToast(UI.elements.uploadToast,
-                `✓ ${result.totalNew} importati, ${result.totalDup} duplicati` + (result.totalErr ? `, ${result.totalErr} errori` : ''),
-                result.totalErr ? 'error' : 'success'
-            );
+            let msg = `✓ ${result.totalNew} importati, ${result.totalDup} duplicati`;
+            if (result.totalReplaced) msg += `, ${result.totalReplaced} sostituiti`;
+            if (result.totalErr) msg += `, ${result.totalErr} errori`;
+
+            Utils.showToast(UI.elements.uploadToast, msg, result.totalErr ? 'error' : 'success');
 
             if (result.lastError) Utils.showToast(UI.elements.uploadToast, result.lastError, 'error');
 
@@ -1409,7 +1430,9 @@ const App = {
             e.target.value = ''; // Reset immediately — allows same file to be imported again
             if (!files.length) return;
             const res = await API.uploadFiles(files);
-            Utils.showToast(UI.elements.elencoToast, `✓ ${res.totalNew} nuovi, ${res.totalDup} duplicati`, 'success');
+            let msg = `✓ ${res.totalNew} nuovi, ${res.totalDup} duplicati`;
+            if (res.totalReplaced) msg += `, ${res.totalReplaced} sostituiti`;
+            Utils.showToast(UI.elements.elencoToast, msg, 'success');
             await this.loadElenco();
             Bonifici.load();
             if (res.totalNew > 0) await this.detectAndPromptRimborso();
@@ -1660,6 +1683,11 @@ const App = {
         document.getElementById('add-rimborso-btn')?.addEventListener('click', () => {
             this.addRimborsoMittente();
         });
+
+        document.getElementById('btn-manual-rimborso-scan')?.addEventListener('click', async () => {
+            UI.closeModal('modal-rimborso-settings');
+            await this.detectAndPromptRimborso();
+        });
         document.getElementById('rimborso-pattern-input')?.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') this.addRimborsoMittente();
         });
@@ -1905,9 +1933,12 @@ const App = {
 
             const c = candidates[idx];
             const tx = c.transaction;
-            const monthTags = c.months.map(m =>
+            let monthTags = c.months.map(m =>
                 `<span class="rimborso-candidate-tag">${m.month_name} ${m.year} (${Utils.formatImporto(m.amount)})</span>`
             ).join('');
+            if (!monthTags) {
+                monthTags = `<span class="rimborso-candidate-tag" style="background:var(--color-neutral-transparent); color:var(--text-muted);">Nessuna spesa passata da rimborsare rilevata.</span>`;
+            }
             const counter = candidates.length > 1
                 ? `<div class="rimborso-counter">${idx + 1} di ${candidates.length}</div>` : '';
 
@@ -1932,7 +1963,7 @@ const App = {
                 details.addEventListener('animationend', () => details.classList.remove('slide-in'), { once: true });
             }
 
-            ['rimborso-confirm-btn', 'rimborso-skip-btn'].forEach(id => {
+            ['rimborso-confirm-btn', 'rimborso-skip-btn', 'rimborso-ignore-btn'].forEach(id => {
                 const el = document.getElementById(id);
                 if (el) el.replaceWith(el.cloneNode(true));
             });
@@ -1941,6 +1972,8 @@ const App = {
                 // Ultima card: chiudi con il normale fade-out del modal, senza slide
                 if (idx >= candidates.length - 1) {
                     UI.closeModal('modal-rimborso-confirm');
+                    App.loadElenco();
+                    Bonifici.load();
                     return;
                 }
                 // Card intermedia: slide-out, poi mostra la successiva con slide-in
@@ -1951,6 +1984,7 @@ const App = {
             };
 
             document.getElementById('rimborso-confirm-btn').addEventListener('click', async () => {
+                await API.confirmRimborso(tx.id);
                 for (const month of c.months) {
                     await API.setMonthlyStatus(month.year, month.month, true);
                     Bonifici.updateRowState(String(month.year), month.month, true);
@@ -1966,6 +2000,16 @@ const App = {
             }, { once: true });
 
             document.getElementById('rimborso-skip-btn').addEventListener('click', slideToNext, { once: true });
+
+            // "Non è un rimborso" — flag this transaction so it never pops up again
+            const ignoreBtn = document.getElementById('rimborso-ignore-btn');
+            if (ignoreBtn) {
+                ignoreBtn.replaceWith(ignoreBtn.cloneNode(true));
+                document.getElementById('rimborso-ignore-btn').addEventListener('click', async () => {
+                    await API.ignoreRimborso(tx.id);
+                    slideToNext();
+                }, { once: true });
+            }
         };
 
         UI.openModal('modal-rimborso-confirm');
