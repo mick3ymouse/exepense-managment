@@ -25,6 +25,8 @@
     --p-cream-hover: #FFEDBA;
     --p-excluded: #c5c5c5;
     --p-scrollbar: #b8b5b4;
+    --p-orange-pastel: #FFF8E1;
+    --p-mustard-light: #D4AC0D;
 
     /* === SEMANTIC ROLES === */
     /* --- Surfaces --- */
@@ -70,6 +72,16 @@
     --color-ignored-rimborso-bg: var(--p-mint);
     --color-ignored-rimborso-hover: var(--p-mint-hover);
     --color-excluded: var(--p-excluded);
+
+    /* --- Pending State --- */
+    --pending-bg: var(--p-orange-pastel);
+    --pending-text: var(--p-dark-teal);
+    --pending-border: var(--p-mustard-light);
+
+    /* --- Success State --- */
+    --success-bg: var(--p-mint);
+    --success-text: var(--p-green-dark);
+    --success-border: var(--p-green);
 
     /* --- Misc --- */
     --scrollbar-color: var(--p-scrollbar);
@@ -2146,7 +2158,7 @@ tr.expense-row.ignored-rimborso-row:hover,
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 20px 24px 18px 24px;
+    padding: 20px 24px 8px 24px;
     background-color: var(--color-white);
     flex-shrink: 0;
 }
@@ -2216,7 +2228,7 @@ tr.expense-row.ignored-rimborso-row:hover,
 
 /* --- Transfers table wrapper --- */
 .bonifici-table-wrapper {
-    padding: 16px 20px 20px 20px;
+    padding: 0px 20px 20px 20px;
     overflow-y: auto;
     max-height: 480px;
 }
@@ -2660,6 +2672,33 @@ tr.expense-row.ignored-rimborso-row:hover,
     font-size: 0.76rem;
     color: var(--text-muted);
     margin-top: 8px;
+}
+
+/* === NEW BADGE: Pending Reimbursements === */
+.badge-pending {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    background-color: var(--pending-bg);
+    color: var(--pending-text);
+    padding: 12px 16px;
+    border-radius: 14px;
+    font-weight: 700;
+    font-size: 0.95rem;
+    margin: 0 20px 8px 20px;
+    border: 1px solid var(--pending-border);
+    transition: background-color var(--transition-base), color var(--transition-base), border-color var(--transition-base);
+}
+
+.badge-success {
+    background-color: var(--success-bg) !important;
+    color: var(--p-dark-teal) !important;
+    border-color: var(--success-border) !important;
+}
+
+.badge-pending i {
+    font-size: 1.15rem;
 }
 
 .rimborso-counter {

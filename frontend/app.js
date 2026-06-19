@@ -594,7 +594,7 @@ const UI = {
             <td class="${importoClass}">${Utils.formatImporto(exp.importo)}</td>
             <td>
                 <div class="action-btns">
-                    <button class="eye-toggle" data-id="${exp.id}"Includi' : 'Escludi'}">
+                    <button class="eye-toggle" data-id="${exp.id}" title="${exp.is_excluded ? 'Includi' : 'Escludi'}">
                         <i class="fa-solid ${exp.is_excluded ? 'fa-eye-slash' : 'fa-eye'}"></i>
                     </button>
                     <button class="edit-btn" data-id="${exp.id}">
@@ -977,6 +977,9 @@ const Bonifici = {
         this.currentYear = this.availableYears[0] || new Date().getFullYear();
         this.updateYearLabel();
         this.updateNavButtons();
+        
+        // Optimistic UI: Initialize badge from cache
+        this.initBadge();
     },
 
     /** Set year from outside (e.g. after new data upload) */
@@ -1011,6 +1014,78 @@ const Bonifici = {
         this.updateYearLabel();
         this.updateNavButtons();
         this.render();
+    },
+
+    /**
+     * Optimistic UI: Try to render the badge immediately from localStorage cache
+     */
+    initBadge() {
+        const badgeContainer = document.getElementById('bonifici-pending-badge');
+        if (!badgeContainer) return;
+
+        const cacheKey = `bonifici_badge_cache_${this.currentYear}`;
+        const cachedHtml = localStorage.getItem(cacheKey);
+        const cachedClass = localStorage.getItem(cacheKey + '_class');
+
+        if (cachedHtml && cachedClass) {
+            // Step A (Check Cache): Cache hit, show instantly
+            badgeContainer.className = cachedClass;
+            badgeContainer.innerHTML = cachedHtml;
+            badgeContainer.style.display = 'flex';
+        } else {
+            // Step B (Fallback): Cache miss, keep hidden
+            badgeContainer.style.display = 'none';
+        }
+    },
+
+    /**
+     * Calculate and update the overall pending reimbursements badge.
+     */
+    updatePendingBadge() {
+        let totalPending = 0;
+        const currentYearStr = String(this.currentYear);
+        
+        for (const [key, amount] of Object.entries(this.monthlyAmounts)) {
+            // Contextual Year Logic: sum only for the current year
+            if (!key.startsWith(currentYearStr)) continue;
+
+            const isPaid = !!this.statusMap[key];
+            if (!isPaid && amount !== undefined) {
+                totalPending += amount;
+            }
+        }
+        
+        // Update DOM: Conditional Success State
+        const badgeContainer = document.getElementById('bonifici-pending-badge');
+        if (!badgeContainer) return;
+
+        let newClass = '';
+        let newHtml = '';
+
+        // Note: we use !== 0 to cover any pending amount (usually expenses are stored as negative, so totalPending might be negative)
+        if (totalPending !== 0) {
+            newClass = 'badge-pending';
+            newHtml = `
+                <i class="fa-solid fa-hourglass-half"></i>
+                <span>Totale da ricevere: <span id="bonifici-pending-val">${Utils.formatImporto(totalPending)}</span></span>
+            `;
+        } else {
+            newClass = 'badge-pending badge-success';
+            newHtml = `
+                <i class="fa-solid fa-circle-check"></i>
+                <span>Tutto rimborsato!</span>
+            `;
+        }
+
+        // Step C (Ricalcolo & Update)
+        badgeContainer.className = newClass;
+        badgeContainer.innerHTML = newHtml;
+        badgeContainer.style.display = 'flex';
+
+        // Write to Cache for Future Visits
+        const cacheKey = `bonifici_badge_cache_${this.currentYear}`;
+        localStorage.setItem(cacheKey, newHtml);
+        localStorage.setItem(cacheKey + '_class', newClass);
     },
 
     /**
@@ -1115,6 +1190,9 @@ const Bonifici = {
         if (tfootTotal) {
             tfootTotal.textContent = Utils.formatImporto(yearTotal);
         }
+
+        // Update the overall pending badge
+        this.updatePendingBadge();
     },
 
     /**
@@ -1123,6 +1201,9 @@ const Bonifici = {
     updateRowState(year, month, isPaid) {
         const key = Utils.monthKey(year, month);
         this.statusMap[key] = isPaid;
+
+        // Reactive update: update badge globally on every state change
+        this.updatePendingBadge();
 
         if (parseInt(year) !== this.currentYear) return;
 
@@ -1150,6 +1231,9 @@ const Bonifici = {
     updateMonthAmount(year, month, newAmount) {
         const key = Utils.monthKey(year, month);
         this.monthlyAmounts[key] = newAmount;
+
+        // Reactive update: update badge globally when an amount changes
+        this.updatePendingBadge();
 
         if (parseInt(year) !== this.currentYear) return;
 
