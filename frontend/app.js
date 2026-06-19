@@ -1735,16 +1735,11 @@ const App = {
                     setTimeout(async () => {
                         const res = await API.bulkDelete(periods);
                         if (res.ok) {
-                            const sections = periods.map(p =>
-                                document.querySelector(`#page-elenco .month-section[data-year="${p.year}"][data-month="${p.month}"]`)
-                            ).filter(Boolean);
-
-                            if (sections.length > 0) {
-                                sections.forEach(sec => sec.classList.add('fade-out'));
-                                setTimeout(() => window.location.reload(), 500);
-                            } else {
-                                window.location.reload();
-                            }
+                            periods.forEach(p => {
+                                const sec = document.querySelector(`#page-elenco .month-section[data-year="${p.year}"][data-month="${p.month}"]`);
+                                if (sec) sec.classList.add('fade-out');
+                            });
+                            setTimeout(() => window.location.reload(), 500);
                         }
                     }, 300);
                 }, { once: true });

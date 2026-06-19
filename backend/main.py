@@ -218,6 +218,28 @@ def _try_replace_pending(conn, data_valuta: str, importo: float,
     return True
 
 
+def _delete_matching_pending(conn, data_valuta: str, importo: float, stats: dict) -> None:
+    """
+    Delete a pending POS entry that matches a finalised row already in the DB.
+    Called when the finalised row is a hash duplicate (already imported) but
+    its pending counterpart was never cleaned up.
+    """
+    target = datetime.strptime(data_valuta, "%Y-%m-%d")
+    lo = (target - timedelta(days=7)).strftime("%Y-%m-%d")
+    hi = (target + timedelta(days=7)).strftime("%Y-%m-%d")
+
+    pending = conn.execute("""
+        SELECT id FROM expenses
+        WHERE is_pending = 1 AND importo = ? AND data_valuta BETWEEN ? AND ?
+        ORDER BY data_valuta ASC
+        LIMIT 1
+    """, (importo, lo, hi)).fetchone()
+
+    if pending:
+        conn.execute("DELETE FROM expenses WHERE id = ?", (pending["id"],))
+        stats["replaced"] += 1
+
+
 def process_excel(file_bytes: bytes) -> dict:
     """
     Process an Excel file and insert new expenses into the database.
@@ -263,11 +285,18 @@ def _ingest_row(conn, row, neutral_kws: set, rimborso_patterns: list, stats: dic
     valuta = _clean_str(row.get("Valuta", "EUR"), fallback="EUR")
     importo = parse_importo(row.get("Importo", 0))
 
-    is_pending = 1 if operazione.lower().startswith("pagamento pos") else 0
+    op_lower = operazione.lower()
+    is_pending = 1 if ("pagamento" in op_lower and "pos" in op_lower) else 0
     hash_id = generate_hash(data_valuta, importo, operazione, conto_carta)
 
-    # 1) Exact hash duplicate → skip
-    if conn.execute("SELECT 1 FROM expenses WHERE hash_id = ?", (hash_id,)).fetchone():
+    # 1) Exact hash duplicate
+    is_dup = conn.execute("SELECT 1 FROM expenses WHERE hash_id = ?", (hash_id,)).fetchone()
+
+    if is_dup:
+        # Even though the finalised row already exists, a matching pending POS
+        # entry may still be sitting in the DB from an earlier import.  Clean it up.
+        if is_pending == 0:
+            _delete_matching_pending(conn, data_valuta, importo, stats)
         stats["duplicates"] += 1
         return
 
@@ -481,21 +510,6 @@ async def toggle_expense(expense_id: int):
         conn.close()
 
 
-@app.delete("/expenses/{expense_id}")
-async def delete_expense(expense_id: int):
-    """Delete a single expense by ID."""
-    conn = get_db_connection()
-    try:
-        if not conn.execute("SELECT 1 FROM expenses WHERE id = ?", (expense_id,)).fetchone():
-            return JSONResponse(status_code=404, content={"error": "Spesa non trovata."})
-
-        conn.execute("DELETE FROM expenses WHERE id = ?", (expense_id,))
-        conn.commit()
-        return {"deleted": expense_id}
-    finally:
-        conn.close()
-
-
 @app.delete("/expenses/bulk-delete")
 async def bulk_delete_expenses(request: Request):
     """Delete all expenses for given month/year combos and reset monthly_status."""
@@ -515,6 +529,21 @@ async def bulk_delete_expenses(request: Request):
             conn.execute("DELETE FROM monthly_status WHERE month = ? AND year = ?", (m, y))
         conn.commit()
         return {"deleted": total_deleted}
+    finally:
+        conn.close()
+
+
+@app.delete("/expenses/{expense_id}")
+async def delete_expense(expense_id: int):
+    """Delete a single expense by ID."""
+    conn = get_db_connection()
+    try:
+        if not conn.execute("SELECT 1 FROM expenses WHERE id = ?", (expense_id,)).fetchone():
+            return JSONResponse(status_code=404, content={"error": "Spesa non trovata."})
+
+        conn.execute("DELETE FROM expenses WHERE id = ?", (expense_id,))
+        conn.commit()
+        return {"deleted": expense_id}
     finally:
         conn.close()
 

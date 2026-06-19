@@ -114,6 +114,35 @@ _MIGRATIONS: list[tuple[int, str, list[str]]] = [
           )
         """,
     ]),
+    # v4 — backfill: flag old "Pagamento Tramite Pos" entries as pending
+    (4, "backfill is_pending for pagamento tramite pos entries", [
+        """
+        UPDATE expenses
+        SET is_pending = 1
+        WHERE LOWER(TRIM(operazione)) LIKE 'pagamento tramite pos%'
+          AND is_pending = 0
+        """,
+    ]),
+    # v5 — cleanup: remove orphaned "Pagamento (Tramite) Pos" entries when
+    #       a finalised counterpart with the same amount and close date exists
+    (5, "delete orphaned pagamento pos entries with finalized counterpart", [
+        """
+        DELETE FROM expenses
+        WHERE id IN (
+            SELECT p.id
+            FROM expenses p
+            JOIN expenses f ON f.is_pending = 0
+                           AND f.importo = p.importo
+                           AND f.data_valuta BETWEEN date(p.data_valuta, '-7 days')
+                                                 AND date(p.data_valuta, '+7 days')
+                           AND f.id != p.id
+                           AND LOWER(TRIM(f.operazione)) NOT LIKE 'pagamento pos%'
+                           AND LOWER(TRIM(f.operazione)) NOT LIKE 'pagamento tramite pos%'
+            WHERE (LOWER(TRIM(p.operazione)) LIKE 'pagamento pos%'
+                OR LOWER(TRIM(p.operazione)) LIKE 'pagamento tramite pos%')
+        )
+        """,
+    ]),
 ]
 
 
