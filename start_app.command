@@ -17,11 +17,18 @@ if [ ! -d ".venv" ]; then
     python3 -m venv .venv
 fi
 source .venv/bin/activate
-pip install -q -r requirements.txt
+
+# ── Installa le dipendenze ───────────────────────────────────────
+if ! .venv/bin/python3 -m pip --version &>/dev/null; then
+    echo "ERRORE: pip non è disponibile nel virtual environment."
+    echo "   Prova a ricreare il venv: rm -rf .venv && python3 -m venv .venv"
+    exec bash
+fi
+.venv/bin/python3 -m pip install -q -r requirements.txt
 
 # ── Avvia il lanciatore Python in Background ─────────────────────
-# Python stesso farà il daemonize e si sgancerà dal terminale
-python3 backend/background_launcher.py
+# Python farà il fork+setsid e si sgancerà dal terminale
+.venv/bin/python3 backend/background_launcher.py
 
 # ── Chiudi il Terminale immediatamente ───────────────────────────
 osascript -e 'tell application "Terminal" to close front window' &
